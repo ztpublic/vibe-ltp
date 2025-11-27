@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { ChatHome, ChatHomeProps } from '../src/features/chatbot/ChatHome';
-import MockActionProvider from '../src/features/chatbot/MockActionProvider';
+import { MockChatService, ApiChatService } from '../src/features/chatbot/services';
 import React from 'react';
 
 const meta: Meta<typeof ChatHome> = {
@@ -25,12 +25,13 @@ type Story = StoryObj<typeof ChatHome>;
 export const Default: Story = {
   args: {
     roomId: 'storybook-room',
+    chatService: new MockChatService(),
   } satisfies ChatHomeProps,
 };
 
-export const Mocked: Story = {
+export const WithRealApi: Story = {
   args: {
     roomId: 'storybook-room',
-    actionProviderOverride: MockActionProvider,
+    chatService: new ApiChatService(),
   } satisfies ChatHomeProps,
 };
