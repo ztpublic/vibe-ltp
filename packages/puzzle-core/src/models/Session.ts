@@ -1,11 +1,23 @@
-import type { RoomStatus, AnswerType } from '@vibe-ltp/shared';
-import { RoomStatus as RoomStatusEnum } from '@vibe-ltp/shared';
 import type { Puzzle } from './Puzzle';
 
 /**
  * Domain model for a game session
  * Manages the state machine for a puzzle-solving session
  */
+
+export enum SessionStatus {
+  WAITING_FOR_PLAYERS = 'WAITING_FOR_PLAYERS',
+  IN_PROGRESS = 'IN_PROGRESS',
+  SOLVED = 'SOLVED',
+  ABANDONED = 'ABANDONED',
+}
+
+export enum AnswerType {
+  YES = 'YES',
+  NO = 'NO',
+  MAYBE = 'MAYBE',
+  IRRELEVANT = 'IRRELEVANT',
+}
 
 export interface SessionQuestion {
   id: string;
@@ -26,7 +38,7 @@ export interface SessionParticipant {
 }
 
 export class Session {
-  private _status: RoomStatus;
+  private _status: SessionStatus;
   private _questions: SessionQuestion[] = [];
   private _participants: SessionParticipant[] = [];
   private _solutionRevealed: boolean = false;
@@ -36,10 +48,10 @@ export class Session {
     public readonly puzzle: Puzzle,
     public readonly createdAt: Date = new Date()
   ) {
-    this._status = RoomStatusEnum.WAITING_FOR_PLAYERS;
+    this._status = SessionStatus.WAITING_FOR_PLAYERS;
   }
 
-  get status(): RoomStatus {
+  get status(): SessionStatus {
     return this._status;
   }
 
@@ -75,7 +87,7 @@ export class Session {
    * Start the session
    */
   start(): void {
-    if (this._status !== RoomStatusEnum.WAITING_FOR_PLAYERS) {
+    if (this._status !== SessionStatus.WAITING_FOR_PLAYERS) {
       throw new Error('Session already started');
     }
 
@@ -84,14 +96,14 @@ export class Session {
       throw new Error('Cannot start session without a host');
     }
 
-    this._status = RoomStatusEnum.IN_PROGRESS;
+    this._status = SessionStatus.IN_PROGRESS;
   }
 
   /**
    * Ask a question in the session
    */
   askQuestion(socketId: string, questionText: string): SessionQuestion {
-    if (this._status !== RoomStatusEnum.IN_PROGRESS) {
+    if (this._status !== SessionStatus.IN_PROGRESS) {
       throw new Error('Session not in progress');
     }
 
@@ -114,7 +126,7 @@ export class Session {
     answerType: AnswerType,
     explanation?: string
   ): void {
-    if (this._status !== RoomStatusEnum.IN_PROGRESS) {
+    if (this._status !== SessionStatus.IN_PROGRESS) {
       throw new Error('Session not in progress');
     }
 
@@ -138,22 +150,22 @@ export class Session {
    * Reveal the solution
    */
   revealSolution(): void {
-    if (this._status !== RoomStatusEnum.IN_PROGRESS) {
+    if (this._status !== SessionStatus.IN_PROGRESS) {
       throw new Error('Session not in progress');
     }
 
     this._solutionRevealed = true;
-    this._status = RoomStatusEnum.SOLVED;
+    this._status = SessionStatus.SOLVED;
   }
 
   /**
    * Abandon the session
    */
   abandon(): void {
-    if (this._status === RoomStatusEnum.SOLVED || this._status === RoomStatusEnum.ABANDONED) {
+    if (this._status === SessionStatus.SOLVED || this._status === SessionStatus.ABANDONED) {
       throw new Error('Session already ended');
     }
 
-    this._status = RoomStatusEnum.ABANDONED;
+    this._status = SessionStatus.ABANDONED;
   }
 }

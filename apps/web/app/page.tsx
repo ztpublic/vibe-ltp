@@ -1,50 +1,77 @@
-import Link from 'next/link';
+'use client';
+
+import { useState } from 'react';
 
 export default function Home() {
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
+  const [input, setInput] = useState('');
+
+  const handleSend = () => {
+    if (!input.trim()) return;
+    
+    setMessages([...messages, { role: 'user', content: input }]);
+    setInput('');
+    
+    // TODO: Connect to game logic
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            Vibe LTP
-          </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Lateral Thinking Puzzles - Solve mysteries with friends
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Link
-              href="/puzzles"
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Browse Puzzles
-            </Link>
-            <Link
-              href="/rooms"
-              className="bg-gray-200 text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-            >
-              Join Room
-            </Link>
-          </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header className="bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-4">
+          <h1 className="text-2xl font-bold text-gray-900">Vibe LTP</h1>
+          <p className="text-sm text-gray-600">Lateral Thinking Puzzle Game</p>
+        </div>
+      </header>
+
+      <main className="flex-1 container mx-auto px-4 py-8 flex flex-col max-w-4xl">
+        {/* Chat messages area */}
+        <div className="flex-1 bg-white rounded-lg shadow-md p-6 mb-4 overflow-y-auto">
+          {messages.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-gray-400">
+              <p>Start chatting to begin the puzzle...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${
+                    message.role === 'user' ? 'justify-end' : 'justify-start'
+                  }`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                      message.role === 'user'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-900'
+                    }`}
+                  >
+                    {message.content}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-bold mb-2">🧩 Mystery Puzzles</h3>
-            <p className="text-gray-600">
-              Solve intriguing lateral thinking puzzles with cryptic scenarios
-            </p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-bold mb-2">👥 Multiplayer Rooms</h3>
-            <p className="text-gray-600">
-              Create or join rooms to solve puzzles with friends in real-time
-            </p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-bold mb-2">💡 Q&A System</h3>
-            <p className="text-gray-600">
-              Ask yes/no questions to uncover the truth behind each mystery
-            </p>
+        {/* Input area */}
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Ask a question or make a guess..."
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+            />
+            <button
+              onClick={handleSend}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            >
+              Send
+            </button>
           </div>
         </div>
       </main>

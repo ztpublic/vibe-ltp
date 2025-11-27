@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { Session } from '../models/Session';
+import { Session, SessionStatus, AnswerType } from '../models/Session';
 import { Puzzle } from '../models/Puzzle';
-import { PuzzleDifficulty, AnswerType, RoomStatus } from '@vibe-ltp/shared';
+import { PuzzleDifficulty } from '@vibe-ltp/shared';
 
 describe('Session', () => {
   const mockPuzzle = new Puzzle(
@@ -16,7 +16,7 @@ describe('Session', () => {
 
   it('should create a session in WAITING_FOR_PLAYERS state', () => {
     const session = new Session('session-1', mockPuzzle);
-    expect(session.status).toBe(RoomStatus.WAITING_FOR_PLAYERS);
+    expect(session.status).toBe(SessionStatus.WAITING_FOR_PLAYERS);
     expect(session.solutionRevealed).toBe(false);
   });
 
@@ -43,7 +43,7 @@ describe('Session', () => {
     session.addParticipant('socket-1', 'HOST');
     session.start();
 
-    expect(session.status).toBe(RoomStatus.IN_PROGRESS);
+    expect(session.status).toBe(SessionStatus.IN_PROGRESS);
   });
 
   it('should not start session without host', () => {
@@ -88,7 +88,7 @@ describe('Session', () => {
     session.revealSolution();
 
     expect(session.solutionRevealed).toBe(true);
-    expect(session.status).toBe(RoomStatus.SOLVED);
+    expect(session.status).toBe(SessionStatus.SOLVED);
   });
 
   it('should abandon session', () => {
@@ -98,6 +98,6 @@ describe('Session', () => {
 
     session.abandon();
 
-    expect(session.status).toBe(RoomStatus.ABANDONED);
+    expect(session.status).toBe(SessionStatus.ABANDONED);
   });
 });
