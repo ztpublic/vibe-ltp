@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"],
+  "references": [
+    { "path": "../../packages/shared" },
+    { "path": "../../packages/puzzle-core" },
+    { "path": "../../puzzle-content" }
+  ]
+}

@@ -1,0 +1,307 @@
+# AGENTS.md - Guide for AI Code Agents
+
+This document provides context and guidance for AI agents working on the vibe-ltp codebase.
+
+## Project Overview
+
+**vibe-ltp** is a lateral thinking puzzle game built as a pnpm monorepo. Players solve mystery puzzles by asking yes/no questions to uncover hidden solutions.
+
+### Tech Stack
+- **Frontend**: Next.js 16 (App Router), React 18, Tailwind CSS
+- **Backend**: Node.js, Express, Socket.IO
+- **Database**: PostgreSQL with Prisma ORM
+- **Real-time**: Socket.IO for live rooms and Q&A
+- **Monorepo**: pnpm workspaces with TypeScript project references
+
+---
+
+## Repository Structure
+
+```
+vibe-ltp/
+├── apps/
+│   ├── web/              # Next.js frontend
+│   └── server/           # Express + Socket.IO backend
+├── packages/
+│   ├── puzzle-core/      # Domain logic (framework-free)
+│   ├── shared/           # Shared types, DTOs, Zod schemas
+│   ├── ui/               # Shared React components
+│   └── config/           # Shared configs (ESLint, TS, Tailwind)
+├── puzzle-content/       # JSON puzzle library
+├── .github/workflows/    # CI/CD
+└── docker-compose.yml    # PostgreSQL service
+```
+
+### Key Packages
+
+| Package | Purpose | Dependencies |
+|---------|---------|--------------|
+| `puzzle-core` | Pure domain logic (Puzzle, Session models) | `@vibe-ltp/shared` |
+| `shared` | Types, API constants, Zod schemas | `zod` |
+| `ui` | Reusable React components | `react`, `@vibe-ltp/shared` |
+| `server` | REST API + Socket.IO | `express`, `socket.io`, `prisma` |
+| `web` | Next.js UI | `next`, `@vibe-ltp/ui`, `@vibe-ltp/shared` |
+
+---
+
+## How to Run
+
+### Prerequisites
+- Node.js 20+
+- pnpm 9+
+- Docker (for PostgreSQL)
+
+### Setup Steps
+
+1. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
+
+2. **Start database**
+   ```bash
+   docker compose up -d db
+   ```
+
+3. **Setup environment**
+   ```bash
+   cp .env.example .env
+   ```
+
+4. **Run database migrations**
+   ```bash
+   cd apps/server
+   pnpm prisma migrate dev
+   ```
+
+5. **Start dev servers**
+   ```bash
+   # Start both frontend and backend
+   pnpm dev
+
+   # Or run individually
+   pnpm dev:web      # Frontend only (localhost:3000)
+   pnpm dev:server   # Backend only (localhost:4000)
+   ```
+
+### Other Commands
+
+```bash
+pnpm lint          # Lint all packages
+pnpm typecheck     # TypeScript type checking
+pnpm test          # Run unit tests (Vitest)
+pnpm e2e           # Run e2e tests (Playwright)
+pnpm format        # Format code with Prettier
+```
+
+---
+
+## Architecture Principles
+
+### 1. Domain Logic in `puzzle-core`
+
+**ALL business logic** must go in `packages/puzzle-core`. This package is:
+- ✅ Pure TypeScript (no React, Express, Prisma)
+- ✅ Framework-agnostic
+- ✅ Easy to test
+
+**Examples:**
+- Session state machine
+- Question/answer validation rules
+- Puzzle difficulty scoring
+
+### 2. Shared Types in `shared`
+
+- Define all DTOs, API response types here
+- Use Zod for runtime validation
+- Import in both `server` and `web`
+
+### 3. UI Components in `ui`
+
+- Reusable React components
+- No app-specific logic
+- Use Tailwind for styling
+
+### 4. Database Access
+
+- ❌ **Never** import Prisma in `web`
+- ✅ Only `server` accesses the database
+- ✅ Expose data via REST API or Socket.IO
+
+---
+
+## Common Tasks
+
+### Add a New Puzzle Field
+
+1. **Update Prisma schema** (`apps/server/prisma/schema.prisma`)
+   ```prisma
+   model Puzzle {
+     // ... existing fields
+     newField String?
+   }
+   ```
+
+2. **Run migration**
+   ```bash
+   cd apps/server
+   pnpm prisma migrate dev --name add-new-field
+   ```
+
+3. **Update shared types** (`packages/shared/src/types/puzzles.ts`)
+   ```ts
+   export interface Puzzle {
+     // ... existing fields
+     newField?: string;
+   }
+   ```
+
+4. **Update validation** (`packages/shared/src/validation/puzzleSchemas.ts`)
+   ```ts
+   export const puzzleCreateSchema = z.object({
+     // ... existing fields
+     newField: z.string().optional(),
+   });
+   ```
+
+5. **Update UI** to display new field
+
+### Add a New API Endpoint
+
+1. **Add route** in `apps/server/src/http/routes/`
+2. **Import types** from `@vibe-ltp/shared`
+3. **Validate request** with Zod schemas
+4. **Use Prisma** for database operations
+5. **Call from frontend** using fetch/TanStack Query
+
+### Add a Socket.IO Event
+
+1. **Define event constant** in `packages/shared/src/api/endpoints.ts`
+   ```ts
+   export const SOCKET_EVENTS = {
+     // ... existing events
+     NEW_EVENT: 'new:event',
+   };
+   ```
+
+2. **Add handler** in `apps/server/src/sockets/index.ts`
+3. **Emit/listen** in `apps/web` components
+
+---
+
+## Testing Guidelines
+
+### Unit Tests (Vitest)
+
+- Focus on `puzzle-core` logic
+- Test files: `*.spec.ts` or `*.test.ts`
+- Run: `pnpm test`
+
+**Example:**
+```ts
+// packages/puzzle-core/src/tests/session.spec.ts
+import { describe, it, expect } from 'vitest';
+import { Session } from '../models/Session';
+
+describe('Session', () => {
+  it('should start with WAITING_FOR_PLAYERS', () => {
+    const session = new Session('id', mockPuzzle);
+    expect(session.status).toBe('WAITING_FOR_PLAYERS');
+  });
+});
+```
+
+### E2E Tests (Playwright)
+
+- Test critical user flows
+- Run: `pnpm e2e`
+- See `AGENT_TIPS_PLAYWRIGHT.md` for details
+
+---
+
+## Code Style & Conventions
+
+### TypeScript
+
+- ✅ Enable `strict` mode
+- ✅ Use explicit types for function parameters
+- ✅ Avoid `any` (use `unknown` if needed)
+- ✅ Use `const` over `let`
+
+### Naming
+
+- Files: `camelCase.ts` or `PascalCase.tsx` (components)
+- Variables/functions: `camelCase`
+- Types/interfaces: `PascalCase`
+- Constants: `SCREAMING_SNAKE_CASE`
+
+### Imports
+
+- Use absolute imports from `@vibe-ltp/*` packages
+- Group imports: external → workspace → relative
+
+---
+
+## Troubleshooting
+
+### TypeScript Errors After Adding Dependencies
+
+```bash
+pnpm install
+```
+
+### Prisma Client Out of Sync
+
+```bash
+cd apps/server
+pnpm prisma generate
+```
+
+### Port Already in Use
+
+Change `PORT` in `.env` or kill the process:
+```bash
+lsof -ti:4000 | xargs kill
+```
+
+---
+
+## LLM-Specific Tips
+
+1. **Don't refactor everything at once**
+   - Make incremental changes
+   - Test after each change
+
+2. **Follow existing patterns**
+   - Look at similar features before adding new ones
+   - Keep consistency across the codebase
+
+3. **Domain logic first**
+   - Start with `puzzle-core` when adding features
+   - Then wire up server → web
+
+4. **Ask before major architectural changes**
+   - This project follows a specific structure
+   - Discuss large changes with the team first
+
+---
+
+## Next Steps for Development
+
+See the initialization plan for roadmap phases:
+1. ✅ Scaffold monorepo
+2. ✅ Add puzzle-core models
+3. 🚧 Wire up backend (Prisma, routes, sockets)
+4. ⏸ Seed content & DB
+5. ⏸ Basic frontend (puzzle list, room UI)
+6. ⏸ Full Q&A flow
+7. ⏸ Polish & testing
+
+---
+
+## Additional Resources
+
+- [Prisma Docs](https://www.prisma.io/docs)
+- [Next.js App Router](https://nextjs.org/docs/app)
+- [Socket.IO Docs](https://socket.io/docs/v4)
+- [TanStack Query](https://tanstack.com/query/latest)

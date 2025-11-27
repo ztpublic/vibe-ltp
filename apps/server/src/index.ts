@@ -1,0 +1,37 @@
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { setupRoutes } from './http/routes/index.js';
+import { setupSocketIO } from './sockets/index.js';
+
+dotenv.config();
+
+const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    credentials: true,
+  },
+});
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Health check
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Setup routes and socket handlers
+setupRoutes(app);
+setupSocketIO(io);
+
+const PORT = process.env.PORT || 4000;
+
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+});
