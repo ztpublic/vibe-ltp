@@ -28,6 +28,7 @@ export const SoupBotChat: React.FC<SoupBotChatProps> = ({
         config={config}
         messageParser={MessageParser}
         actionProvider={ActionProviderWithService}
+        placeholderText="向主持人提问"
       />
     </div>
   );

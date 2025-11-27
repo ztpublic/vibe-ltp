@@ -2,7 +2,7 @@
 
 import { createChatBotMessage } from 'react-chatbot-kit';
 
-export const BOT_NAME = 'SoupBot';
+export const BOT_NAME = '主持人';
 
 const config = {
   botName: BOT_NAME,
