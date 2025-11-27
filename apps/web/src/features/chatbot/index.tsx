@@ -18,7 +18,7 @@ export const SoupBotChat: React.FC<SoupBotChatProps> = ({
   const ActionProviderComponent = actionProviderOverride ?? ActionProvider;
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full h-full flex flex-col">
       <Chatbot
         config={config}
         messageParser={MessageParser}

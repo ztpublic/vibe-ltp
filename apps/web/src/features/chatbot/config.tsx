@@ -19,6 +19,10 @@ const config = {
     chatButton: {
       backgroundColor: '#2563eb',
     },
+    chatContainer: {
+      height: '100%',
+      width: '100%',
+    },
   },
 };
 

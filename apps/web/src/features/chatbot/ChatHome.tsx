@@ -10,7 +10,7 @@ export interface ChatHomeProps {
 
 export const ChatHome: React.FC<ChatHomeProps> = ({ roomId, actionProviderOverride }) => {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="h-screen bg-gray-50 flex flex-col">
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <h1 className="text-2xl font-bold text-gray-900">Vibe LTP</h1>
@@ -18,7 +18,7 @@ export const ChatHome: React.FC<ChatHomeProps> = ({ roomId, actionProviderOverri
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto px-4 py-8 flex flex-col max-w-4xl">
+      <main className="flex-1 container mx-auto px-4 py-8 flex flex-col w-[40vw]">
         <SoupBotChat roomId={roomId} actionProviderOverride={actionProviderOverride} />
       </main>
     </div>
