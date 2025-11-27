@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Session } from '../models/Session';
 import { Puzzle } from '../models/Puzzle';
-import { PuzzleDifficulty } from '@vibe-ltp/shared';
+import { PuzzleDifficulty, AnswerType, RoomStatus } from '@vibe-ltp/shared';
 
 describe('Session', () => {
   const mockPuzzle = new Puzzle(
@@ -16,7 +16,7 @@ describe('Session', () => {
 
   it('should create a session in WAITING_FOR_PLAYERS state', () => {
     const session = new Session('session-1', mockPuzzle);
-    expect(session.status).toBe('WAITING_FOR_PLAYERS');
+    expect(session.status).toBe(RoomStatus.WAITING_FOR_PLAYERS);
     expect(session.solutionRevealed).toBe(false);
   });
 
@@ -43,7 +43,7 @@ describe('Session', () => {
     session.addParticipant('user-1', 'HOST');
     session.start();
 
-    expect(session.status).toBe('IN_PROGRESS');
+    expect(session.status).toBe(RoomStatus.IN_PROGRESS);
   });
 
   it('should not start session without host', () => {
@@ -73,10 +73,10 @@ describe('Session', () => {
     session.start();
 
     const question = session.askQuestion('user-1', 'Was it intentional?');
-    session.answerQuestion(question.id, 'NO', 'It was not intentional');
+    session.answerQuestion(question.id, AnswerType.NO, 'It was not intentional');
 
     const answered = session.questions.find((q) => q.id === question.id);
-    expect(answered?.answer?.type).toBe('NO');
+    expect(answered?.answer?.type).toBe(AnswerType.NO);
     expect(answered?.answer?.explanation).toBe('It was not intentional');
   });
 
@@ -88,7 +88,7 @@ describe('Session', () => {
     session.revealSolution();
 
     expect(session.solutionRevealed).toBe(true);
-    expect(session.status).toBe('SOLVED');
+    expect(session.status).toBe(RoomStatus.SOLVED);
   });
 
   it('should abandon session', () => {
@@ -98,6 +98,6 @@ describe('Session', () => {
 
     session.abandon();
 
-    expect(session.status).toBe('ABANDONED');
+    expect(session.status).toBe(RoomStatus.ABANDONED);
   });
 });

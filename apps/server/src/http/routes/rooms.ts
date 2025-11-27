@@ -1,6 +1,6 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 
-export const roomRoutes = Router();
+export const roomRoutes: RouterType = Router();
 
 // GET /api/rooms - List all rooms
 roomRoutes.get('/', async (_req, res) => {

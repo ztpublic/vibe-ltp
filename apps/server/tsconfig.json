@@ -4,7 +4,12 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "module": "ESNext",
-    "moduleResolution": "bundler"
+    "moduleResolution": "node",
+    "paths": {
+      "@vibe-ltp/shared": ["../../packages/shared/src/index.ts"],
+      "@vibe-ltp/puzzle-core": ["../../packages/puzzle-core/src/index.ts"],
+      "@vibe-ltp/puzzle-content": ["../../puzzle-content/src/index.ts"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"],

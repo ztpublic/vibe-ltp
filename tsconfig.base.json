@@ -2,13 +2,12 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM"],
-    "module": "ESNext",
+    "module": "ES2020",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "allowJs": true,
     "checkJs": false,
     "outDir": "./dist",
-    "rootDir": ".",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
@@ -17,7 +16,6 @@
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "declarationMap": true,
-    "composite": true,
     "incremental": true,
     "isolatedModules": true,
     "allowSyntheticDefaultImports": true

@@ -8,7 +8,7 @@
     "dev:web": "pnpm -C apps/web dev",
     "dev:server": "pnpm -C apps/server dev",
     "lint": "eslint .",
-    "typecheck": "tsc -p tsconfig.base.json --noEmit",
+    "typecheck": "pnpm -r exec tsc --noEmit",
     "test": "vitest --runInBand",
     "e2e": "playwright test",
     "format": "prettier --write ."

@@ -27,7 +27,7 @@ export class Puzzle implements SharedPuzzle {
   /**
    * Get a sanitized version of the puzzle (without solution)
    */
-  getSurfaceOnly(): Omit<Puzzle, 'soupBottom'> {
+  getSurfaceOnly(): Omit<Puzzle, 'soupBottom' | 'getSurfaceOnly' | 'hasTag'> {
     const { soupBottom: _excluded, ...rest } = this;
     return rest;
   }

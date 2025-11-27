@@ -9,8 +9,13 @@
     "./typescript": "./tsconfig.json",
     "./tailwind": "./tailwind.config.ts"
   },
-  "files": ["*.mjs", "*.ts", "*.json"],
+  "files": [
+    "*.mjs",
+    "*.ts",
+    "*.json"
+  ],
   "devDependencies": {
+    "tailwindcss": "^4",
     "typescript": "^5.6.3"
   }
 }

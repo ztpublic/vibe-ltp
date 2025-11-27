@@ -1,6 +1,6 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 
-export const puzzleRoutes = Router();
+export const puzzleRoutes: RouterType = Router();
 
 // GET /api/puzzles - List all puzzles
 puzzleRoutes.get('/', async (_req, res) => {

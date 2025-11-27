@@ -1,4 +1,5 @@
 import type { RoomStatus, AnswerType } from '@vibe-ltp/shared';
+import { RoomStatus as RoomStatusEnum } from '@vibe-ltp/shared';
 import type { Puzzle } from './Puzzle';
 
 /**
@@ -35,7 +36,7 @@ export class Session {
     public readonly puzzle: Puzzle,
     public readonly createdAt: Date = new Date()
   ) {
-    this._status = 'WAITING_FOR_PLAYERS';
+    this._status = RoomStatusEnum.WAITING_FOR_PLAYERS;
   }
 
   get status(): RoomStatus {
@@ -74,7 +75,7 @@ export class Session {
    * Start the session
    */
   start(): void {
-    if (this._status !== 'WAITING_FOR_PLAYERS') {
+    if (this._status !== RoomStatusEnum.WAITING_FOR_PLAYERS) {
       throw new Error('Session already started');
     }
 
@@ -83,14 +84,14 @@ export class Session {
       throw new Error('Cannot start session without a host');
     }
 
-    this._status = 'IN_PROGRESS';
+    this._status = RoomStatusEnum.IN_PROGRESS;
   }
 
   /**
    * Ask a question in the session
    */
   askQuestion(userId: string, questionText: string): SessionQuestion {
-    if (this._status !== 'IN_PROGRESS') {
+    if (this._status !== RoomStatusEnum.IN_PROGRESS) {
       throw new Error('Session not in progress');
     }
 
@@ -113,7 +114,7 @@ export class Session {
     answerType: AnswerType,
     explanation?: string
   ): void {
-    if (this._status !== 'IN_PROGRESS') {
+    if (this._status !== RoomStatusEnum.IN_PROGRESS) {
       throw new Error('Session not in progress');
     }
 
@@ -137,22 +138,22 @@ export class Session {
    * Reveal the solution
    */
   revealSolution(): void {
-    if (this._status !== 'IN_PROGRESS') {
+    if (this._status !== RoomStatusEnum.IN_PROGRESS) {
       throw new Error('Session not in progress');
     }
 
     this._solutionRevealed = true;
-    this._status = 'SOLVED';
+    this._status = RoomStatusEnum.SOLVED;
   }
 
   /**
    * Abandon the session
    */
   abandon(): void {
-    if (this._status === 'SOLVED' || this._status === 'ABANDONED') {
+    if (this._status === RoomStatusEnum.SOLVED || this._status === RoomStatusEnum.ABANDONED) {
       throw new Error('Session already ended');
     }
 
-    this._status = 'ABANDONED';
+    this._status = RoomStatusEnum.ABANDONED;
   }
 }
