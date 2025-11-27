@@ -73,6 +73,18 @@ body {
 .react-chatbot-kit-chat-bot-message {
   background-color: #2d2d30 !important;
   color: #cccccc !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+.react-chatbot-kit-chat-bot-message-container {
+  justify-content: flex-start !important;
+  display: flex !important;
+  flex-direction: row !important;
+}
+
+.react-chatbot-kit-chat-bot-message-arrow {
+  display: none !important;
 }
 
 .react-chatbot-kit-user-chat-message {
