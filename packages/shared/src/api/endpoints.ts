@@ -7,8 +7,6 @@ export const API_ROUTES = {
   PUZZLE_BY_ID: (id: string) => `/api/puzzles/${id}`,
   ROOMS: '/api/rooms',
   ROOM_BY_ID: (id: string) => `/api/rooms/${id}`,
-  USERS: '/api/users',
-  USER_BY_ID: (id: string) => `/api/users/${id}`,
 } as const;
 
 export const SOCKET_EVENTS = {

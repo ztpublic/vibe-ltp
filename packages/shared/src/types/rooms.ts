@@ -33,7 +33,7 @@ export interface Room {
 export interface RoomParticipant {
   id: string;
   roomId: string;
-  userId: string;
+  socketId: string; // Socket connection ID
   role: ParticipantRole;
   joinedAt: Date;
 }
@@ -41,7 +41,7 @@ export interface RoomParticipant {
 export interface Question {
   id: string;
   roomId: string;
-  userId: string;
+  socketId: string; // Socket connection ID of asker
   text: string;
   askedAt: Date;
 }

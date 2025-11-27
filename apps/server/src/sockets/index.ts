@@ -6,25 +6,25 @@ export function setupSocketIO(io: Server): void {
     console.log(`Client connected: ${socket.id}`);
 
     // Handle room join
-    socket.on(SOCKET_EVENTS.ROOM_JOIN, (data: { roomId: string; userId: string }) => {
-      const { roomId, userId } = data;
+    socket.on(SOCKET_EVENTS.ROOM_JOIN, (data: { roomId: string }) => {
+      const { roomId } = data;
       socket.join(roomId);
-      console.log(`User ${userId} joined room ${roomId}`);
+      console.log(`Socket ${socket.id} joined room ${roomId}`);
       
       // Notify room members
       io.to(roomId).emit(SOCKET_EVENTS.ROOM_STATE_UPDATED, {
-        message: `User ${userId} joined`,
+        message: `Participant ${socket.id} joined`,
       });
     });
 
     // Handle room leave
-    socket.on(SOCKET_EVENTS.ROOM_LEAVE, (data: { roomId: string; userId: string }) => {
-      const { roomId, userId } = data;
+    socket.on(SOCKET_EVENTS.ROOM_LEAVE, (data: { roomId: string }) => {
+      const { roomId } = data;
       socket.leave(roomId);
-      console.log(`User ${userId} left room ${roomId}`);
+      console.log(`Socket ${socket.id} left room ${roomId}`);
       
       io.to(roomId).emit(SOCKET_EVENTS.ROOM_STATE_UPDATED, {
-        message: `User ${userId} left`,
+        message: `Participant ${socket.id} left`,
       });
     });
 

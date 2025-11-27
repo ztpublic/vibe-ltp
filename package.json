@@ -9,7 +9,7 @@
     "dev:server": "pnpm -C apps/server dev",
     "lint": "eslint .",
     "typecheck": "pnpm -r exec tsc --noEmit",
-    "test": "vitest --runInBand",
+    "test": "vitest run",
     "e2e": "playwright test",
     "format": "prettier --write ."
   },

@@ -9,7 +9,7 @@ import type { Puzzle } from './Puzzle';
 
 export interface SessionQuestion {
   id: string;
-  userId: string;
+  socketId: string; // Socket connection ID of asker
   text: string;
   askedAt: Date;
   answer?: {
@@ -20,7 +20,7 @@ export interface SessionQuestion {
 }
 
 export interface SessionParticipant {
-  userId: string;
+  socketId: string; // Socket connection ID
   role: 'HOST' | 'PLAYER' | 'SPECTATOR';
   joinedAt: Date;
 }
@@ -58,14 +58,14 @@ export class Session {
   /**
    * Add a participant to the session
    */
-  addParticipant(userId: string, role: 'HOST' | 'PLAYER' | 'SPECTATOR'): void {
-    const existing = this._participants.find((p) => p.userId === userId);
+  addParticipant(socketId: string, role: 'HOST' | 'PLAYER' | 'SPECTATOR'): void {
+    const existing = this._participants.find((p) => p.socketId === socketId);
     if (existing) {
       throw new Error('Participant already in session');
     }
 
     this._participants.push({
-      userId,
+      socketId,
       role,
       joinedAt: new Date(),
     });
@@ -90,14 +90,14 @@ export class Session {
   /**
    * Ask a question in the session
    */
-  askQuestion(userId: string, questionText: string): SessionQuestion {
+  askQuestion(socketId: string, questionText: string): SessionQuestion {
     if (this._status !== RoomStatusEnum.IN_PROGRESS) {
       throw new Error('Session not in progress');
     }
 
     const question: SessionQuestion = {
       id: `q-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      userId,
+      socketId,
       text: questionText,
       askedAt: new Date(),
     };

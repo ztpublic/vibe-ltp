@@ -9,20 +9,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id          String   @id @default(uuid())
-  name        String?
-  email       String?  @unique
-  isAnonymous Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  participants RoomParticipant[]
-  questions    Question[]
-
-  @@map("users")
-}
-
 model Puzzle {
   id             String   @id @default(uuid())
   soupSurface    String
@@ -55,26 +41,24 @@ model Room {
 model RoomParticipant {
   id       String   @id @default(uuid())
   roomId   String
-  userId   String
+  socketId String   // Socket connection ID
   role     String   // HOST, PLAYER, SPECTATOR
   joinedAt DateTime @default(now())
 
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([roomId, userId])
+  @@unique([roomId, socketId])
   @@map("room_participants")
 }
 
 model Question {
-  id      String   @id @default(uuid())
-  roomId  String
-  userId  String
-  text    String
-  askedAt DateTime @default(now())
+  id       String   @id @default(uuid())
+  roomId   String
+  socketId String   // Socket connection ID of asker
+  text     String
+  askedAt  DateTime @default(now())
 
   room    Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   answers Answer[]
 
   @@map("questions")

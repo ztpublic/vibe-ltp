@@ -22,8 +22,8 @@ describe('Session', () => {
 
   it('should add participants', () => {
     const session = new Session('session-1', mockPuzzle);
-    session.addParticipant('user-1', 'HOST');
-    session.addParticipant('user-2', 'PLAYER');
+    session.addParticipant('socket-1', 'HOST');
+    session.addParticipant('socket-2', 'PLAYER');
 
     expect(session.participants).toHaveLength(2);
     expect(session.participants[0]?.role).toBe('HOST');
@@ -31,16 +31,16 @@ describe('Session', () => {
 
   it('should not allow duplicate participants', () => {
     const session = new Session('session-1', mockPuzzle);
-    session.addParticipant('user-1', 'HOST');
+    session.addParticipant('socket-1', 'HOST');
 
     expect(() => {
-      session.addParticipant('user-1', 'PLAYER');
+      session.addParticipant('socket-1', 'PLAYER');
     }).toThrow('Participant already in session');
   });
 
   it('should start session when host is present', () => {
     const session = new Session('session-1', mockPuzzle);
-    session.addParticipant('user-1', 'HOST');
+    session.addParticipant('socket-1', 'HOST');
     session.start();
 
     expect(session.status).toBe(RoomStatus.IN_PROGRESS);
@@ -48,7 +48,7 @@ describe('Session', () => {
 
   it('should not start session without host', () => {
     const session = new Session('session-1', mockPuzzle);
-    session.addParticipant('user-1', 'PLAYER');
+    session.addParticipant('socket-1', 'PLAYER');
 
     expect(() => {
       session.start();
@@ -57,11 +57,11 @@ describe('Session', () => {
 
   it('should allow asking questions during session', () => {
     const session = new Session('session-1', mockPuzzle);
-    session.addParticipant('user-1', 'HOST');
-    session.addParticipant('user-2', 'PLAYER');
+    session.addParticipant('socket-1', 'HOST');
+    session.addParticipant('socket-2', 'PLAYER');
     session.start();
 
-    const question = session.askQuestion('user-2', 'Was it an accident?');
+    const question = session.askQuestion('socket-2', 'Was it an accident?');
 
     expect(question.text).toBe('Was it an accident?');
     expect(session.questions).toHaveLength(1);
@@ -69,10 +69,10 @@ describe('Session', () => {
 
   it('should answer questions', () => {
     const session = new Session('session-1', mockPuzzle);
-    session.addParticipant('user-1', 'HOST');
+    session.addParticipant('socket-1', 'HOST');
     session.start();
 
-    const question = session.askQuestion('user-1', 'Was it intentional?');
+    const question = session.askQuestion('socket-1', 'Was it intentional?');
     session.answerQuestion(question.id, AnswerType.NO, 'It was not intentional');
 
     const answered = session.questions.find((q) => q.id === question.id);
@@ -82,7 +82,7 @@ describe('Session', () => {
 
   it('should reveal solution and mark as solved', () => {
     const session = new Session('session-1', mockPuzzle);
-    session.addParticipant('user-1', 'HOST');
+    session.addParticipant('socket-1', 'HOST');
     session.start();
 
     session.revealSolution();
@@ -93,7 +93,7 @@ describe('Session', () => {
 
   it('should abandon session', () => {
     const session = new Session('session-1', mockPuzzle);
-    session.addParticipant('user-1', 'HOST');
+    session.addParticipant('socket-1', 'HOST');
     session.start();
 
     session.abandon();

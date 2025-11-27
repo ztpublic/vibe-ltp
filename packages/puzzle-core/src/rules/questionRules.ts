@@ -13,10 +13,10 @@ export function isValidQuestionText(text: string): boolean {
 }
 
 /**
- * Check if a user can ask a question in the session
+ * Check if a participant can ask a question in the session
  */
-export function canAskQuestion(session: Session, userId: string): boolean {
-  const participant = session.participants.find((p) => p.userId === userId);
+export function canAskQuestion(session: Session, socketId: string): boolean {
+  const participant = session.participants.find((p) => p.socketId === socketId);
   if (!participant) {
     return false;
   }
@@ -31,10 +31,10 @@ export function canAskQuestion(session: Session, userId: string): boolean {
 }
 
 /**
- * Check if a user can answer questions (must be host)
+ * Check if a participant can answer questions (must be host)
  */
-export function canAnswerQuestion(session: Session, userId: string): boolean {
-  const participant = session.participants.find((p) => p.userId === userId);
+export function canAnswerQuestion(session: Session, socketId: string): boolean {
+  const participant = session.participants.find((p) => p.socketId === socketId);
   if (!participant) {
     return false;
   }
