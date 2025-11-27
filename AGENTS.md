@@ -92,6 +92,8 @@ pnpm typecheck     # TypeScript type checking
 pnpm test          # Run unit tests (Vitest)
 pnpm e2e           # Run e2e tests (Playwright)
 pnpm format        # Format code with Prettier
+pnpm storybook:web # Run Storybook for visual component development
+pnpm build-storybook:web # Build Storybook for deployment
 ```
 
 ---
@@ -216,6 +218,146 @@ describe('Session', () => {
 - Test critical user flows
 - Run: `pnpm e2e`
 - See `AGENT_TIPS_PLAYWRIGHT.md` for details
+
+---
+
+## Storybook - Component Development
+
+### Overview
+
+Storybook is integrated into `apps/web` for visual component development and testing. It allows developing UI components in isolation without running the full application.
+
+### Configuration
+
+- **Config location**: `apps/web/.storybook/`
+  - `main.ts` - Storybook configuration (Next.js + Vite framework)
+  - `preview.ts` - Global decorators and parameters (includes Tailwind CSS)
+  - `vitest.setup.ts` - Vitest integration for component testing
+
+- **Stories location**: 
+  - `apps/web/stories/` - Page-level stories (e.g., ChatHome)
+  - `apps/web/src/**/*.stories.tsx` - Component-level stories
+
+### Running Storybook
+
+```bash
+# From project root
+pnpm storybook:web
+
+# Or from apps/web
+cd apps/web
+pnpm storybook
+```
+
+Storybook will start at `http://localhost:6006`
+
+### Creating Stories
+
+#### For Small Components
+
+Create stories next to components for quick iterations:
+
+```tsx
+// apps/web/src/features/chatbot/widgets/PuzzleCard.stories.tsx
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { PuzzleCard } from './PuzzleCard';
+
+const meta: Meta<typeof PuzzleCard> = {
+  title: 'Chatbot/Widgets/PuzzleCard',
+  component: PuzzleCard,
+};
+
+export default meta;
+type Story = StoryObj<typeof PuzzleCard>;
+
+export const Default: Story = {
+  args: {
+    title: 'Sample Puzzle',
+    difficulty: 'medium',
+  },
+};
+```
+
+#### For Page-Level Components
+
+Full-page stories go in `apps/web/stories/`:
+
+```tsx
+// apps/web/stories/ChatHome.stories.tsx
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { ChatHome } from '../src/features/chatbot/ChatHome';
+import MockActionProvider from '../src/features/chatbot/MockActionProvider';
+
+const meta: Meta<typeof ChatHome> = {
+  title: 'Pages/ChatHome',
+  component: ChatHome,
+  parameters: {
+    layout: 'fullscreen',
+  },
+};
+
+export default meta;
+
+export const Mocked: Story = {
+  args: {
+    actionProviderOverride: MockActionProvider,
+  },
+};
+```
+
+### Mock Providers
+
+**Important**: Never hit real APIs from Storybook stories. Always use mocks.
+
+- **Chat bot mock**: Use `MockActionProvider` from `src/features/chatbot/MockActionProvider.tsx`
+- **Custom mocks**: Create mock providers for any component that needs backend data
+
+#### How to Use Mocks
+
+1. Make components accept optional provider overrides:
+   ```tsx
+   export interface MyComponentProps {
+     dataProvider?: typeof RealProvider;
+   }
+   ```
+
+2. Pass mock providers in stories:
+   ```tsx
+   export const Mocked: Story = {
+     args: {
+       dataProvider: MockProvider,
+     },
+   };
+   ```
+
+### Best Practices
+
+1. **Component-driven development**
+   - Build UI components in Storybook first
+   - Test different states and props
+   - Then integrate into the app
+
+2. **One story per state**
+   - Default state
+   - Loading state
+   - Error state
+   - Empty state
+
+3. **Keep stories simple**
+   - Focus on visual variations
+   - Use args for dynamic props
+   - Avoid complex logic in stories
+
+4. **Accessibility testing**
+   - Storybook includes `@storybook/addon-a11y`
+   - Check the Accessibility tab for violations
+
+### Addons Available
+
+- `@storybook/addon-docs` - Auto-generated documentation
+- `@storybook/addon-a11y` - Accessibility testing
+- `@storybook/addon-vitest` - Component testing with Vitest
+- `@chromatic-com/storybook` - Visual regression testing
 
 ---
 
