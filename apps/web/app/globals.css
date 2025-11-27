@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #1e1e1e;
+  --foreground: #cccccc;
 }
 
 @theme inline {
@@ -14,8 +14,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1e1e1e;
+    --foreground: #cccccc;
   }
 }
 
@@ -29,12 +29,53 @@ body {
 .react-chatbot-kit-chat-container {
   width: 100% !important;
   height: 100% !important;
+  background-color: #252526 !important;
 }
 
 .react-chatbot-kit-chat-inner-container {
   height: 100% !important;
+  background-color: #252526 !important;
 }
 
 .react-chatbot-kit-chat-message-container {
   height: 100% !important;
+  background-color: #1e1e1e !important;
+}
+
+.react-chatbot-kit-chat-input-container {
+  background-color: #2d2d30 !important;
+  border-top: 1px solid #3e3e42 !important;
+}
+
+.react-chatbot-kit-chat-input {
+  background-color: #3c3c3c !important;
+  color: #cccccc !important;
+  border: 1px solid #3e3e42 !important;
+}
+
+.react-chatbot-kit-chat-input::placeholder {
+  color: #858585 !important;
+}
+
+.react-chatbot-kit-chat-input:focus {
+  outline: none !important;
+  border: 1px solid #0e639c !important;
+}
+
+.react-chatbot-kit-chat-btn-send {
+  background-color: #0e639c !important;
+}
+
+.react-chatbot-kit-chat-btn-send:hover {
+  background-color: #1177bb !important;
+}
+
+.react-chatbot-kit-chat-bot-message {
+  background-color: #2d2d30 !important;
+  color: #cccccc !important;
+}
+
+.react-chatbot-kit-user-chat-message {
+  background-color: #094771 !important;
+  color: #ffffff !important;
 }

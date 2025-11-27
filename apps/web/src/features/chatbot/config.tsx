@@ -14,10 +14,15 @@ const config = {
   ],
   customStyles: {
     botMessageBox: {
-      backgroundColor: '#f3f4f6',
+      backgroundColor: '#2d2d30',
+      color: '#cccccc',
+    },
+    userMessageBox: {
+      backgroundColor: '#094771',
+      color: '#ffffff',
     },
     chatButton: {
-      backgroundColor: '#2563eb',
+      backgroundColor: '#0e639c',
     },
     chatContainer: {
       height: '100%',
