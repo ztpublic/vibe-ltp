@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import 'react-chatbot-kit/build/main.css';
 
 export const metadata: Metadata = {
   title: 'Vibe LTP - Lateral Thinking Puzzles',
