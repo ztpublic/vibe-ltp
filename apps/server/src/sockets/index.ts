@@ -7,13 +7,13 @@ const roomPuzzleContent = new Map<string, PuzzleContent>();
 
 export function setupSocketIO(io: Server): void {
   io.on(SOCKET_EVENTS.CONNECT, (socket) => {
-    console.log(`Client connected: ${socket.id}`);
+    console.log(`[socketIO] client connected: ${socket.id}`);
 
     // Handle room join
     socket.on(SOCKET_EVENTS.ROOM_JOIN, (data: { roomId: string }) => {
       const { roomId } = data;
       socket.join(roomId);
-      console.log(`Socket ${socket.id} joined room ${roomId}`);
+      console.log(`[socketIO] socket ${socket.id} joined room ${roomId}`);
       
       // Initialize room game state if not exists
       if (!roomGameStates.has(roomId)) {
@@ -39,7 +39,7 @@ export function setupSocketIO(io: Server): void {
     socket.on(SOCKET_EVENTS.ROOM_LEAVE, (data: { roomId: string }) => {
       const { roomId } = data;
       socket.leave(roomId);
-      console.log(`Socket ${socket.id} left room ${roomId}`);
+      console.log(`[socketIO] socket ${socket.id} left room ${roomId}`);
       
       io.to(roomId).emit(SOCKET_EVENTS.ROOM_STATE_UPDATED, {
         message: `Participant ${socket.id} left`,
@@ -49,12 +49,14 @@ export function setupSocketIO(io: Server): void {
     // Handle question asked
     socket.on(SOCKET_EVENTS.QUESTION_ASKED, (data: { roomId: string; question: string }) => {
       const { roomId, question } = data;
+      console.log(`[socketIO] question asked in room ${roomId}:`, question);
       io.to(roomId).emit(SOCKET_EVENTS.QUESTION_ASKED, { question });
     });
 
     // Handle host answer
     socket.on(SOCKET_EVENTS.HOST_ANSWER, (data: { roomId: string; answer: unknown }) => {
       const { roomId, answer } = data;
+      console.log(`[socketIO] host answer in room ${roomId}:`, answer);
       io.to(roomId).emit(SOCKET_EVENTS.HOST_ANSWER, { answer });
     });
 
@@ -63,7 +65,7 @@ export function setupSocketIO(io: Server): void {
       const { roomId, puzzleContent } = data;
       roomGameStates.set(roomId, 'Started');
       roomPuzzleContent.set(roomId, puzzleContent);
-      console.log(`Game started in room ${roomId} with puzzle:`, puzzleContent);
+      console.log(`[socketIO] game started in room ${roomId} with puzzle:`, puzzleContent);
       
       // Notify all clients in the room
       io.to(roomId).emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
@@ -78,7 +80,7 @@ export function setupSocketIO(io: Server): void {
       const { roomId } = data;
       roomGameStates.set(roomId, 'NotStarted');
       roomPuzzleContent.delete(roomId);
-      console.log(`Game reset in room ${roomId}`);
+      console.log(`[socketIO] game reset in room ${roomId}`);
       
       // Notify all clients in the room
       io.to(roomId).emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
@@ -88,8 +90,8 @@ export function setupSocketIO(io: Server): void {
     });
 
     // Handle disconnect
-    socket.on(SOCKET_EVENTS.DISCONNECT, () => {
-      console.log(`Client disconnected: ${socket.id}`);
+    socket.on(SOCKET_EVENTS.DISCONNECT, (reason: string) => {
+      console.log(`[socketIO] client disconnected: ${socket.id}, reason: ${reason}`);
     });
   });
 }
