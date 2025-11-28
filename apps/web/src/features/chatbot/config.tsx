@@ -1,6 +1,8 @@
 'use client';
 
 import { createChatBotMessage } from 'react-chatbot-kit';
+import { PuzzleBotMessage } from './components/PuzzleBotMessage';
+import { PuzzleUserMessage } from './components/PuzzleUserMessage';
 
 export const BOT_NAME = '主持人';
 
@@ -12,6 +14,10 @@ const config = {
       {}
     ),
   ],
+  customComponents: {
+    botChatMessage: (props: any) => <PuzzleBotMessage {...props} />,
+    userChatMessage: (props: any) => <PuzzleUserMessage {...props} />,
+  },
   customStyles: {
     botMessageBox: {
       backgroundColor: '#2d2d30',

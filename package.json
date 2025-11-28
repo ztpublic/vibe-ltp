@@ -12,6 +12,7 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "format": "prettier --write .",
+    "sb": "pnpm -C apps/web storybook",
     "storybook:web": "pnpm -C apps/web storybook",
     "build-storybook:web": "pnpm -C apps/web build-storybook"
   },
