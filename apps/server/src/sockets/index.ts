@@ -1,9 +1,6 @@
 import type { Server } from 'socket.io';
-import { SOCKET_EVENTS, type GameState, type PuzzleContent, type GameStateData } from '@vibe-ltp/shared';
-
-// Single global game state (simplified from room-based architecture)
-let globalGameState: GameState = 'NotStarted';
-let globalPuzzleContent: PuzzleContent | undefined;
+import { SOCKET_EVENTS, type PuzzleContent, type GameStateData } from '@vibe-ltp/shared';
+import * as gameState from '../state/gameState.js';
 
 export function setupSocketIO(io: Server): void {
   io.on(SOCKET_EVENTS.CONNECT, (socket) => {
@@ -11,8 +8,8 @@ export function setupSocketIO(io: Server): void {
 
     // Send current game state to the connecting client
     socket.emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
-      state: globalGameState,
-      puzzleContent: globalPuzzleContent,
+      state: gameState.getGameState(),
+      puzzleContent: gameState.getPuzzleContent(),
     });
 
     // Handle question asked
@@ -32,8 +29,8 @@ export function setupSocketIO(io: Server): void {
       const { puzzleContent } = data;
       
       try {
-        globalGameState = 'Started';
-        globalPuzzleContent = puzzleContent;
+        gameState.setGameState('Started');
+        gameState.setPuzzleContent(puzzleContent);
         
         // Notify all connected clients
         io.emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
@@ -56,8 +53,7 @@ export function setupSocketIO(io: Server): void {
     // Handle game reset
     socket.on(SOCKET_EVENTS.GAME_RESET, (callback?: (response: { success: boolean; error?: string }) => void) => {
       try {
-        globalGameState = 'NotStarted';
-        globalPuzzleContent = undefined;
+        gameState.resetGameState();
         
         // Notify all connected clients
         io.emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {

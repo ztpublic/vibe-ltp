@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "typecheck": "pnpm -r exec tsc --noEmit",
     "test": "vitest run",
+    "test:agent": "node test-puzzle-agent.mjs",
     "e2e": "playwright test",
     "format": "prettier --write .",
     "sb": "pnpm -C apps/web storybook",

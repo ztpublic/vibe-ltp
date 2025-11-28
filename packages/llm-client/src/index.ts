@@ -8,3 +8,4 @@ export * from './client.js';
 export * from './chat.js';
 export * from './tools.js';
 export * from './agent.js';
+export * from './puzzleAgent.js';
