@@ -8,12 +8,11 @@ import { useGameState } from './hooks/useGameState';
 import { PuzzleInputDialog } from './components';
 
 export interface ChatHomeProps {
-  roomId?: string;
   chatService: ChatService;
 }
 
-export const ChatHome: React.FC<ChatHomeProps> = ({ roomId = 'default', chatService }) => {
-  const { gameState, puzzleContent, startGame, resetGame } = useGameState(roomId);
+export const ChatHome: React.FC<ChatHomeProps> = ({ chatService }) => {
+  const { gameState, puzzleContent, startGame, resetGame } = useGameState();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const isGameStarted = gameState === 'Started';
@@ -49,7 +48,7 @@ export const ChatHome: React.FC<ChatHomeProps> = ({ roomId = 'default', chatServ
             
             {/* Center - Chatbot */}
             <div className="w-[40vw] h-full flex flex-col">
-              <SoupBotChat roomId={roomId} chatService={chatService} disabled={isGameNotStarted} />
+              <SoupBotChat chatService={chatService} disabled={isGameNotStarted} />
             </div>
             
             {/* Right side - Action Buttons */}

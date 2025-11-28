@@ -12,7 +12,6 @@ const SOCKET_OPTIONS = {
 type SocketInstance = {
   socket: Socket;
   refCount: number;
-  roomId: string | null;
 };
 
 let sharedInstance: SocketInstance | null = null;
@@ -28,14 +27,9 @@ export type SocketLifecycleCallbacks = {
  * Acquire a socket connection with ref counting to prevent duplicate connections
  * in React Strict Mode and support multiple component usage
  */
-export function acquireSocket(baseUrl: string, roomId: string): Socket {
+export function acquireSocket(baseUrl: string): Socket {
   if (sharedInstance && sharedInstance.socket.connected) {
     sharedInstance.refCount += 1;
-    console.info('[socketManager] acquired existing socket', {
-      refCount: sharedInstance.refCount,
-      socketId: sharedInstance.socket.id,
-      roomId,
-    });
     return sharedInstance.socket;
   }
 
@@ -44,14 +38,7 @@ export function acquireSocket(baseUrl: string, roomId: string): Socket {
   sharedInstance = {
     socket,
     refCount: 1,
-    roomId,
   };
-
-  console.info('[socketManager] created new socket', {
-    refCount: 1,
-    baseUrl,
-    roomId,
-  });
 
   return socket;
 }
@@ -66,15 +53,8 @@ export function releaseSocket(socket: Socket): void {
   }
 
   sharedInstance.refCount = Math.max(0, sharedInstance.refCount - 1);
-  console.info('[socketManager] released socket', {
-    refCount: sharedInstance.refCount,
-    socketId: socket.id,
-  });
 
   if (sharedInstance.refCount === 0) {
-    console.info('[socketManager] disconnecting socket (ref count = 0)', {
-      socketId: socket.id,
-    });
     socket.disconnect();
     sharedInstance = null;
   }
@@ -92,41 +72,12 @@ export function getSharedSocket(): Socket | null {
  */
 export function attachSocketLifecycle(
   socket: Socket,
-  roomId: string,
   callbacks: SocketLifecycleCallbacks = {}
 ): () => void {
-  const handleConnect = () => {
-    console.info('[socketManager] socket connected', {
-      socketId: socket.id,
-      roomId,
-    });
-    callbacks.onConnect?.();
-  };
-
-  const handleReconnect = () => {
-    console.info('[socketManager] socket reconnected', {
-      socketId: socket.id,
-      roomId,
-    });
-    callbacks.onReconnect?.();
-  };
-
-  const handleConnectError = (error: Error) => {
-    console.error('[socketManager] socket connect_error', {
-      roomId,
-      error: error.message,
-    });
-    callbacks.onConnectError?.(error);
-  };
-
-  const handleDisconnect = (reason: string) => {
-    console.warn('[socketManager] socket disconnected', {
-      socketId: socket.id,
-      roomId,
-      reason,
-    });
-    callbacks.onDisconnect?.(reason);
-  };
+  const handleConnect = () => callbacks.onConnect?.();
+  const handleReconnect = () => callbacks.onReconnect?.();
+  const handleConnectError = (error: Error) => callbacks.onConnectError?.(error);
+  const handleDisconnect = (reason: string) => callbacks.onDisconnect?.(reason);
 
   // Attach event listeners
   socket.on('connect', handleConnect);

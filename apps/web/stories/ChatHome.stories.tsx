@@ -24,14 +24,12 @@ type Story = StoryObj<typeof ChatHome>;
 
 export const Default: Story = {
   args: {
-    roomId: 'storybook-room',
     chatService: new MockChatService(),
   } satisfies ChatHomeProps,
 };
 
 export const WithRealApi: Story = {
   args: {
-    roomId: 'storybook-room',
     chatService: new ApiChatService(),
   } satisfies ChatHomeProps,
 };

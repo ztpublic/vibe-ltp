@@ -10,11 +10,6 @@ export const API_ROUTES = {
 } as const;
 
 export const SOCKET_EVENTS = {
-  // Room events
-  ROOM_JOIN: 'room:join',
-  ROOM_LEAVE: 'room:leave',
-  ROOM_STATE_UPDATED: 'room:stateUpdated',
-
   // Question/Answer events
   QUESTION_ASKED: 'question:asked',
   HOST_ANSWER: 'host:answer',

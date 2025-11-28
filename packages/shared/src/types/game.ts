@@ -11,6 +11,5 @@ export interface PuzzleContent {
 
 export interface GameStateData {
   state: GameState;
-  roomId: string;
   puzzleContent?: PuzzleContent;
 }

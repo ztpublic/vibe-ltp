@@ -10,13 +10,11 @@ import MessageParser from './MessageParser';
 import type { ChatService } from './services';
 
 export type SoupBotChatProps = {
-  roomId?: string;
   chatService: ChatService;
   disabled?: boolean;
 };
 
 export const SoupBotChat: React.FC<SoupBotChatProps> = ({
-  roomId,
   chatService,
   disabled = false,
 }) => {
