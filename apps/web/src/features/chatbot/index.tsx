@@ -28,7 +28,7 @@ export const SoupBotChat: React.FC<SoupBotChatProps> = ({
 
   return (
     <div className="w-full h-full flex flex-col border border-[#3e3e42] rounded-lg overflow-hidden">
-      <div className={disabled ? 'chatbot-disabled' : ''}>
+      <div className={`h-full flex flex-col ${disabled ? 'chatbot-disabled' : ''}`}>
         <Chatbot
           config={config}
           messageParser={MessageParser}
