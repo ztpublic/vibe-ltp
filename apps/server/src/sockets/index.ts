@@ -61,32 +61,58 @@ export function setupSocketIO(io: Server): void {
     });
 
     // Handle game start
-    socket.on(SOCKET_EVENTS.GAME_STARTED, (data: { roomId: string; puzzleContent: PuzzleContent }) => {
+    socket.on(SOCKET_EVENTS.GAME_STARTED, (data: { roomId: string; puzzleContent: PuzzleContent }, callback?: (response: { success: boolean; error?: string }) => void) => {
       const { roomId, puzzleContent } = data;
-      roomGameStates.set(roomId, 'Started');
-      roomPuzzleContent.set(roomId, puzzleContent);
-      console.log(`[socketIO] game started in room ${roomId} with puzzle:`, puzzleContent);
       
-      // Notify all clients in the room
-      io.to(roomId).emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
-        state: 'Started',
-        roomId,
-        puzzleContent,
-      });
+      try {
+        roomGameStates.set(roomId, 'Started');
+        roomPuzzleContent.set(roomId, puzzleContent);
+        console.log(`[socketIO] game started in room ${roomId} with puzzle:`, puzzleContent);
+        
+        // Notify all clients in the room
+        io.to(roomId).emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
+          state: 'Started',
+          roomId,
+          puzzleContent,
+        });
+        
+        // Send acknowledgment
+        if (callback) {
+          callback({ success: true });
+        }
+      } catch (error) {
+        console.error(`[socketIO] error starting game in room ${roomId}:`, error);
+        if (callback) {
+          callback({ success: false, error: String(error) });
+        }
+      }
     });
 
     // Handle game reset
-    socket.on(SOCKET_EVENTS.GAME_RESET, (data: { roomId: string }) => {
+    socket.on(SOCKET_EVENTS.GAME_RESET, (data: { roomId: string }, callback?: (response: { success: boolean; error?: string }) => void) => {
       const { roomId } = data;
-      roomGameStates.set(roomId, 'NotStarted');
-      roomPuzzleContent.delete(roomId);
-      console.log(`[socketIO] game reset in room ${roomId}`);
       
-      // Notify all clients in the room
-      io.to(roomId).emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
-        state: 'NotStarted',
-        roomId,
-      });
+      try {
+        roomGameStates.set(roomId, 'NotStarted');
+        roomPuzzleContent.delete(roomId);
+        console.log(`[socketIO] game reset in room ${roomId}`);
+        
+        // Notify all clients in the room
+        io.to(roomId).emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
+          state: 'NotStarted',
+          roomId,
+        });
+        
+        // Send acknowledgment
+        if (callback) {
+          callback({ success: true });
+        }
+      } catch (error) {
+        console.error(`[socketIO] error resetting game in room ${roomId}:`, error);
+        if (callback) {
+          callback({ success: false, error: String(error) });
+        }
+      }
     });
 
     // Handle disconnect

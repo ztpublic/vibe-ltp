@@ -95,7 +95,26 @@ export function useGameState(roomId: string = 'default') {
     }
     
     console.log('[useGameState] starting game', { roomId, puzzleContent: content });
-    socket.emit(SOCKET_EVENTS.GAME_STARTED, { roomId, puzzleContent: content });
+    
+    // Optimistically update local state for responsive UI
+    setGameState('Started');
+    setPuzzleContent(content);
+    
+    // Emit with acknowledgment callback
+    socket.emit(
+      SOCKET_EVENTS.GAME_STARTED, 
+      { roomId, puzzleContent: content },
+      (response: { success: boolean; error?: string }) => {
+        if (response.success) {
+          console.log('[useGameState] game started successfully');
+        } else {
+          console.error('[useGameState] failed to start game:', response.error);
+          // Revert optimistic update on failure
+          setGameState('NotStarted');
+          setPuzzleContent(null);
+        }
+      }
+    );
   }, [roomId]);
 
   const resetGame = useCallback(() => {
@@ -106,8 +125,23 @@ export function useGameState(roomId: string = 'default') {
     }
     
     console.log('[useGameState] resetting game', { roomId });
-    socket.emit(SOCKET_EVENTS.GAME_RESET, { roomId });
+    
+    // Optimistically update local state
+    setGameState('NotStarted');
     setPuzzleContent(null);
+    
+    // Emit with acknowledgment callback
+    socket.emit(
+      SOCKET_EVENTS.GAME_RESET,
+      { roomId },
+      (response: { success: boolean; error?: string }) => {
+        if (response.success) {
+          console.log('[useGameState] game reset successfully');
+        } else {
+          console.error('[useGameState] failed to reset game:', response.error);
+        }
+      }
+    );
   }, [roomId]);
 
   return {
