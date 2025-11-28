@@ -12,7 +12,7 @@ type BotMessageProps = {
  * Custom bot message component with reply label and scroll-to behavior
  */
 export const PuzzleBotMessage: React.FC<BotMessageProps> = ({ message }) => {
-  const { content, replyToId, replyToPreview } = decodeBotMessage(message);
+  const { content, replyToId, replyToPreview, replyToNickname } = decodeBotMessage(message);
 
   const handleReplyClick = () => {
     if (!replyToId) return;
@@ -29,7 +29,7 @@ export const PuzzleBotMessage: React.FC<BotMessageProps> = ({ message }) => {
           onClick={handleReplyClick}
           title="点击跳转到问题"
         >
-          ↩ 回复: &quot;{replyToPreview}&quot;
+          ↩ 回复 {replyToNickname || 'visitor'}: &quot;{replyToPreview}&quot;
         </button>
       )}
       <div className="react-chatbot-kit-chat-bot-message">

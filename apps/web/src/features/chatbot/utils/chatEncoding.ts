@@ -7,6 +7,7 @@ export type EncodedBotPayload = {
   content: string;
   replyToId?: string;
   replyToPreview?: string;
+  replyToNickname?: string;
 };
 
 const PREFIX = '__JSON_META__:';
@@ -19,6 +20,7 @@ export function encodeBotMessage(payload: EncodedBotPayload): string {
   const meta = JSON.stringify({
     replyToId: payload.replyToId,
     replyToPreview: payload.replyToPreview,
+    replyToNickname: payload.replyToNickname,
   });
   return `${PREFIX}${meta}__\n${payload.content}`;
 }
@@ -42,6 +44,7 @@ export function decodeBotMessage(raw: string): EncodedBotPayload {
     content: content ?? '',
     replyToId: meta.replyToId,
     replyToPreview: meta.replyToPreview,
+    replyToNickname: meta.replyToNickname,
   };
 }
 
@@ -60,4 +63,34 @@ export function generateMessageId(content: string): string {
   const timestamp = Date.now();
   const hash = content.slice(0, 10).replace(/\s/g, '_');
   return `msg_${timestamp}_${hash}`;
+}
+
+/**
+ * Encoding/decoding utilities for user message nicknames
+ */
+const USER_PREFIX = '__NICK__';
+
+/**
+ * Encodes nickname into user message text
+ * Format: __NICK__{nickname}::{text}
+ */
+export function encodeUserText(nickname: string, text: string): string {
+  const safeNick = nickname.replace(/\n/g, ' ');
+  return `${USER_PREFIX}${safeNick}::${text}`;
+}
+
+/**
+ * Decodes user message to extract nickname and text
+ * Returns { nickname, text }
+ */
+export function decodeUserText(encoded: string): { nickname?: string; text: string } {
+  if (!encoded.startsWith(USER_PREFIX)) return { nickname: undefined, text: encoded };
+  const without = encoded.slice(USER_PREFIX.length);
+  const idx = without.indexOf('::');
+  if (idx === -1) return { nickname: undefined, text: encoded };
+
+  const nickname = without.slice(0, idx);
+  const text = without.slice(idx + 2);
+
+  return { nickname, text };
 }

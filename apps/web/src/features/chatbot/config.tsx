@@ -3,6 +3,7 @@
 import { createChatBotMessage } from 'react-chatbot-kit';
 import { PuzzleBotMessage } from './components/PuzzleBotMessage';
 import { PuzzleUserMessage } from './components/PuzzleUserMessage';
+import { NicknameBadge } from './components/NicknameBadge';
 
 export const BOT_NAME = '主持人';
 
@@ -15,6 +16,14 @@ const config = {
     ),
   ],
   customComponents: {
+    header: () => (
+      <div className="react-chatbot-kit-chat-header">
+        <div className="flex items-center justify-between w-full px-4 py-2">
+          <span className="font-semibold">海龟汤聊天室</span>
+          <NicknameBadge />
+        </div>
+      </div>
+    ),
     botChatMessage: (props: any) => <PuzzleBotMessage {...props} />,
     userChatMessage: (props: any) => <PuzzleUserMessage {...props} />,
   },

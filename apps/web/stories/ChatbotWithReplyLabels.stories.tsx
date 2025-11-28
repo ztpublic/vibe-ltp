@@ -7,8 +7,9 @@ import config from '../src/features/chatbot/config';
 import ActionProvider from '../src/features/chatbot/ActionProvider';
 import MessageParser from '../src/features/chatbot/MessageParser';
 import { MockChatService } from '../src/features/chatbot/services';
-import { encodeBotMessage, generateMessageId, truncateText } from '../src/features/chatbot/utils/chatEncoding';
+import { encodeBotMessage, encodeUserText, generateMessageId, truncateText } from '../src/features/chatbot/utils/chatEncoding';
 import { createChatBotMessage, createClientMessage } from 'react-chatbot-kit';
+import { IdentityProvider } from '../src/features/chatbot/identity';
 
 // Q&A pairs for the story
 const conversationPairs = [
@@ -80,17 +81,25 @@ const ChatbotWithMessages: React.FC = () => {
     ];
 
     // Create all question-answer pairs with metadata
-    const qaPairs = conversationPairs.map((pair) => {
+    const qaPairs = conversationPairs.map((pair, index) => {
+      // Generate a nickname for variety (some visitors, some with custom names)
+      const nicknames = ['visitor', 'Alice', 'Bob', 'Charlie', 'visitor', 'Diana', 'visitor'];
+      const nickname = nicknames[index % nicknames.length] ?? 'visitor';
+      
+      // Encode nickname into the question
+      const encodedQuestion = encodeUserText(nickname, pair.question);
+      
       // Use deterministic ID generation (content-based, no timestamp)
       const contentHash = pair.question.slice(0, 10).replace(/\s/g, '_');
       const questionId = `user_${contentHash}_${pair.question.length}`;
       const questionPreview = truncateText(pair.question, 40);
-      const userMessage = createClientMessage(pair.question, { loading: false }) as any;
+      const userMessage = createClientMessage(encodedQuestion, { loading: false }) as any;
       
       const encodedAnswer = encodeBotMessage({
         content: pair.answer,
         replyToId: questionId,
         replyToPreview: questionPreview,
+        replyToNickname: nickname,
       });
       const botMessage = createChatBotMessage(encodedAnswer, {}) as any;
       
@@ -135,14 +144,16 @@ const ChatbotWithMessages: React.FC = () => {
   );
 
   return (
-    <div className="w-full h-full flex flex-col border border-[#3e3e42] rounded-lg overflow-hidden">
-      <Chatbot
-        config={configWithMessages}
-        messageParser={MessageParser}
-        actionProvider={ActionProviderWithService}
-        placeholderText="向主持人提问"
-      />
-    </div>
+    <IdentityProvider>
+      <div className="w-full h-full flex flex-col border border-[#3e3e42] rounded-lg overflow-hidden">
+        <Chatbot
+          config={configWithMessages}
+          messageParser={MessageParser}
+          actionProvider={ActionProviderWithService}
+          placeholderText="向主持人提问"
+        />
+      </div>
+    </IdentityProvider>
   );
 };
 
