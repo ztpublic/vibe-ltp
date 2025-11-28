@@ -60,3 +60,16 @@
   position: relative;
   transition: box-shadow 0.25s ease-in-out;
 }
+
+/* Disabled chatbot styles */
+.chatbot-disabled .react-chatbot-kit-chat-input {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chatbot-disabled .react-chatbot-kit-chat-btn-send {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+}

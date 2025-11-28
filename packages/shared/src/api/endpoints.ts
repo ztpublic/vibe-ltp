@@ -23,6 +23,11 @@ export const SOCKET_EVENTS = {
   HINT_REVEALED: 'hint:revealed',
   SOLUTION_REVEALED: 'solution:revealed',
 
+  // Game state events
+  GAME_STARTED: 'game:started',
+  GAME_RESET: 'game:reset',
+  GAME_STATE_UPDATED: 'game:stateUpdated',
+
   // Connection events
   CONNECT: 'connect',
   DISCONNECT: 'disconnect',

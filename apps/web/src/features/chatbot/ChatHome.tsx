@@ -1,16 +1,37 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { SoupBotChat } from './index';
 import type { ChatService } from './services';
 import { IdentityProvider } from './identity/useChatIdentity';
+import { useGameState } from './hooks/useGameState';
+import { PuzzleInputDialog } from './components';
 
 export interface ChatHomeProps {
   roomId?: string;
   chatService: ChatService;
 }
 
-export const ChatHome: React.FC<ChatHomeProps> = ({ roomId, chatService }) => {
+export const ChatHome: React.FC<ChatHomeProps> = ({ roomId = 'default', chatService }) => {
+  const { gameState, puzzleContent, startGame, resetGame } = useGameState(roomId);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  const isGameStarted = gameState === 'Started';
+  const isGameNotStarted = gameState === 'NotStarted';
+
+  const handleStartGameClick = () => {
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogConfirm = (soupSurface: string, soupTruth: string) => {
+    startGame({ soupSurface, soupTruth });
+    setIsDialogOpen(false);
+  };
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+  };
+
   return (
     <IdentityProvider>
       <div className="h-screen bg-[#1e1e1e] flex flex-col">
@@ -21,42 +42,48 @@ export const ChatHome: React.FC<ChatHomeProps> = ({ roomId, chatService }) => {
               <div className="h-full border border-[#3e3e42] rounded-lg bg-[#252526] p-4 flex flex-col">
                 <h2 className="text-xl font-semibold text-white mb-4">汤面</h2>
                 <div className="text-[#cccccc] whitespace-pre-wrap flex-1 overflow-auto">
-                  {/* Placeholder content - this will be replaced with actual puzzle data */}
-                  一个男人走进餐厅，点了一碗海龜汤。
-                  他尝了一口后，走出餐厅，然后自杀了。
-                  为什么？
+                  {puzzleContent?.soupSurface || '等待开始新汤...'}
                 </div>
               </div>
             </div>
             
             {/* Center - Chatbot */}
             <div className="w-[40vw] h-full flex flex-col">
-              <SoupBotChat roomId={roomId} chatService={chatService} />
+              <SoupBotChat roomId={roomId} chatService={chatService} disabled={isGameNotStarted} />
             </div>
             
             {/* Right side - Action Buttons */}
             <div className="flex flex-col gap-4">
               <button
-                className="px-6 py-3 bg-[#0e639c] hover:bg-[#1177bb] text-white rounded-lg transition-colors whitespace-nowrap"
-                onClick={() => {
-                  // TODO: Implement start new puzzle logic
-                  console.log('开始新汤');
-                }}
+                className={`px-6 py-3 rounded-lg transition-colors whitespace-nowrap ${
+                  isGameNotStarted
+                    ? 'bg-[#0e639c] hover:bg-[#1177bb] text-white cursor-pointer'
+                    : 'bg-[#3e3e42] text-[#858585] cursor-not-allowed'
+                }`}
+                onClick={handleStartGameClick}
+                disabled={isGameStarted}
               >
                 开始新汤
               </button>
               <button
-                className="px-6 py-3 bg-[#2d2d30] hover:bg-[#3e3e42] text-white rounded-lg transition-colors border border-[#3e3e42] whitespace-nowrap"
-                onClick={() => {
-                  // TODO: Implement reveal answer logic
-                  console.log('公布答案');
-                }}
+                className={`px-6 py-3 rounded-lg transition-colors border border-[#3e3e42] whitespace-nowrap ${
+                  isGameStarted
+                    ? 'bg-[#2d2d30] hover:bg-[#3e3e42] text-white cursor-pointer'
+                    : 'bg-[#2d2d30] text-[#858585] cursor-not-allowed'
+                }`}
+                onClick={resetGame}
+                disabled={isGameNotStarted}
               >
                 公布答案
               </button>
             </div>
           </div>
         </main>
+        <PuzzleInputDialog
+          isOpen={isDialogOpen}
+          onClose={handleDialogClose}
+          onConfirm={handleDialogConfirm}
+        />
       </div>
     </IdentityProvider>
   );
