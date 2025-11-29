@@ -73,12 +73,7 @@ const ChatbotWithMessages: React.FC = () => {
 
   // Build initial messages array with all Q&A pairs
   const initialMessages = React.useMemo(() => {
-    const messages = [
-      createChatBotMessage(
-        `你好，我是 主持人。我们来玩海龟汤吧，随便问任何"是/否"问题来探索真相。`,
-        {}
-      ),
-    ];
+    const messages = [];
 
     // Create all question-answer pairs with metadata
     const qaPairs = conversationPairs.map((pair, index) => {

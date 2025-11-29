@@ -9,12 +9,7 @@ export const BOT_NAME = '主持人';
 
 const config = {
   botName: BOT_NAME,
-  initialMessages: [
-    createChatBotMessage(
-      `你好，我是 ${BOT_NAME}。我们来玩海龟汤吧，随便问任何"是/否"问题来探索真相。`,
-      {}
-    ),
-  ],
+  initialMessages: [],
   customComponents: {
     header: () => (
       <div className="react-chatbot-kit-chat-header">
