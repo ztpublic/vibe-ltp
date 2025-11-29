@@ -7,9 +7,6 @@ import { acquireSocket, releaseSocket, attachSocketLifecycle, isSocketConnected 
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
-console.log('🌐 [useGameState] SOCKET_URL:', SOCKET_URL);
-console.log('🌐 [useGameState] process.env.NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
-
 export function useGameState() {
   const [gameState, setGameState] = useState<GameState>('NotStarted');
   const [puzzleContent, setPuzzleContent] = useState<PuzzleContent | null>(null);

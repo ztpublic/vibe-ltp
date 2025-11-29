@@ -2,6 +2,7 @@ import type { Server } from 'socket.io';
 import { SOCKET_EVENTS, type PuzzleContent, type GameStateData } from '@vibe-ltp/shared';
 import * as gameState from '../state/gameState.js';
 import type { PersistedMessage } from '../state/gameState.js';
+import { handleSocketError, sendSocketSuccess } from '../utils/errorHandler.js';
 
 export function setupSocketIO(io: Server): void {
   io.on(SOCKET_EVENTS.CONNECT, (socket) => {
@@ -15,14 +16,6 @@ export function setupSocketIO(io: Server): void {
     
     // Send chat history to the connecting client
     const chatMessages = gameState.getChatMessages();
-    console.log(`[Socket] Sending chat history: ${chatMessages.length} messages`);
-    if (chatMessages.length > 0 && chatMessages[0]) {
-      console.log('[Socket] First message:', {
-        type: chatMessages[0].type,
-        content: chatMessages[0].content,
-        nickname: chatMessages[0].nickname
-      });
-    }
     socket.emit(SOCKET_EVENTS.CHAT_HISTORY_SYNC, {
       messages: chatMessages,
     });
@@ -42,15 +35,7 @@ export function setupSocketIO(io: Server): void {
     // Handle chat message added
     socket.on(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, (data: { message: PersistedMessage }) => {
       const { message } = data;
-      console.log(`[Socket] Received message:`, {
-        type: message.type,
-        content: message.content,
-        contentLength: message.content?.length || 0,
-        nickname: message.nickname,
-        id: message.id
-      });
       gameState.addChatMessage(message);
-      console.log(`[Socket] Total messages in history: ${gameState.getChatMessages().length}`);
       // Broadcast to all clients
       io.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { message });
     });
@@ -60,8 +45,10 @@ export function setupSocketIO(io: Server): void {
       const { puzzleContent } = data;
       
       try {
-        gameState.setGameState('Started');
+        // IMPORTANT: Set puzzle content BEFORE setting state to 'Started'
+        // The validateStateTransition function requires puzzle content to exist
         gameState.setPuzzleContent(puzzleContent);
+        gameState.setGameState('Started');
         
         // Notify all connected clients
         io.emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
@@ -69,15 +56,9 @@ export function setupSocketIO(io: Server): void {
           puzzleContent,
         });
         
-        // Send acknowledgment
-        if (callback) {
-          callback({ success: true });
-        }
+        sendSocketSuccess(callback);
       } catch (error) {
-        console.error('[Socket] Error starting game:', error);
-        if (callback) {
-          callback({ success: false, error: String(error) });
-        }
+        handleSocketError(error, 'Error starting game', callback);
       }
     });
 
@@ -91,15 +72,9 @@ export function setupSocketIO(io: Server): void {
           state: 'NotStarted',
         });
         
-        // Send acknowledgment
-        if (callback) {
-          callback({ success: true });
-        }
+        sendSocketSuccess(callback);
       } catch (error) {
-        console.error('[Socket] Error resetting game:', error);
-        if (callback) {
-          callback({ success: false, error: String(error) });
-        }
+        handleSocketError(error, 'Error resetting game', callback);
       }
     });
 

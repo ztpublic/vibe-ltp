@@ -3,7 +3,7 @@
  * Implements agentic workflows with tool calling support
  */
 
-import { generateText } from 'ai';
+import { generateText, type CoreTool, type LanguageModel } from 'ai';
 import { getOpenRouterClient } from './client.js';
 import type { AgentRunOptions, AgentRunResult, ChatMessage, ToolMessage, ToolCall } from './types.js';
 
@@ -19,7 +19,7 @@ export async function runAgent(options: AgentRunOptions): Promise<AgentRunResult
   const openRouter = getOpenRouterClient();
 
   // Convert tools to the format expected by the AI SDK
-  const aiTools: Record<string, any> = {};
+  const aiTools: Record<string, CoreTool> = {};
   for (const tool of tools) {
     aiTools[tool.name] = {
       description: tool.description,
@@ -38,7 +38,7 @@ export async function runAgent(options: AgentRunOptions): Promise<AgentRunResult
   for (let step = 0; step < maxSteps; step++) {
     try {
       const result = await generateText({
-        model: openRouter(model) as any,
+        model: openRouter(model) as LanguageModel,
         messages: conversationHistory.map(m => ({
           role: m.role as any,
           content: m.content,

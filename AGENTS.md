@@ -103,9 +103,10 @@ pnpm build-storybook:web # Build Storybook for deployment
 - ✅ Easy to test
 
 **Examples:**
-- Session state machine
-- Question/answer validation rules
-- Puzzle difficulty scoring
+- Puzzle model with tag filtering and sanitization
+- Question/answer validation rules (pure functions)
+
+**Note:** This project uses a simplified single-session architecture with global state management in the server instead of Session domain models. This approach better fits the single-page, single-game design.
 
 ### 2. Shared Types in `shared`
 
@@ -149,20 +150,25 @@ pnpm build-storybook:web # Build Storybook for deployment
 
 ### Unit Tests (Vitest)
 
-- Focus on `puzzle-core` logic
+- Focus on `puzzle-core` logic and server state management
 - Test files: `*.spec.ts` or `*.test.ts`
 - Run: `pnpm test`
 
+**Key Test Suites:**
+- `packages/puzzle-core/src/models/Puzzle.test.ts` - Puzzle domain model
+- `apps/server/src/state/gameState.test.ts` - Game state management with validation
+- `apps/server/src/utils/errorHandler.test.ts` - Socket error handling utilities
+
 **Example:**
 ```ts
-// packages/puzzle-core/src/tests/session.spec.ts
+// packages/puzzle-core/src/models/Puzzle.test.ts
 import { describe, it, expect } from 'vitest';
-import { Session } from '../models/Session';
+import { Puzzle } from './Puzzle';
 
-describe('Session', () => {
-  it('should start with WAITING_FOR_PLAYERS', () => {
-    const session = new Session('id', mockPuzzle);
-    expect(session.status).toBe('WAITING_FOR_PLAYERS');
+describe('Puzzle Model', () => {
+  it('should check for tag existence', () => {
+    const puzzle = new Puzzle(/*...*/);
+    expect(puzzle.hasTag('classic')).toBe(true);
   });
 });
 ```

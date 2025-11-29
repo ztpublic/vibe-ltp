@@ -101,24 +101,15 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     // we need to replace it with our encoded version
     setState((prev: any) => {
       const messages = [...prev.messages];
-      console.log('[ActionProvider] Current messages count:', messages.length);
       if (messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
-        console.log('[ActionProvider] Last message:', { 
-          type: lastMessage.type, 
-          message: lastMessage.message?.substring(0, 50),
-          userMessage: userMessage.substring(0, 50)
-        });
         // Check if the last message is a user message with the raw text
         if (lastMessage.type === 'user' && lastMessage.message === userMessage) {
-          console.log('[ActionProvider] Replacing with encoded version');
           // Replace with encoded version
           messages[messages.length - 1] = {
             ...lastMessage,
             message: encodedMessage
           };
-        } else {
-          console.log('[ActionProvider] No match to replace, last message type:', lastMessage.type, 'message match:', lastMessage.message === userMessage);
         }
       }
       return { ...prev, messages };
@@ -136,12 +127,6 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     lastUserMessageNicknameRef.current = msgNickname;
     
     // Emit user message to server for persistence
-    console.log('[ActionProvider] Emitting user message:', {
-      id: userMessageId,
-      content: userMessage,
-      nickname: msgNickname,
-      contentLength: userMessage.length
-    });
     emitMessageToServer({
       id: userMessageId,
       type: 'user',

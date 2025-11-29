@@ -1,6 +1,18 @@
 /**
  * Global Game State Manager
- * Centralized state for the single-page puzzle game
+ * 
+ * Manages state for the single-session puzzle game architecture.
+ * Unlike multi-session systems, this maintains one global game state
+ * shared across all connected clients.
+ * 
+ * Key Features:
+ * - State transition validation (prevents invalid state changes)
+ * - Message history with automatic trimming (prevents memory growth)
+ * - Question history for context building
+ * 
+ * @remarks
+ * This replaces the Session domain model approach for architectural simplicity.
+ * All state is ephemeral - persisted only in memory during server runtime.
  */
 
 import type { GameState, PuzzleContent } from '@vibe-ltp/shared';
@@ -24,6 +36,13 @@ export interface PersistedMessage {
  */
 let globalGameState: GameState = 'NotStarted';
 let globalPuzzleContent: PuzzleContent | undefined;
+
+/**
+ * Message history configuration
+ * Limits prevent unbounded memory growth in long-running sessions
+ */
+const MAX_CHAT_HISTORY = 200;
+const MAX_QUESTION_HISTORY = 100;
 
 /**
  * Question history for building context summaries
@@ -57,9 +76,34 @@ export function getPuzzleContent(): PuzzleContent | undefined {
 }
 
 /**
- * Set game state
+ * Validate state transition before applying
+ * Prevents invalid state changes that could break game flow
+ * 
+ * Valid transitions:
+ * - NotStarted -> Started (requires puzzle content)
+ * - Started -> NotStarted (reset operation)
+ * 
+ * @throws Error if transition is invalid
+ */
+function validateStateTransition(from: GameState, to: GameState): void {
+  // Cannot restart an already started game without resetting first
+  if (from === 'Started' && to === 'Started') {
+    throw new Error('Game already started. Reset before starting new game.');
+  }
+  
+  // Cannot start game without puzzle content
+  if (to === 'Started' && !globalPuzzleContent) {
+    throw new Error('Cannot start game without puzzle content.');
+  }
+}
+
+/**
+ * Set game state with validation
+ * 
+ * @throws Error if state transition is invalid
  */
 export function setGameState(state: GameState): void {
+  validateStateTransition(globalGameState, state);
   globalGameState = state;
 }
 
@@ -72,6 +116,11 @@ export function setPuzzleContent(content: PuzzleContent | undefined): void {
 
 /**
  * Add a question to history
+ * Automatically trims history if it exceeds MAX_QUESTION_HISTORY
+ * 
+ * @param question - The question text
+ * @param answer - The answer type (yes/no/irrelevant/both/unknown)
+ * @param tips - Optional tips or explanation
  */
 export function addQuestionToHistory(question: string, answer: string, tips?: string): void {
   questionHistory.push({
@@ -80,6 +129,11 @@ export function addQuestionToHistory(question: string, answer: string, tips?: st
     tips,
     timestamp: new Date(),
   });
+  
+  // Trim history if exceeds limit (keep most recent)
+  if (questionHistory.length > MAX_QUESTION_HISTORY) {
+    questionHistory = questionHistory.slice(-MAX_QUESTION_HISTORY);
+  }
 }
 
 /**
@@ -114,9 +168,17 @@ export function getHistorySummary(): string {
 
 /**
  * Add a chat message to history
+ * Automatically trims history if it exceeds MAX_CHAT_HISTORY
+ * 
+ * @param message - The persisted chat message to add
  */
 export function addChatMessage(message: PersistedMessage): void {
   chatMessages.push(message);
+  
+  // Trim history if exceeds limit (keep most recent)
+  if (chatMessages.length > MAX_CHAT_HISTORY) {
+    chatMessages = chatMessages.slice(-MAX_CHAT_HISTORY);
+  }
 }
 
 /**

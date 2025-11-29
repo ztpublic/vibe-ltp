@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm -C apps/server dev & pnpm -C apps/web dev",
     "dev:web": "pnpm -C apps/web dev",
-    "dev:server": "PORT=${BACKEND_PORT:-4000} pnpm -C apps/server dev",
+    "dev:server": "pnpm -C apps/server dev",
     "build": "pnpm -r --filter './packages/*' build",
     "lint": "eslint .",
     "typecheck": "pnpm -r exec tsc --noEmit",

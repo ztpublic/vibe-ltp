@@ -10,17 +10,12 @@ router.post('/chat', async (req, res) => {
 
   try {
     const userMessage = body.message;
-    
-    console.log('\n📨 User message:', userMessage);
-    console.log('📜 Conversation history length:', body.history.length);
 
     // Check if game has started and puzzle is loaded
     const currentGameState = gameState.getGameState();
     const puzzleContent = gameState.getPuzzleContent();
 
     if (currentGameState !== 'Started' || !puzzleContent) {
-      console.log('⚠️  Game not started or no puzzle loaded');
-      
       const reply: ChatResponse['reply'] = {
         role: 'bot',
         content: '游戏还未开始，请先开始一个谜题。\n\nThe game hasn\'t started yet. Please start a puzzle first.',
@@ -39,7 +34,6 @@ router.post('/chat', async (req, res) => {
 
     // Use puzzle agent to evaluate question
     const model = process.env.LLM_MODEL_ID ?? 'x-ai/grok-4.1-fast:free';
-    console.log('🤖 Using model:', model);
     
     const evaluation = await evaluatePuzzleQuestion(
       userMessage,
@@ -56,12 +50,6 @@ router.post('/chat', async (req, res) => {
 
     // Format reply for chat UI
     const replyText = formatEvaluationReply(evaluation);
-
-    console.log('\n✅ Final Reply:');
-    console.log('─'.repeat(60));
-    console.log(replyText);
-    console.log('─'.repeat(60));
-    console.log(`📊 Question history: ${gameState.getQuestionHistory().length} questions\n`);
 
     // Format response
     const reply: ChatResponse['reply'] = {

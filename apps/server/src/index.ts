@@ -17,7 +17,7 @@ dotenv.config({ path: envPath, override: false });
 
 console.log('🔧 Loading .env from:', envPath);
 console.log('🔑 OPENROUTER_API_KEY present:', !!process.env.OPENROUTER_API_KEY);
-console.log('🔌 BACKEND_PORT:', process.env.BACKEND_PORT || process.env.PORT || 4000);
+console.log('🔌 BACKEND_PORT:', process.env.BACKEND_PORT || 4000);
 console.log('🌐 FRONTEND_PORT:', process.env.FRONTEND_PORT || 3000);
 console.log('🔒 CORS_ORIGIN:', process.env.CORS_ORIGIN || 'auto-generated');
 
@@ -63,7 +63,7 @@ app.get('/health', (_req, res) => {
 setupRoutes(app);
 setupSocketIO(io);
 
-const PORT = process.env.BACKEND_PORT || process.env.PORT || 4000;
+const PORT = process.env.BACKEND_PORT || 4000;
 
 httpServer.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
