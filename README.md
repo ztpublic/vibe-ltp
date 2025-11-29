@@ -15,7 +15,6 @@ A multiplayer lateral thinking puzzle game built with Next.js, Express, and Sock
 
 - **Frontend**: Next.js 16, React 18, Tailwind CSS, TanStack Query
 - **Backend**: Node.js, Express, Socket.IO
-- **Database**: PostgreSQL with Prisma
 - **Monorepo**: pnpm workspaces
 - **Testing**: Vitest (unit), Playwright (e2e)
 - **CI/CD**: GitHub Actions
@@ -26,7 +25,6 @@ A multiplayer lateral thinking puzzle game built with Next.js, Express, and Sock
 
 - Node.js 20+
 - pnpm 9+
-- Docker (for PostgreSQL)
 
 ### Installation
 
@@ -38,18 +36,7 @@ cd vibe-ltp
 # Install dependencies
 pnpm install
 
-# Start database
-docker compose up -d
-
-# Setup environment
-cp .env.example .env
-
-# Run database migrations
-cd apps/server
-pnpm prisma migrate dev
-
 # Start development servers
-cd ../..
 pnpm dev
 ```
 

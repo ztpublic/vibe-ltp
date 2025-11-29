@@ -9,7 +9,6 @@ This document provides context and guidance for AI agents working on the vibe-lt
 ### Tech Stack
 - **Frontend**: Next.js 16 (App Router), React 18, Tailwind CSS
 - **Backend**: Node.js, Express, Socket.IO
-- **Database**: PostgreSQL with Prisma ORM
 - **Real-time**: Socket.IO for live rooms and Q&A
 - **Monorepo**: pnpm workspaces with TypeScript project references
 
@@ -28,8 +27,7 @@ vibe-ltp/
 │   ├── ui/               # Shared React components
 │   └── config/           # Shared configs (ESLint, TS, Tailwind)
 ├── puzzle-content/       # JSON puzzle library
-├── .github/workflows/    # CI/CD
-└── docker-compose.yml    # PostgreSQL service
+└── .github/workflows/    # CI/CD
 ```
 
 ### Key Packages
@@ -39,7 +37,7 @@ vibe-ltp/
 | `puzzle-core` | Pure domain logic (Puzzle, Session models) | `@vibe-ltp/shared` |
 | `shared` | Types, API constants, Zod schemas | `zod` |
 | `ui` | Reusable React components | `react`, `@vibe-ltp/shared` |
-| `server` | REST API + Socket.IO | `express`, `socket.io`, `prisma` |
+| `server` | REST API + Socket.IO | `express`, `socket.io` |
 | `web` | Next.js UI | `next`, `@vibe-ltp/ui`, `@vibe-ltp/shared` |
 
 ---
@@ -49,7 +47,6 @@ vibe-ltp/
 ### Prerequisites
 - Node.js 20+
 - pnpm 9+
-- Docker (for PostgreSQL)
 
 ### Setup Steps
 
@@ -58,23 +55,7 @@ vibe-ltp/
    pnpm install
    ```
 
-2. **Start database**
-   ```bash
-   docker compose up -d db
-   ```
-
-3. **Setup environment**
-   ```bash
-   cp .env.example .env
-   ```
-
-4. **Run database migrations**
-   ```bash
-   cd apps/server
-   pnpm prisma migrate dev
-   ```
-
-5. **Start dev servers**
+2. **Start dev servers**
    ```bash
    # Start both frontend and backend
    pnpm dev
@@ -103,7 +84,7 @@ pnpm build-storybook:web # Build Storybook for deployment
 ### 1. Domain Logic in `puzzle-core`
 
 **ALL business logic** must go in `packages/puzzle-core`. This package is:
-- ✅ Pure TypeScript (no React, Express, Prisma)
+- ✅ Pure TypeScript (no React, Express)
 - ✅ Framework-agnostic
 - ✅ Easy to test
 
@@ -124,57 +105,16 @@ pnpm build-storybook:web # Build Storybook for deployment
 - No app-specific logic
 - Use Tailwind for styling
 
-### 4. Database Access
-
-- ❌ **Never** import Prisma in `web`
-- ✅ Only `server` accesses the database
-- ✅ Expose data via REST API or Socket.IO
-
 ---
 
 ## Common Tasks
-
-### Add a New Puzzle Field
-
-1. **Update Prisma schema** (`apps/server/prisma/schema.prisma`)
-   ```prisma
-   model Puzzle {
-     // ... existing fields
-     newField String?
-   }
-   ```
-
-2. **Run migration**
-   ```bash
-   cd apps/server
-   pnpm prisma migrate dev --name add-new-field
-   ```
-
-3. **Update shared types** (`packages/shared/src/types/puzzles.ts`)
-   ```ts
-   export interface Puzzle {
-     // ... existing fields
-     newField?: string;
-   }
-   ```
-
-4. **Update validation** (`packages/shared/src/validation/puzzleSchemas.ts`)
-   ```ts
-   export const puzzleCreateSchema = z.object({
-     // ... existing fields
-     newField: z.string().optional(),
-   });
-   ```
-
-5. **Update UI** to display new field
 
 ### Add a New API Endpoint
 
 1. **Add route** in `apps/server/src/http/routes/`
 2. **Import types** from `@vibe-ltp/shared`
 3. **Validate request** with Zod schemas
-4. **Use Prisma** for database operations
-5. **Call from frontend** using fetch/TanStack Query
+4. **Call from frontend** using fetch/TanStack Query
 
 ### Add a Socket.IO Event
 
@@ -392,13 +332,6 @@ export const Mocked: Story = {
 pnpm install
 ```
 
-### Prisma Client Out of Sync
-
-```bash
-cd apps/server
-pnpm prisma generate
-```
-
 ### Port Already in Use
 
 Change `PORT` in `.env` or kill the process:
@@ -443,7 +376,6 @@ See the initialization plan for roadmap phases:
 
 ## Additional Resources
 
-- [Prisma Docs](https://www.prisma.io/docs)
 - [Next.js App Router](https://nextjs.org/docs/app)
 - [Socket.IO Docs](https://socket.io/docs/v4)
 - [TanStack Query](https://tanstack.com/query/latest)
