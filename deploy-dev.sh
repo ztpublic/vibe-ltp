@@ -220,7 +220,8 @@ run_cmd ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" bash <<EOF
   
   echo "==> Creating .env file for runtime configuration"
   cd '$REMOTE_DIR'
-  echo "BACKEND_PORT=$BACKEND_PORT" > .env
+  echo "PORT=$FRONTEND_PORT" > .env
+  echo "BACKEND_PORT=$BACKEND_PORT" >> .env
   echo "FRONTEND_PORT=$FRONTEND_PORT" >> .env
   echo "CORS_ORIGIN=http://$REMOTE_HOST:$FRONTEND_PORT" >> .env
   echo "NEXT_PUBLIC_API_BASE_URL=http://$REMOTE_HOST:$BACKEND_PORT" >> .env
@@ -239,6 +240,11 @@ run_cmd ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" bash <<EOF
   
   # Start in background with nohup (.env file will be auto-loaded)
   cd '$REMOTE_DIR'
+  echo "DEBUG: About to start pnpm dev"
+  echo "DEBUG: Current directory: \$(pwd)"
+  echo "DEBUG: .env file exists: \$(test -f .env && echo 'yes' || echo 'no')"
+  echo "DEBUG: .env contents:"
+  cat .env || echo "No .env file found"
   nohup pnpm dev > dev-server.log 2>&1 &
   echo \$! > dev-server.pid
   
