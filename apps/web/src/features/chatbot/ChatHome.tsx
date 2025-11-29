@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { SoupBotChat } from './index';
+import React, { useState, useRef } from 'react';
+import { SoupBotChat, type SoupBotChatRef } from './index';
 import type { ChatService } from './services';
 import { IdentityProvider } from './identity/useChatIdentity';
 import { useGameState } from './hooks/useGameState';
@@ -14,6 +14,7 @@ export interface ChatHomeProps {
 export const ChatHome: React.FC<ChatHomeProps> = ({ chatService }) => {
   const { gameState, puzzleContent, startGame, resetGame } = useGameState();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const chatbotRef = useRef<SoupBotChatRef>(null);
   
   const isGameStarted = gameState === 'Started';
   const isGameNotStarted = gameState === 'NotStarted';
@@ -29,6 +30,17 @@ export const ChatHome: React.FC<ChatHomeProps> = ({ chatService }) => {
 
   const handleDialogClose = () => {
     setIsDialogOpen(false);
+  };
+
+  const handleRevealTruth = () => {
+    // Send truth to chatbot
+    if (puzzleContent?.soupTruth && chatbotRef.current) {
+      const truthMessage = `💡 谜题真相：\n\n${puzzleContent.soupTruth}`;
+      chatbotRef.current.addBotMessage(truthMessage);
+    }
+    
+    // Reset game state
+    resetGame();
   };
 
   return (
@@ -48,7 +60,7 @@ export const ChatHome: React.FC<ChatHomeProps> = ({ chatService }) => {
             
             {/* Center - Chatbot */}
             <div className="w-[40vw] h-full flex flex-col">
-              <SoupBotChat chatService={chatService} disabled={isGameNotStarted} />
+              <SoupBotChat ref={chatbotRef} chatService={chatService} disabled={isGameNotStarted} />
             </div>
             
             {/* Right side - Action Buttons */}
@@ -70,7 +82,7 @@ export const ChatHome: React.FC<ChatHomeProps> = ({ chatService }) => {
                     ? 'bg-[#2d2d30] hover:bg-[#3e3e42] text-white cursor-pointer'
                     : 'bg-[#2d2d30] text-[#858585] cursor-not-allowed'
                 }`}
-                onClick={resetGame}
+                onClick={handleRevealTruth}
                 disabled={isGameNotStarted}
               >
                 公布答案

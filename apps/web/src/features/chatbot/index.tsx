@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useImperativeHandle, useRef } from 'react';
 import Chatbot from 'react-chatbot-kit';
 import 'react-chatbot-kit/build/main.css';
 import './chatbot.css';
@@ -8,19 +8,45 @@ import config from './config';
 import ActionProvider from './ActionProvider';
 import MessageParser from './MessageParser';
 import type { ChatService } from './services';
+import { encodeBotMessage } from './utils/chatEncoding';
 
 export type SoupBotChatProps = {
   chatService: ChatService;
   disabled?: boolean;
 };
 
-export const SoupBotChat: React.FC<SoupBotChatProps> = ({
-  chatService,
-  disabled = false,
-}) => {
-  // Create a wrapper that injects the chatService into ActionProvider
+export interface SoupBotChatRef {
+  addBotMessage: (content: string) => void;
+}
+
+export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
+  { chatService, disabled = false },
+  ref
+) => {
+  const createChatBotMessageRef = useRef<any>(null);
+  const setStateRef = useRef<any>(null);
+  
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    addBotMessage: (content: string) => {
+      if (createChatBotMessageRef.current && setStateRef.current) {
+        const encoded = encodeBotMessage({ content });
+        const botMessage = createChatBotMessageRef.current(encoded);
+        setStateRef.current((prev: any) => ({
+          ...prev,
+          messages: [...prev.messages, botMessage],
+        }));
+      }
+    },
+  }));
+
+  // Create a wrapper that injects the chatService and captures refs
   const ActionProviderWithService = React.useMemo(
-    () => (props: any) => <ActionProvider {...props} chatService={chatService} />,
+    () => (props: any) => {
+      createChatBotMessageRef.current = props.createChatBotMessage;
+      setStateRef.current = props.setState;
+      return <ActionProvider {...props} chatService={chatService} />;
+    },
     [chatService]
   );
 
@@ -36,4 +62,4 @@ export const SoupBotChat: React.FC<SoupBotChatProps> = ({
       </div>
     </div>
   );
-};
+});
