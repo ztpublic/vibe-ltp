@@ -218,20 +218,30 @@ run_cmd ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" bash <<EOF
   echo "==> Building packages"
   pnpm build
   
+  echo "==> Creating .env file for runtime configuration"
+  cd '$REMOTE_DIR'
+  cat > .env <<ENVEOF
+BACKEND_PORT=$BACKEND_PORT
+FRONTEND_PORT=$FRONTEND_PORT
+CORS_ORIGIN=http://$REMOTE_HOST:$FRONTEND_PORT
+NEXT_PUBLIC_API_BASE_URL=http://$REMOTE_HOST:$BACKEND_PORT
+OPENROUTER_API_KEY=$OPENROUTER_API_KEY
+LLM_MODEL_ID=x-ai/grok-4.1-fast:free
+ENVEOF
+  echo "Created .env file with:"
+  cat .env
+  
   echo "==> Restarting development server"
   
   # Kill existing process if running
   pkill -f 'pnpm dev' || echo "No existing pnpm dev process to kill"
+  pkill -f 'next dev' || echo "No existing next dev process"
+  pkill -f 'tsx' || echo "No existing tsx process"
+  sleep 2
   
-  # Debug: Show environment variables being passed
-  echo "BACKEND_PORT=$BACKEND_PORT"
-  echo "FRONTEND_PORT=$FRONTEND_PORT"
-  echo "NEXT_PUBLIC_API_BASE_URL=http://$REMOTE_HOST:$BACKEND_PORT"
-  echo "CORS_ORIGIN=http://$REMOTE_HOST:$FRONTEND_PORT"
-  
-  # Start in background with nohup
+  # Start in background with nohup (.env file will be auto-loaded)
   cd '$REMOTE_DIR'
-  nohup env BACKEND_PORT=$BACKEND_PORT FRONTEND_PORT=$FRONTEND_PORT CORS_ORIGIN="http://$REMOTE_HOST:$FRONTEND_PORT" NEXT_PUBLIC_API_BASE_URL="http://$REMOTE_HOST:$BACKEND_PORT" OPENROUTER_API_KEY='$OPENROUTER_API_KEY' pnpm dev > dev-server.log 2>&1 &
+  nohup pnpm dev > dev-server.log 2>&1 &
   echo \$! > dev-server.pid
   
   echo "==> Development server started in background (PID: \$(cat dev-server.pid))"
