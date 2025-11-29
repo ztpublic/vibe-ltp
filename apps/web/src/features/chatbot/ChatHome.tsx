@@ -46,7 +46,7 @@ export const ChatHome: React.FC<ChatHomeProps> = ({ chatService }) => {
   return (
     <IdentityProvider>
       <div className="h-screen bg-[#1e1e1e] flex flex-col">
-        <main className="flex-1 flex items-center justify-center px-4 py-8">
+        <main className="flex-1 flex items-center justify-center p-4 overflow-hidden">
           <div className="flex flex-row gap-4 h-full w-full max-w-screen-xl">
             {/* Left side - Puzzle Surface (汤面) */}
             <div className="w-[30vw] h-full flex flex-col">
