@@ -12,6 +12,7 @@ import { encodeBotMessage, encodeUserText } from './utils/chatEncoding';
 import { acquireSocket, releaseSocket } from '../../lib/socketManager';
 import { SOCKET_EVENTS } from '@vibe-ltp/shared';
 import { Socket } from 'socket.io-client';
+import { useChatIdentity } from './identity/useChatIdentity';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
@@ -28,6 +29,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
   { chatService, disabled = false },
   ref
 ) => {
+  const { nickname } = useChatIdentity();
   const createChatBotMessageRef = useRef<any>(null);
   const setStateRef = useRef<any>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -158,6 +160,14 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
     [chatService]
   );
 
+  // Validator function to intercept and encode user messages before they're added to state
+  const validateAndEncodeMessage = (message: string) => {
+    if (!message || typeof message !== 'string') return true;
+    // This validator is called before the message is added to state
+    // Return true to allow the message to be added
+    return true;
+  };
+
   return (
     <div className="w-full h-full flex flex-col border border-[#3e3e42] rounded-lg overflow-hidden">
       <div className={`h-full flex flex-col ${disabled ? 'chatbot-disabled' : ''}`}>
@@ -167,6 +177,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
           messageParser={MessageParser}
           actionProvider={ActionProviderWithService}
           placeholderText={disabled ? "游戏未开始" : "向主持人提问"}
+          validator={validateAndEncodeMessage}
         />
       </div>
     </div>

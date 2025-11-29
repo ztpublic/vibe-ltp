@@ -81,11 +81,48 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     });
   };
 
-  const handleUserMessage = async (userMessage: string) => {
-    // Encode nickname into message text
-    const encodedText = encodeUserText(nickname, userMessage);
-    // Note: encodedText is stored in state when react-chatbot-kit creates the message
-    // We don't use it directly here, but it's needed for the message component to decode
+  const handleUserMessage = async (encodedMessage: string) => {
+    // Message comes from MessageParser already encoded with nickname
+    // Decode it to get the raw text and nickname
+    const { nickname: msgNickname, text: userMessage } = (() => {
+      const decoded = encodedMessage.startsWith('__NICK__')
+        ? (() => {
+            const without = encodedMessage.slice('__NICK__'.length);
+            const idx = without.indexOf('::');
+            if (idx === -1) return { nickname, text: encodedMessage };
+            return { nickname: without.slice(0, idx), text: without.slice(idx + 2) };
+          })()
+        : { nickname, text: encodedMessage };
+      return decoded;
+    })();
+    
+    // CRITICAL: Replace the last user message in state with the encoded version
+    // react-chatbot-kit automatically adds a message with raw text,
+    // we need to replace it with our encoded version
+    setState((prev: any) => {
+      const messages = [...prev.messages];
+      console.log('[ActionProvider] Current messages count:', messages.length);
+      if (messages.length > 0) {
+        const lastMessage = messages[messages.length - 1];
+        console.log('[ActionProvider] Last message:', { 
+          type: lastMessage.type, 
+          message: lastMessage.message?.substring(0, 50),
+          userMessage: userMessage.substring(0, 50)
+        });
+        // Check if the last message is a user message with the raw text
+        if (lastMessage.type === 'user' && lastMessage.message === userMessage) {
+          console.log('[ActionProvider] Replacing with encoded version');
+          // Replace with encoded version
+          messages[messages.length - 1] = {
+            ...lastMessage,
+            message: encodedMessage
+          };
+        } else {
+          console.log('[ActionProvider] No match to replace, last message type:', lastMessage.type, 'message match:', lastMessage.message === userMessage);
+        }
+      }
+      return { ...prev, messages };
+    });
     
     // Generate a deterministic ID for this user message (content-based, no timestamp)
     // This must match the ID generation in PuzzleUserMessage component
@@ -96,20 +133,20 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     // Store for use when bot replies
     lastUserMessageIdRef.current = userMessageId;
     lastUserMessageTextRef.current = userMessagePreview;
-    lastUserMessageNicknameRef.current = nickname;
+    lastUserMessageNicknameRef.current = msgNickname;
     
     // Emit user message to server for persistence
     console.log('[ActionProvider] Emitting user message:', {
       id: userMessageId,
       content: userMessage,
-      nickname,
+      nickname: msgNickname,
       contentLength: userMessage.length
     });
     emitMessageToServer({
       id: userMessageId,
       type: 'user',
       content: userMessage,
-      nickname,
+      nickname: msgNickname,
     });
 
     // Build history from state
@@ -125,7 +162,7 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     const reply = await chatService.sendMessage(userMessage, history);
     
     // Append bot message with reply metadata including nickname
-    appendBotMessage(reply, userMessageId, userMessagePreview, nickname);
+    appendBotMessage(reply, userMessageId, userMessagePreview, msgNickname);
   };
 
   const actions = {
