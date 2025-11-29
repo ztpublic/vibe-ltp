@@ -4,7 +4,7 @@
   "private": true,
   "description": "Lateral thinking puzzle game - monorepo",
   "scripts": {
-    "dev": "(lsof -ti:${FRONTEND_PORT:-3000} | xargs kill -9 2>/dev/null || true) && (lsof -ti:${BACKEND_PORT:-4000} | xargs kill -9 2>/dev/null || true) && BACKEND_PORT=${BACKEND_PORT:-4000} FRONTEND_PORT=${FRONTEND_PORT:-3000} PORT=${BACKEND_PORT:-4000} pnpm -C apps/server dev & NEXT_PUBLIC_API_BASE_URL=http://localhost:${BACKEND_PORT:-4000} PORT=${FRONTEND_PORT:-3000} pnpm -C apps/web dev",
+    "dev": "pnpm -C apps/server dev & pnpm -C apps/web dev",
     "dev:web": "pnpm -C apps/web dev",
     "dev:server": "PORT=${BACKEND_PORT:-4000} pnpm -C apps/server dev",
     "build": "pnpm -r --filter './packages/*' build",

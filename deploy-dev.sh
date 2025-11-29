@@ -220,14 +220,12 @@ run_cmd ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" bash <<EOF
   
   echo "==> Creating .env file for runtime configuration"
   cd '$REMOTE_DIR'
-  cat > .env <<ENVEOF
-BACKEND_PORT=$BACKEND_PORT
-FRONTEND_PORT=$FRONTEND_PORT
-CORS_ORIGIN=http://$REMOTE_HOST:$FRONTEND_PORT
-NEXT_PUBLIC_API_BASE_URL=http://$REMOTE_HOST:$BACKEND_PORT
-OPENROUTER_API_KEY=$OPENROUTER_API_KEY
-LLM_MODEL_ID=x-ai/grok-4.1-fast:free
-ENVEOF
+  echo "BACKEND_PORT=$BACKEND_PORT" > .env
+  echo "FRONTEND_PORT=$FRONTEND_PORT" >> .env
+  echo "CORS_ORIGIN=http://$REMOTE_HOST:$FRONTEND_PORT" >> .env
+  echo "NEXT_PUBLIC_API_BASE_URL=http://$REMOTE_HOST:$BACKEND_PORT" >> .env
+  echo "OPENROUTER_API_KEY=$OPENROUTER_API_KEY" >> .env
+  echo "LLM_MODEL_ID=x-ai/grok-4.1-fast:free" >> .env
   echo "Created .env file with:"
   cat .env
   
