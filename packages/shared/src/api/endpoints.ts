@@ -22,6 +22,10 @@ export const SOCKET_EVENTS = {
   GAME_STARTED: 'game:started',
   GAME_RESET: 'game:reset',
   GAME_STATE_UPDATED: 'game:stateUpdated',
+  
+  // Chat history events
+  CHAT_HISTORY_SYNC: 'chat:historySync',
+  CHAT_MESSAGE_ADDED: 'chat:messageAdded',
 
   // Connection events
   CONNECT: 'connect',

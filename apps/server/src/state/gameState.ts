@@ -6,6 +6,20 @@
 import type { GameState, PuzzleContent } from '@vibe-ltp/shared';
 
 /**
+ * Persisted chat message for UI restoration
+ */
+export interface PersistedMessage {
+  id: string;
+  type: 'user' | 'bot';
+  content: string;
+  nickname?: string;
+  replyToId?: string;
+  replyToPreview?: string;
+  replyToNickname?: string;
+  timestamp: string;
+}
+
+/**
  * Global game state
  */
 let globalGameState: GameState = 'NotStarted';
@@ -22,6 +36,11 @@ interface QuestionHistory {
 }
 
 let questionHistory: QuestionHistory[] = [];
+
+/**
+ * Chat message history for UI restoration
+ */
+let chatMessages: PersistedMessage[] = [];
 
 /**
  * Get current game state
@@ -94,10 +113,25 @@ export function getHistorySummary(): string {
 }
 
 /**
+ * Add a chat message to history
+ */
+export function addChatMessage(message: PersistedMessage): void {
+  chatMessages.push(message);
+}
+
+/**
+ * Get all chat messages
+ */
+export function getChatMessages(): readonly PersistedMessage[] {
+  return chatMessages;
+}
+
+/**
  * Reset game state and history
  */
 export function resetGameState(): void {
   globalGameState = 'NotStarted';
   globalPuzzleContent = undefined;
   questionHistory = [];
+  chatMessages = [];
 }
