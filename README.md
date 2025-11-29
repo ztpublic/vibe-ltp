@@ -36,6 +36,10 @@ cd vibe-ltp
 # Install dependencies
 pnpm install
 
+# Setup environment variables
+cp .env.example .env
+# Edit .env and add your OPENROUTER_API_KEY
+
 # Start development servers
 pnpm dev
 ```
@@ -43,6 +47,31 @@ pnpm dev
 The application will be available at:
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:4000
+
+### Environment Variables
+
+Copy `.env.example` to `.env` and configure:
+
+```bash
+# Server ports
+BACKEND_PORT=4000        # Backend server port
+FRONTEND_PORT=3000       # Frontend dev server port
+
+# CORS configuration
+CORS_ORIGIN=http://localhost:3000
+
+# LLM Configuration (required)
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
+LLM_MODEL_ID=x-ai/grok-4.1-fast:free
+
+# Frontend API configuration
+NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
+```
+
+To use custom ports:
+```bash
+FRONTEND_PORT=8080 BACKEND_PORT=8081 pnpm dev
+```
 
 ### Available Commands
 

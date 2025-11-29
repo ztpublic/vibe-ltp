@@ -28,38 +28,48 @@ DRY_RUN="${DRY_RUN:-0}"
 SKIP_INSTALL="${SKIP_INSTALL:-0}"
 FORCE_INSTALL="${FORCE_INSTALL:-0}"
 
+# OpenRouter API Key
+OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-}"
+
 # ============================================
 # Helper Functions
 # ============================================
 
 print_usage() {
   cat <<EOF
-Usage: $0 [OPTIONS]
+Usage: $0 [OPTIONS] [OPENROUTER_API_KEY]
 
 Git-based deploy: Clone or pull repo on remote server and start dev server.
 
+Arguments:
+  OPENROUTER_API_KEY  OpenRouter API key (optional, can also set via env var)
+
 Environment Variables:
-  BRANCH           Git branch to deploy (default: main)
-  REMOTE_USER      SSH username (default: youruser)
-  REMOTE_HOST      Remote server hostname (default: your.server.com)
-  REMOTE_DIR       Remote deployment directory (default: ~/apps/vibe-ltp-dev)
-  SSH_PORT         SSH port (default: 22)
-  FRONTEND_PORT    Frontend server port (default: 3000)
-  BACKEND_PORT     Backend server port (default: 4000)
-  SKIP_INSTALL     Skip pnpm install step (default: 0)
-  FORCE_INSTALL    Always run pnpm install (default: 0)
-  DRY_RUN          Print commands instead of executing (default: 0)
+  BRANCH              Git branch to deploy (default: main)
+  REMOTE_USER         SSH username (default: youruser)
+  REMOTE_HOST         Remote server hostname (default: your.server.com)
+  REMOTE_DIR          Remote deployment directory (default: ~/apps/vibe-ltp-dev)
+  SSH_PORT            SSH port (default: 22)
+  FRONTEND_PORT       Frontend server port (default: 3000)
+  BACKEND_PORT        Backend server port (default: 4000)
+  OPENROUTER_API_KEY  OpenRouter API key (can also pass as argument)
+  SKIP_INSTALL        Skip pnpm install step (default: 0)
+  FORCE_INSTALL       Always run pnpm install (default: 0)
+  DRY_RUN             Print commands instead of executing (default: 0)
 
 Options:
-  -h, --help       Show this help message
-  --stop           Stop the remote development server
+  -h, --help          Show this help message
+  --stop              Stop the remote development server
 
 Examples:
-  # Deploy (auto-detects first time or update)
-  REMOTE_USER=myuser REMOTE_HOST=example.com $0
+  # Deploy with OpenRouter API key as argument
+  REMOTE_USER=myuser REMOTE_HOST=example.com $0 sk-or-v1-xxx
+
+  # Deploy with OpenRouter API key as environment variable
+  OPENROUTER_API_KEY=sk-or-v1-xxx REMOTE_USER=myuser REMOTE_HOST=example.com $0
 
   # Deploy specific branch
-  BRANCH=dev REMOTE_USER=myuser REMOTE_HOST=example.com $0
+  BRANCH=dev REMOTE_USER=myuser REMOTE_HOST=example.com $0 sk-or-v1-xxx
 
   # Stop the remote server
   REMOTE_USER=myuser REMOTE_HOST=example.com $0 --stop
@@ -99,6 +109,10 @@ if [ $# -gt 0 ]; then
       ;;
     --stop)
       STOP_MODE=1
+      ;;
+    sk-or-*)
+      # OpenRouter API key passed as argument
+      OPENROUTER_API_KEY="$1"
       ;;
     *)
       echo "Unknown option: $1"
@@ -209,9 +223,13 @@ run_cmd ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" bash <<EOF
   # Kill existing process if running
   pkill -f 'pnpm dev' || echo "No existing pnpm dev process to kill"
   
+  # Debug: Show environment variables being passed
+  echo "BACKEND_PORT=$BACKEND_PORT"
+  echo "FRONTEND_PORT=$FRONTEND_PORT"
+  
   # Start in background with nohup
   cd '$REMOTE_DIR'
-  nohup env PORT=$BACKEND_PORT FRONTEND_PORT=$FRONTEND_PORT pnpm dev > dev-server.log 2>&1 &
+  nohup env BACKEND_PORT=$BACKEND_PORT FRONTEND_PORT=$FRONTEND_PORT OPENROUTER_API_KEY='$OPENROUTER_API_KEY' pnpm dev > dev-server.log 2>&1 &
   echo \$! > dev-server.pid
   
   echo "==> Development server started in background (PID: \$(cat dev-server.pid))"

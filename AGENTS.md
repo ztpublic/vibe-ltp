@@ -55,7 +55,18 @@ vibe-ltp/
    pnpm install
    ```
 
-2. **Start dev servers**
+2. **Configure environment variables**
+   ```bash
+   # Copy example env file
+   cp .env.example .env
+   
+   # Edit .env and set required variables:
+   # - OPENROUTER_API_KEY (required for LLM features)
+   # - BACKEND_PORT (optional, default: 4000)
+   # - FRONTEND_PORT (optional, default: 3000)
+   ```
+
+3. **Start dev servers**
    ```bash
    # Start both frontend and backend
    pnpm dev
@@ -63,6 +74,9 @@ vibe-ltp/
    # Or run individually
    pnpm dev:web      # Frontend only (localhost:3000)
    pnpm dev:server   # Backend only (localhost:4000)
+   
+   # With custom ports
+   FRONTEND_PORT=8080 BACKEND_PORT=8081 pnpm dev
    ```
 
 ### Other Commands
@@ -334,10 +348,30 @@ pnpm install
 
 ### Port Already in Use
 
-Change `PORT` in `.env` or kill the process:
+Change ports using environment variables:
 ```bash
+# Use custom ports
+FRONTEND_PORT=8080 BACKEND_PORT=8081 pnpm dev
+
+# Or kill the process using the port
 lsof -ti:4000 | xargs kill
 ```
+
+### Environment Variables
+
+All environment variables are documented in `.env.example`:
+
+**Required:**
+- `OPENROUTER_API_KEY` - OpenRouter API key for LLM features
+
+**Optional:**
+- `BACKEND_PORT` - Backend server port (default: 4000)
+- `FRONTEND_PORT` - Frontend dev server port (default: 3000)
+- `LLM_MODEL_ID` - LLM model to use (default: x-ai/grok-4.1-fast:free)
+- `CORS_ORIGIN` - Allowed CORS origins (default: http://localhost:3000)
+- `NEXT_PUBLIC_API_BASE_URL` - Backend API URL for frontend (default: http://localhost:4000)
+- `OPENROUTER_REFERRER` - App referrer for OpenRouter
+- `OPENROUTER_APP_TITLE` - App title for OpenRouter
 
 ---
 

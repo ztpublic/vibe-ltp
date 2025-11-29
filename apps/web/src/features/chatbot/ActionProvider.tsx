@@ -9,7 +9,7 @@ import { useChatIdentity } from './identity/useChatIdentity';
 import { acquireSocket, releaseSocket } from '../../lib/socketManager';
 import { Socket } from 'socket.io-client';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${process.env.NEXT_PUBLIC_BACKEND_PORT || 4000}`;
 
 type ActionProviderProps = {
   createChatBotMessage: any;
