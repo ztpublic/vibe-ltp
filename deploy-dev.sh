@@ -226,10 +226,12 @@ run_cmd ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" bash <<EOF
   # Debug: Show environment variables being passed
   echo "BACKEND_PORT=$BACKEND_PORT"
   echo "FRONTEND_PORT=$FRONTEND_PORT"
+  echo "NEXT_PUBLIC_API_BASE_URL=http://$REMOTE_HOST:$BACKEND_PORT"
+  echo "CORS_ORIGIN=http://$REMOTE_HOST:$FRONTEND_PORT"
   
   # Start in background with nohup
   cd '$REMOTE_DIR'
-  nohup env BACKEND_PORT=$BACKEND_PORT FRONTEND_PORT=$FRONTEND_PORT OPENROUTER_API_KEY='$OPENROUTER_API_KEY' pnpm dev > dev-server.log 2>&1 &
+  nohup env BACKEND_PORT=$BACKEND_PORT FRONTEND_PORT=$FRONTEND_PORT CORS_ORIGIN="http://$REMOTE_HOST:$FRONTEND_PORT" NEXT_PUBLIC_API_BASE_URL="http://$REMOTE_HOST:$BACKEND_PORT" OPENROUTER_API_KEY='$OPENROUTER_API_KEY' pnpm dev > dev-server.log 2>&1 &
   echo \$! > dev-server.pid
   
   echo "==> Development server started in background (PID: \$(cat dev-server.pid))"
