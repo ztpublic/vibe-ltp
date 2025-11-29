@@ -7,6 +7,7 @@
     "dev": "(lsof -ti:${FRONTEND_PORT:-3000} | xargs kill -9 2>/dev/null || true) && (lsof -ti:${PORT:-4000} | xargs kill -9 2>/dev/null || true) && PORT=${PORT:-4000} pnpm -C apps/server dev & PORT=${FRONTEND_PORT:-3000} pnpm -C apps/web dev",
     "dev:web": "pnpm -C apps/web dev",
     "dev:server": "pnpm -C apps/server dev",
+    "build": "pnpm -r --filter './packages/*' build",
     "lint": "eslint .",
     "typecheck": "pnpm -r exec tsc --noEmit",
     "test": "vitest run",

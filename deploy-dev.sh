@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Vibe LTP Development Deployment Script
-# Deploys the project to a remote server and starts pnpm dev in a tmux session
+# Vibe LTP Git-Based Development Deployment Script
+# Deploys the project to a remote server using git pull and starts pnpm dev in background
 
 set -euo pipefail
 
@@ -9,20 +9,24 @@ set -euo pipefail
 # Configuration
 # ============================================
 
+# Git repository (hardcoded)
+GIT_REPO="https://github.com/ztpublic/vibe-ltp"
+BRANCH="${BRANCH:-main}"
+
 # Remote server settings (override via environment variables)
-REMOTE_USER="${REMOTE_USER:-youruser}"
+REMOTE_USER="${REMOTE_USER:-root}"
 REMOTE_HOST="${REMOTE_HOST:-your.server.com}"
-REMOTE_DIR="${REMOTE_DIR:-/home/youruser/apps/vibe-ltp-dev}"
+REMOTE_DIR="${REMOTE_DIR:-~/apps/vibe-ltp-dev}"
 SSH_PORT="${SSH_PORT:-22}"
-TMUX_SESSION="${TMUX_SESSION:-vibe-ltp-dev}"
 
 # Server port settings
-FRONTEND_PORT="${FRONTEND_PORT:-3000}"
-BACKEND_PORT="${BACKEND_PORT:-4000}"
+FRONTEND_PORT="${FRONTEND_PORT:-8810}"
+BACKEND_PORT="${BACKEND_PORT:-8811}"
 
 # Optional flags
 DRY_RUN="${DRY_RUN:-0}"
 SKIP_INSTALL="${SKIP_INSTALL:-0}"
+FORCE_INSTALL="${FORCE_INSTALL:-0}"
 
 # ============================================
 # Helper Functions
@@ -32,31 +36,36 @@ print_usage() {
   cat <<EOF
 Usage: $0 [OPTIONS]
 
-Deploy vibe-ltp to remote server and start development server.
+Git-based deploy: Clone or pull repo on remote server and start dev server.
 
 Environment Variables:
+  BRANCH           Git branch to deploy (default: main)
   REMOTE_USER      SSH username (default: youruser)
   REMOTE_HOST      Remote server hostname (default: your.server.com)
-  REMOTE_DIR       Remote deployment directory (default: /home/youruser/apps/vibe-ltp-dev)
+  REMOTE_DIR       Remote deployment directory (default: ~/apps/vibe-ltp-dev)
   SSH_PORT         SSH port (default: 22)
-  TMUX_SESSION     Tmux session name (default: vibe-ltp-dev)
   FRONTEND_PORT    Frontend server port (default: 3000)
   BACKEND_PORT     Backend server port (default: 4000)
   SKIP_INSTALL     Skip pnpm install step (default: 0)
+  FORCE_INSTALL    Always run pnpm install (default: 0)
   DRY_RUN          Print commands instead of executing (default: 0)
 
 Options:
   -h, --help       Show this help message
+  --stop           Stop the remote development server
 
 Examples:
-  # Deploy with default settings
+  # Deploy (auto-detects first time or update)
   REMOTE_USER=myuser REMOTE_HOST=example.com $0
 
-  # Deploy with custom ports
-  FRONTEND_PORT=8080 BACKEND_PORT=8081 REMOTE_USER=myuser REMOTE_HOST=example.com $0
+  # Deploy specific branch
+  BRANCH=dev REMOTE_USER=myuser REMOTE_HOST=example.com $0
 
-  # Deploy and skip dependency installation
-  SKIP_INSTALL=1 REMOTE_USER=myuser REMOTE_HOST=example.com $0
+  # Stop the remote server
+  REMOTE_USER=myuser REMOTE_HOST=example.com $0 --stop
+
+  # Deploy with custom ports and always install deps
+  FORCE_INSTALL=1 FRONTEND_PORT=8080 BACKEND_PORT=8081 REMOTE_USER=myuser REMOTE_HOST=example.com $0
 
   # Dry run to see what would be executed
   DRY_RUN=1 REMOTE_USER=myuser REMOTE_HOST=example.com $0
@@ -80,11 +89,16 @@ log() {
 # Argument Parsing
 # ============================================
 
+STOP_MODE=0
+
 if [ $# -gt 0 ]; then
   case "$1" in
     -h|--help)
       print_usage
       exit 0
+      ;;
+    --stop)
+      STOP_MODE=1
       ;;
     *)
       echo "Unknown option: $1"
@@ -105,38 +119,104 @@ if [ "$REMOTE_USER" = "youruser" ] || [ "$REMOTE_HOST" = "your.server.com" ]; th
   exit 1
 fi
 
+# Expand tilde in REMOTE_DIR if present
+if [[ "$REMOTE_DIR" == ~* ]]; then
+  # Get the home directory from the remote server
+  REMOTE_HOME=$(ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" "echo \$HOME")
+  REMOTE_DIR="${REMOTE_DIR/\~/$REMOTE_HOME}"
+fi
+
 # ============================================
-# Deployment Steps
+# Stop Mode: Shutdown remote development server
+# ============================================
+
+if [ "$STOP_MODE" = "1" ]; then
+  log "Stopping development server on $REMOTE_USER@$REMOTE_HOST"
+  
+  run_cmd ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" bash <<EOF
+    set -e
+    
+    echo "==> Stopping development server"
+    
+    # Kill using PID file if exists
+    if [ -f '$REMOTE_DIR/dev-server.pid' ]; then
+      PID=\$(cat '$REMOTE_DIR/dev-server.pid')
+      if kill -0 \$PID 2>/dev/null; then
+        kill \$PID
+        echo "==> Stopped process with PID: \$PID"
+        rm '$REMOTE_DIR/dev-server.pid'
+      else
+        echo "==> Process \$PID not running, cleaning up PID file"
+        rm '$REMOTE_DIR/dev-server.pid'
+      fi
+    else
+      # Fallback: kill by process name
+      if pkill -f 'pnpm dev'; then
+        echo "==> Stopped pnpm dev process"
+      else
+        echo "==> No pnpm dev process found"
+      fi
+    fi
+    
+    echo "==> Server stopped successfully"
+EOF
+  
+  log "Server stopped!"
+  exit 0
+fi
+
+# ============================================
+# Deploy Mode: Setup or Update (auto-detect)
 # ============================================
 
 log "Starting deployment to $REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR"
+log "Branch: $BRANCH"
+log "Assuming changes are already pushed to GitHub"
+log "Deploying to remote server (auto-detecting first time vs update)"
 
-# Step 1: Create remote directory
-log "Step 1/5: Ensuring remote directory exists"
-run_cmd ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" "mkdir -p '$REMOTE_DIR'"
-
-# Step 2: Copy project files to remote
-log "Step 2/5: Copying project files to remote server"
-run_cmd scp -P "$SSH_PORT" -r ./ "$REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR"
-
-# Step 3: Install dependencies (optional)
-if [ "$SKIP_INSTALL" = "0" ]; then
-  log "Step 3/5: Installing dependencies with pnpm"
-  run_cmd ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" "cd '$REMOTE_DIR' && pnpm install"
-else
-  log "Step 3/5: Skipping dependency installation (SKIP_INSTALL=1)"
-fi
-
-# Step 4: Stop existing tmux session
-log "Step 4/5: Stopping existing development server (if running)"
-run_cmd ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" "tmux kill-session -t '$TMUX_SESSION' 2>/dev/null || true"
-
-# Step 5: Start new tmux session with pnpm dev
-log "Step 5/5: Starting development server in tmux session '$TMUX_SESSION'"
-log "  Frontend port: $FRONTEND_PORT"
-log "  Backend port: $BACKEND_PORT"
-run_cmd ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" \
-  "cd '$REMOTE_DIR' && tmux new -d -s '$TMUX_SESSION' 'PORT=$BACKEND_PORT FRONTEND_PORT=$FRONTEND_PORT pnpm dev'"
+run_cmd ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" bash <<EOF
+  set -e
+  
+  # Check if directory exists and has git repo
+  if [ -d '$REMOTE_DIR/.git' ]; then
+    echo "==> Existing repository found, updating..."
+    
+    cd '$REMOTE_DIR'
+    git fetch
+    git checkout '$BRANCH'
+    git pull --ff-only
+    
+  else
+    echo "==> No repository found, performing initial setup..."
+    
+    # Create parent directory structure
+    mkdir -p \$(dirname '$REMOTE_DIR')
+    
+    # Clone repository
+    git clone '$GIT_REPO' '$REMOTE_DIR'
+    cd '$REMOTE_DIR'
+    git checkout '$BRANCH'
+  fi
+  
+  echo "==> Installing dependencies"
+  pnpm install
+  
+  echo "==> Building packages"
+  pnpm build
+  
+  echo "==> Restarting development server"
+  
+  # Kill existing process if running
+  pkill -f 'pnpm dev' || echo "No existing pnpm dev process to kill"
+  
+  # Start in background with nohup
+  cd '$REMOTE_DIR'
+  nohup env PORT=$BACKEND_PORT FRONTEND_PORT=$FRONTEND_PORT pnpm dev > dev-server.log 2>&1 &
+  echo \$! > dev-server.pid
+  
+  echo "==> Development server started in background (PID: \$(cat dev-server.pid))"
+  echo "Log file: $REMOTE_DIR/dev-server.log"
+EOF
 
 # ============================================
 # Success Message
@@ -148,7 +228,3 @@ echo "Your development server is now running on the remote server."
 echo "  Frontend: http://$REMOTE_HOST:$FRONTEND_PORT"
 echo "  Backend API: http://$REMOTE_HOST:$BACKEND_PORT"
 echo ""
-echo "To view logs, attach to the tmux session:"
-echo "  ssh -t -p $SSH_PORT $REMOTE_USER@$REMOTE_HOST \"tmux attach -t $TMUX_SESSION\""
-echo ""
-echo "To detach from tmux: Press Ctrl+B, then D"
