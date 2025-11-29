@@ -16,6 +16,10 @@ REMOTE_DIR="${REMOTE_DIR:-/home/youruser/apps/vibe-ltp-dev}"
 SSH_PORT="${SSH_PORT:-22}"
 TMUX_SESSION="${TMUX_SESSION:-vibe-ltp-dev}"
 
+# Server port settings
+FRONTEND_PORT="${FRONTEND_PORT:-3000}"
+BACKEND_PORT="${BACKEND_PORT:-4000}"
+
 # Optional flags
 DRY_RUN="${DRY_RUN:-0}"
 SKIP_INSTALL="${SKIP_INSTALL:-0}"
@@ -36,6 +40,8 @@ Environment Variables:
   REMOTE_DIR       Remote deployment directory (default: /home/youruser/apps/vibe-ltp-dev)
   SSH_PORT         SSH port (default: 22)
   TMUX_SESSION     Tmux session name (default: vibe-ltp-dev)
+  FRONTEND_PORT    Frontend server port (default: 3000)
+  BACKEND_PORT     Backend server port (default: 4000)
   SKIP_INSTALL     Skip pnpm install step (default: 0)
   DRY_RUN          Print commands instead of executing (default: 0)
 
@@ -45,6 +51,9 @@ Options:
 Examples:
   # Deploy with default settings
   REMOTE_USER=myuser REMOTE_HOST=example.com $0
+
+  # Deploy with custom ports
+  FRONTEND_PORT=8080 BACKEND_PORT=8081 REMOTE_USER=myuser REMOTE_HOST=example.com $0
 
   # Deploy and skip dependency installation
   SKIP_INSTALL=1 REMOTE_USER=myuser REMOTE_HOST=example.com $0
@@ -124,8 +133,10 @@ run_cmd ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" "tmux kill-session -t '$T
 
 # Step 5: Start new tmux session with pnpm dev
 log "Step 5/5: Starting development server in tmux session '$TMUX_SESSION'"
+log "  Frontend port: $FRONTEND_PORT"
+log "  Backend port: $BACKEND_PORT"
 run_cmd ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" \
-  "cd '$REMOTE_DIR' && tmux new -d -s '$TMUX_SESSION' 'pnpm dev'"
+  "cd '$REMOTE_DIR' && tmux new -d -s '$TMUX_SESSION' 'PORT=$BACKEND_PORT FRONTEND_PORT=$FRONTEND_PORT pnpm dev'"
 
 # ============================================
 # Success Message
@@ -134,6 +145,9 @@ run_cmd ssh -p "$SSH_PORT" "$REMOTE_USER@$REMOTE_HOST" \
 log "Deployment complete!"
 echo ""
 echo "Your development server is now running on the remote server."
+echo "  Frontend: http://$REMOTE_HOST:$FRONTEND_PORT"
+echo "  Backend API: http://$REMOTE_HOST:$BACKEND_PORT"
+echo ""
 echo "To view logs, attach to the tmux session:"
 echo "  ssh -t -p $SSH_PORT $REMOTE_USER@$REMOTE_HOST \"tmux attach -t $TMUX_SESSION\""
 echo ""
