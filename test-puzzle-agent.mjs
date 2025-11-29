@@ -44,7 +44,7 @@ console.log('🔧 Environment Configuration:');
 console.log('─'.repeat(60));
 console.log('📁 .env path:', envPath);
 console.log('🔑 OPENROUTER_API_KEY:', process.env.OPENROUTER_API_KEY ? '✓ Present' : '✗ Missing');
-console.log('🤖 LLM_MODEL_ID:', process.env.LLM_MODEL_ID || 'openai/gpt-4o-mini (default)');
+console.log('🤖 LLM_MODEL_ID:', process.env.LLM_MODEL_ID || 'x-ai/grok-4.1-fast:free (default)');
 console.log('─'.repeat(60));
 console.log();
 
@@ -78,7 +78,7 @@ async function runTest() {
   console.log();
 
   try {
-    const model = process.env.LLM_MODEL_ID || 'openai/gpt-4o-mini';
+    const model = process.env.LLM_MODEL_ID || 'x-ai/grok-4.1-fast:free';
     
     const result = await evaluatePuzzleQuestion(
       testQuestion,

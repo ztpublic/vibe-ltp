@@ -38,7 +38,7 @@ router.post('/chat', async (req, res) => {
     };
 
     // Use puzzle agent to evaluate question
-    const model = process.env.LLM_MODEL_ID ?? 'openai/gpt-4o-mini';
+    const model = process.env.LLM_MODEL_ID ?? 'x-ai/grok-4.1-fast:free';
     console.log('🤖 Using model:', model);
     
     const evaluation = await evaluatePuzzleQuestion(

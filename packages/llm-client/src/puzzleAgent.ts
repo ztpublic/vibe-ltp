@@ -105,7 +105,7 @@ function buildContextMessages(context: PuzzleContext): ChatMessage[] {
 export async function evaluatePuzzleQuestion(
   question: string,
   context: PuzzleContext,
-  model: string = 'openai/gpt-4o-mini'
+  model: string = 'x-ai/grok-4.1-fast:free'
 ): Promise<PuzzleEvaluationResult> {
   const openRouter = getOpenRouterClient();
   const evaluateTool = createEvaluateQuestionTool();
