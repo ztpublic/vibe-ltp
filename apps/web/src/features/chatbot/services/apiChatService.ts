@@ -1,7 +1,10 @@
 import type { ChatRequest, ChatResponse, ChatMessage } from '@vibe-ltp/shared';
 import type { ChatService } from './chatService';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${process.env.NEXT_PUBLIC_BACKEND_PORT || 4000}`;
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+
+console.log('🌐 [ApiChatService] Using API_BASE:', API_BASE);
+console.log('🔍 [ApiChatService] NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
 
 export class ApiChatService implements ChatService {
   async sendMessage(message: string, history: ChatMessage[]): Promise<string> {

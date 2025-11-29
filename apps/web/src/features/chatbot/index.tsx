@@ -14,7 +14,7 @@ import { SOCKET_EVENTS } from '@vibe-ltp/shared';
 import { Socket } from 'socket.io-client';
 import { useChatIdentity } from './identity/useChatIdentity';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${process.env.NEXT_PUBLIC_BACKEND_PORT || 4000}`;
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
 export type SoupBotChatProps = {
   chatService: ChatService;
