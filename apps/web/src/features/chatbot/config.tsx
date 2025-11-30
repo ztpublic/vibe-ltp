@@ -2,9 +2,20 @@
 
 import { NicknameBadge } from './components/NicknameBadge';
 
+type ChatbotMessageConfig = {
+  message: string;
+  id?: string | number;
+};
+
+type ChatbotConfig = {
+  botName?: string;
+  initialMessages: ChatbotMessageConfig[];
+  customComponents?: Record<string, unknown>;
+};
+
 export const BOT_NAME = '主持人';
 
-const config = {
+const config: ChatbotConfig = {
   botName: BOT_NAME,
   initialMessages: [],
   customComponents: {

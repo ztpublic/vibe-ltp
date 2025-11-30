@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useImperativeHandle, useRef, useEffect, useMemo } from 'react';
-import { Chatbot, createChatBotMessage, type CreateChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
+import { Chatbot, createChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
 import '@vibe-ltp/react-chatbot-kit/build/main.css';
 import './chatbot.css';
 import config from './config';
@@ -11,9 +11,15 @@ import type { ChatService } from './services';
 import type { ChatHistoryController } from './controllers';
 import { useChatIdentity } from './identity/useChatIdentity';
 import { isUserMessage, isBotMessage, type BotMessage, type ChatMessage } from '@vibe-ltp/shared';
-import { createChatbotMessageStore, type ChatbotMessageStore } from './messageStore';
+import {
+  createChatbotMessageStore,
+  type ChatbotMessageStore,
+  type ChatbotUiMessage,
+  type ChatbotState,
+} from './messageStore';
 
-type ChatbotKitMessage = ReturnType<CreateChatBotMessage>;
+type CreateChatBotMessage = typeof createChatBotMessage;
+type ChatbotKitMessage = ChatbotUiMessage;
 
 const convertHistoryMessages = (messages: ChatMessage[]): ChatbotKitMessage[] => {
   return messages
@@ -23,7 +29,7 @@ const convertHistoryMessages = (messages: ChatMessage[]): ChatbotKitMessage[] =>
           loading: false,
           widget: undefined,
           delay: 0,
-          type: 'user',
+          type: 'user' as const,
           message: msg.content,
           nickname: msg.nickname,
           id: msg.id ?? Date.now(),
@@ -32,11 +38,14 @@ const convertHistoryMessages = (messages: ChatMessage[]): ChatbotKitMessage[] =>
 
       if (isBotMessage(msg)) {
         const botMsg = msg as Extract<ChatMessage, { type: 'bot' }>;
-        const botMessage = createChatBotMessage(botMsg.content, {
-          replyToId: botMsg.replyMetadata?.replyToId,
-          replyToPreview: botMsg.replyMetadata?.replyToPreview,
-          replyToNickname: botMsg.replyMetadata?.replyToNickname,
-        });
+        const botMessage = {
+          ...(createChatBotMessage(botMsg.content, {
+            replyToId: botMsg.replyMetadata?.replyToId,
+            replyToPreview: botMsg.replyMetadata?.replyToPreview,
+            replyToNickname: botMsg.replyMetadata?.replyToNickname,
+          }) as unknown as ChatbotUiMessage),
+          type: 'bot' as const,
+        };
 
         return {
           ...botMessage,
@@ -66,8 +75,8 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
 ) => {
   const { nickname } = useChatIdentity();
   const createChatBotMessageRef = useRef<CreateChatBotMessage | null>(null);
-  const setStateRef = useRef<React.Dispatch<React.SetStateAction<{ messages: ChatbotKitMessage[] }>> | null>(null);
-  const chatbotStateRef = useRef<{ messages: ChatbotKitMessage[] } | null>(null);
+  const setStateRef = useRef<React.Dispatch<React.SetStateAction<ChatbotState>> | null>(null);
+  const chatbotStateRef = useRef<ChatbotState | null>(null);
   const messageStoreRef = useRef<ChatbotMessageStore | null>(null);
   
   // Convert chat history messages to chatbot format
@@ -129,11 +138,14 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
       addBotMessage: (message: BotMessage) => {
         if (!messageStoreRef.current || !createChatBotMessageRef.current) return;
 
-        const botMessageNode = createChatBotMessageRef.current(message.content, {
-          replyToId: message.replyMetadata?.replyToId,
-          replyToPreview: message.replyMetadata?.replyToPreview,
-          replyToNickname: message.replyMetadata?.replyToNickname,
-        });
+        const botMessageNode: ChatbotUiMessage = {
+          ...(createChatBotMessageRef.current(message.content, {
+            replyToId: message.replyMetadata?.replyToId,
+            replyToPreview: message.replyMetadata?.replyToPreview,
+            replyToNickname: message.replyMetadata?.replyToNickname,
+          }) as unknown as ChatbotUiMessage),
+          type: 'bot',
+        };
 
         messageStoreRef.current.appendMessage(botMessageNode);
 
@@ -154,8 +166,8 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
     () =>
       (props: {
         createChatBotMessage: CreateChatBotMessage;
-        setState: React.Dispatch<React.SetStateAction<{ messages: ChatbotKitMessage[] }>>;
-        state: { messages: ChatbotKitMessage[] };
+        setState: React.Dispatch<React.SetStateAction<ChatbotState>>;
+        state: ChatbotState;
         children?: React.ReactNode;
       }) => {
         createChatBotMessageRef.current = props.createChatBotMessage;
@@ -192,7 +204,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
       <div className={`h-full flex flex-col ${disabled ? 'chatbot-disabled' : ''}`}>
         <Chatbot
           key="chatbot"
-          config={chatConfig}
+          config={chatConfig as any}
           messageParser={MessageParser}
           actionProvider={ActionProviderWithService}
           placeholderText={disabled ? "游戏未开始" : "向主持人提问"}

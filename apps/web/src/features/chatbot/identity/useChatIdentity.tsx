@@ -41,7 +41,6 @@ export function IdentityProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // @ts-expect-error React 19 type compatibility issue with Context.Provider
   return (
     <IdentityContext.Provider value={{ nickname, setNickname, isHydrated } as Identity}>
       {children}

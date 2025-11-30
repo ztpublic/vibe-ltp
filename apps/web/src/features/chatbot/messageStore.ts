@@ -8,7 +8,7 @@ export type ChatbotUiMessage = {
   message?: string;
   nickname?: string;
   loading?: boolean;
-  widget?: unknown;
+  widget?: string;
   delay?: number;
   replyToId?: string;
   replyToPreview?: string;

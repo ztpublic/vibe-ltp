@@ -3,16 +3,18 @@
 import React, { ReactNode, useRef } from 'react';
 import type { BotMessage, ChatMessage } from '@vibe-ltp/shared';
 import type { ChatService } from './services';
-import { truncateText, type CreateChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
+import { truncateText, createChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
 import type { ChatHistoryController } from './controllers';
 import { v4 as uuidv4 } from 'uuid';
 import type { ChatbotMessageStore, ChatbotUiMessage } from './messageStore';
 import { createTimeoutController } from './utils/timeoutController';
 import { buildReplyMetadata, type PendingUserContext } from './replyMetadata';
 
+type CreateChatBotMessage = typeof createChatBotMessage;
+
 type ActionProviderProps = {
   createChatBotMessage: CreateChatBotMessage;
-  children: ReactNode;
+  children?: ReactNode;
   chatService: ChatService;
   chatHistoryController?: ChatHistoryController;
   messageStore: ChatbotMessageStore;
@@ -35,11 +37,14 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
   };
 
   const appendBotMessage = (message: BotMessage) => {
-    const botMessageNode: ChatbotUiMessage = createChatBotMessage(message.content, {
-      replyToId: message.replyMetadata?.replyToId,
-      replyToPreview: message.replyMetadata?.replyToPreview,
-      replyToNickname: message.replyMetadata?.replyToNickname,
-    });
+    const botMessageNode: ChatbotUiMessage = {
+      ...(createChatBotMessage(message.content, {
+        replyToId: message.replyMetadata?.replyToId,
+        replyToPreview: message.replyMetadata?.replyToPreview,
+        replyToNickname: message.replyMetadata?.replyToNickname,
+      }) as unknown as ChatbotUiMessage),
+      type: 'bot',
+    };
 
     messageStore.appendMessage(botMessageNode);
 
@@ -88,12 +93,15 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     emitMessageToServer(userChatMessage);
 
     // Add loading indicator message with reply metadata
-    const loadingMessage: ChatbotUiMessage = createChatBotMessage('', {
-      loading: true,
-      replyToId: userMessageId,
-      replyToPreview: userMessagePreview,
-      replyToNickname: msgNickname,
-    });
+    const loadingMessage: ChatbotUiMessage = {
+      ...(createChatBotMessage('', {
+        loading: true,
+        replyToId: userMessageId,
+        replyToPreview: userMessagePreview,
+        replyToNickname: msgNickname,
+      }) as unknown as ChatbotUiMessage),
+      type: 'bot',
+    };
     messageStore.appendMessage(loadingMessage);
 
     // Create a cancellable timeout
