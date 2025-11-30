@@ -6,7 +6,10 @@ const SOCKET_OPTIONS = {
   transports: ['websocket'] as string[],
   withCredentials: true,
   reconnection: true,
-  reconnectionDelayMax: 2_000,
+  // Exponential backoff-ish: start small, cap at 4s
+  reconnectionDelay: 250,
+  reconnectionDelayMax: 4_000,
+  randomizationFactor: 0.5,
 };
 
 type SocketInstance = {
@@ -28,7 +31,7 @@ export type SocketLifecycleCallbacks = {
  * in React Strict Mode and support multiple component usage
  */
 export function acquireSocket(baseUrl: string): Socket {
-  if (sharedInstance && sharedInstance.socket.connected) {
+  if (sharedInstance) {
     sharedInstance.refCount += 1;
     return sharedInstance.socket;
   }
@@ -52,7 +55,12 @@ export function releaseSocket(socket: Socket): void {
     return;
   }
 
-  sharedInstance.refCount = Math.max(0, sharedInstance.refCount - 1);
+  if (sharedInstance.refCount <= 0) {
+    console.warn('[socketManager] release called with non-positive refCount');
+    return;
+  }
+
+  sharedInstance.refCount -= 1;
 
   if (sharedInstance.refCount === 0) {
     socket.disconnect();
