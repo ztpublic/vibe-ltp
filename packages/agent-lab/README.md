@@ -1,6 +1,6 @@
 # Agent Lab (experiments only)
 
-Purpose-built workspace package for experimenting with puzzle agents. Use it to try different models, prompt tweaks, and datasets without touching the production server or frontend.
+Purpose-built workspace package for experimenting with the question validator agent. Use it to try different models, prompt tweaks, and datasets without touching the production server or frontend.
 
 ## Running the sample suite
 
@@ -9,7 +9,7 @@ Purpose-built workspace package for experimenting with puzzle agents. Use it to 
 pnpm agent-lab:demo
 ```
 
-This runs `packages/agent-lab/src/demo.ts`, exercising the puzzle agent against a small set of sample cases with two agent variants (default prompt vs. cautious prompt).
+This runs `packages/agent-lab/src/demo.ts`, exercising the question validator agent against a small set of sample cases with two agent variants (default prompt vs. cautious prompt).
 
 ## Key files
 
@@ -22,7 +22,7 @@ This runs `packages/agent-lab/src/demo.ts`, exercising the puzzle agent against 
 
 ## Adding your own experiments
 
-1) Define agents in `fixtures/` (or elsewhere) with `model`, optional `fallbackModel`, and optional `systemPrompt` if you want to tweak the base puzzle host prompt.  
+1) Define agents in `fixtures/` (or elsewhere) with `model`, optional `fallbackModel`, and optional `systemPrompt` if you want to tweak the base question validator prompt.  
 2) Add experiment cases by dropping `.json` files into `src/fixtures/cases/` (each file is a single JSON array with `id`, `question`, `expectedAnswer?`, and `context { surface, truth }`; `conversationHistory` is not needed and is defaulted to `[]`).  
-3) Call `runPuzzleAgentSuite({ agents, cases })` from a script (you can mirror `demo.ts`) and use `logSuiteResult` for quick reporting.  
+3) Call `runQuestionValidatorSuite({ agents, cases })` from a script (you can mirror `demo.ts`) and use `logSuiteResult` for quick reporting.  
 4) Keep this module isolated from production code; it is meant purely for LLM experimentation.

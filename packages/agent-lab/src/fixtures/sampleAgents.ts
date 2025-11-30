@@ -1,7 +1,7 @@
-import { buildSystemPrompt } from '@vibe-ltp/llm-client';
+import { buildQuestionValidatorSystemPrompt } from '@vibe-ltp/llm-client';
 import type { AgentVariant } from '../types.js';
 
-const basePrompt = buildSystemPrompt();
+const basePrompt = buildQuestionValidatorSystemPrompt();
 
 export const sampleAgents: AgentVariant[] = [
   // {

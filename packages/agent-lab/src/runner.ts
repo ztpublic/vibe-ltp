@@ -1,4 +1,4 @@
-import { evaluatePuzzleQuestion, type AnswerType } from '@vibe-ltp/llm-client';
+import { type AnswerType, validatePuzzleQuestion } from '@vibe-ltp/llm-client';
 import type {
   AgentVariant,
   ExperimentCase,
@@ -41,7 +41,7 @@ function summarizeRuns(runs: ExperimentRunResult[], agents: AgentVariant[]): Exp
   });
 }
 
-export async function runPuzzleAgentSuite(options: ExperimentRunnerOptions): Promise<ExperimentSuiteResult> {
+export async function runQuestionValidatorSuite(options: ExperimentRunnerOptions): Promise<ExperimentSuiteResult> {
   const { agents, cases } = options;
   const runs: ExperimentRunResult[] = [];
 
@@ -53,7 +53,7 @@ export async function runPuzzleAgentSuite(options: ExperimentRunnerOptions): Pro
       let error: string | undefined;
 
       try {
-        const evaluation = await evaluatePuzzleQuestion(testCase.question, testCase.context, {
+        const evaluation = await validatePuzzleQuestion(testCase.question, testCase.context, {
           model: agent.model,
           fallbackModel: agent.fallbackModel,
           systemPrompt: agent.systemPrompt,

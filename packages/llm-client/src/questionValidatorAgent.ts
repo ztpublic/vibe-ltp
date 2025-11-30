@@ -1,6 +1,6 @@
 /**
- * Puzzle Agent
- * Implements the lateral thinking puzzle host workflow
+ * Question Validator Agent
+ * Validates player questions against the puzzle truth
  * Following the agent-flow.md specification
  */
 
@@ -32,7 +32,7 @@ export interface PuzzleContext {
 /**
  * Result of evaluating a question against the puzzle
  */
-export interface PuzzleEvaluationResult {
+export interface QuestionValidationResult {
   /** The canonical answer type */
   answer: 'yes' | 'no' | 'irrelevant' | 'both' | 'unknown';
   /** Optional hint surfaced by the agent */
@@ -40,9 +40,9 @@ export interface PuzzleEvaluationResult {
 }
 
 /**
- * Configuration options for running the puzzle agent
+ * Configuration options for running the question validator agent
  */
-export interface PuzzleAgentOptions {
+export interface QuestionValidatorOptions {
   /** Primary model to call (required) */
   model: string;
   /** Fallback model if primary fails */
@@ -52,10 +52,10 @@ export interface PuzzleAgentOptions {
 }
 
 /**
- * Build the system prompt for the puzzle host agent
+ * Build the system prompt for the question validator agent
  * Following the guidelines from agent-flow.md section C
  */
-export function buildSystemPrompt(): string {
+export function buildQuestionValidatorSystemPrompt(): string {
   return `You are a lateral thinking puzzle host (situation puzzle / 海龟汤).
 
 ROLE & RULES:
@@ -111,7 +111,7 @@ function buildContextMessages(context: PuzzleContext): ChatMessage[] {
 }
 
 /**
- * Evaluate a puzzle question using the agent workflow
+ * Validate a puzzle question using the agent workflow
  * This is the main entry point for the simplified agent (agent-flow.md section D)
  * 
  * @param question - The player's question
@@ -120,24 +120,24 @@ function buildContextMessages(context: PuzzleContext): ChatMessage[] {
  * @param fallbackModel - Optional fallback LLM model to use if primary model fails (only used when modelOrOptions is string)
  * @returns Evaluation result with answer
  */
-export async function evaluatePuzzleQuestion(
+export async function validatePuzzleQuestion(
   question: string,
   context: PuzzleContext,
-  modelOrOptions: string | PuzzleAgentOptions,
+  modelOrOptions: string | QuestionValidatorOptions,
   fallbackModel?: string
-): Promise<PuzzleEvaluationResult> {
-  const options: PuzzleAgentOptions =
+): Promise<QuestionValidationResult> {
+  const options: QuestionValidatorOptions =
     typeof modelOrOptions === 'string'
       ? { model: modelOrOptions, fallbackModel }
       : modelOrOptions;
 
   if (!options || !options.model) {
-    throw new Error('Puzzle agent requires a model to be specified.');
+    throw new Error('Question validator agent requires a model to be specified.');
   }
 
   const model = options.model;
   const fallbackModelToUse = options.fallbackModel;
-  const systemPrompt = options.systemPrompt ?? buildSystemPrompt();
+  const systemPrompt = options.systemPrompt ?? buildQuestionValidatorSystemPrompt();
 
   const openRouter = getOpenRouterClient();
   const evaluateTool = createEvaluateQuestionTool();
@@ -160,7 +160,7 @@ export async function evaluatePuzzleQuestion(
     },
   };
 
-  console.log('\n[Puzzle Agent]');
+  console.log('\n[Question Validator Agent]');
   console.log('Input:', question);
 
   // Helper function to call LLM with tool
@@ -221,16 +221,16 @@ export async function evaluatePuzzleQuestion(
       const primaryMsg = String(primaryError).slice(0, 50);
       const fallbackMsg = String(fallbackError).slice(0, 50);
       
-      throw new Error(`Failed to evaluate puzzle question: Primary(${primaryMsg}), Fallback(${fallbackMsg})`);
+      throw new Error(`Failed to validate puzzle question: Primary(${primaryMsg}), Fallback(${fallbackMsg})`);
     }
   }
 }
 
 /**
- * Format the evaluation result as a chat reply
+ * Format the validation result as a chat reply
  * Following agent-flow.md section D2, step 5
  */
-export function formatEvaluationReply(result: PuzzleEvaluationResult): string {
+export function formatValidationReply(result: QuestionValidationResult): string {
   const answerLabels = {
     yes: '是',
     no: '否',

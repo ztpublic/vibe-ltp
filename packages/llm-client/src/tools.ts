@@ -29,7 +29,7 @@ export type EvaluateQuestionArgs = z.infer<typeof EvaluateQuestionArgsSchema>;
 
 /**
  * Tool for evaluating puzzle questions against the truth
- * This is the core tool for the lateral thinking puzzle agent
+ * This is the core tool for the question validator agent
  */
 export function createEvaluateQuestionTool(): AgentTool<EvaluateQuestionArgs, EvaluateQuestionArgs> {
   return defineTool({

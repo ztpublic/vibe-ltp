@@ -1,6 +1,6 @@
 import { Router, type Router as RouterType } from 'express';
 import type { ChatRequest, ChatResponse } from '@vibe-ltp/shared';
-import { evaluatePuzzleQuestion, formatEvaluationReply, type PuzzleContext } from '@vibe-ltp/llm-client';
+import { formatValidationReply, type PuzzleContext, validatePuzzleQuestion } from '@vibe-ltp/llm-client';
 import * as gameState from '../../state/gameState.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -39,10 +39,10 @@ router.post('/chat', async (req, res) => {
       conversationHistory: gameState.getConversationHistory(),
     };
 
-    // Use puzzle agent to evaluate question
+    // Use question validator agent to evaluate question
     const model = process.env.LLM_MODEL_ID ?? 'x-ai/grok-4.1-fast:free';
     
-    const evaluation = await evaluatePuzzleQuestion(
+    const evaluation = await validatePuzzleQuestion(
       userText,
       puzzleContext,
       model
@@ -55,7 +55,7 @@ router.post('/chat', async (req, res) => {
     );
 
     // Format reply for chat UI
-    const replyText = formatEvaluationReply(evaluation);
+    const replyText = formatValidationReply(evaluation);
 
     // Format response with full structured message
     const reply: ChatResponse['reply'] = {
