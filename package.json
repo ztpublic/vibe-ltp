@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:agent": "node test-puzzle-agent.mjs",
     "agent-lab:demo": "pnpm -C packages/agent-lab demo",
+    "agent-lab:demo:connections": "pnpm -C packages/agent-lab demo:connections",
     "e2e": "playwright test",
     "e2e:complete": "playwright test apps/web/tests/e2e/chatbot.spec.ts -g \"should handle complete gameplay flow with questions and answers\" --headed",
     "format": "prettier --write .",

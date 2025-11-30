@@ -9,3 +9,4 @@ export * from './chat.js';
 export * from './tools.js';
 export * from './agent.js';
 export * from './questionValidatorAgent.js';
+export * from './connectionDistillerAgent.js';

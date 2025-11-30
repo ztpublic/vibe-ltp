@@ -52,3 +52,26 @@ export interface ExperimentRunnerOptions {
   agents: AgentVariant[];
   cases: ExperimentCase[];
 }
+
+export interface ConnectionCase {
+  id: string;
+  context: PuzzleContext;
+  notes?: string;
+}
+
+export interface ConnectionDistillerRunResult {
+  caseId: string;
+  connections: string[];
+  durationMs: number;
+  startedAt: string;
+  completedAt: string;
+  error?: string;
+  notes?: string;
+}
+
+export interface ConnectionDistillerRunnerOptions {
+  model: string;
+  fallbackModel?: string;
+  systemPrompt?: string;
+  cases: ConnectionCase[];
+}

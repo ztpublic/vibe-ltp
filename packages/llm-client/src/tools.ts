@@ -28,6 +28,17 @@ export const EvaluateQuestionArgsSchema = z.object({
 export type EvaluateQuestionArgs = z.infer<typeof EvaluateQuestionArgsSchema>;
 
 /**
+ * Arguments for distill_connections tool
+ */
+export const DistillConnectionsArgsSchema = z.object({
+  connections: z.array(z.string().min(3)).min(3).max(6).describe(
+    'Concise bridging statements (ordered from closest to the surface to closest to the truth) that help players infer the true story.'
+  ),
+});
+
+export type DistillConnectionsArgs = z.infer<typeof DistillConnectionsArgsSchema>;
+
+/**
  * Tool for evaluating puzzle questions against the truth
  * This is the core tool for the question validator agent
  */
@@ -40,6 +51,19 @@ export function createEvaluateQuestionTool(): AgentTool<EvaluateQuestionArgs, Ev
       // This tool just returns its arguments - the agent uses it for structured output
       return args;
     },
+  });
+}
+
+/**
+ * Tool for distilling puzzle connections to guide players
+ */
+export function createDistillConnectionsTool(): AgentTool<DistillConnectionsArgs, DistillConnectionsArgs> {
+  return defineTool({
+    name: 'distill_connections',
+    description:
+      'Extract 3-6 concise connection statements that bridge the puzzle surface to the underlying truth, ordered from surface-adjacent to truth-adjacent.',
+    argsSchema: DistillConnectionsArgsSchema,
+    execute: async (args) => args,
   });
 }
 
