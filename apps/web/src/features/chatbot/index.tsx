@@ -139,7 +139,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
     addBotMessage: (content: string) => {
       if (createChatBotMessageRef.current && setStateRef.current) {
         const encoded = encodeBotMessage({ content });
-        const botMessage = createChatBotMessageRef.current(encoded);
+        const botMessage = createChatBotMessageRef.current(encoded, { withAvatar: true });
         setStateRef.current((prev: any) => ({
           ...prev,
           messages: [...prev.messages, botMessage],

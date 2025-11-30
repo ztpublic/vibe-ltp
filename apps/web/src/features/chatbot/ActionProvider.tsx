@@ -63,7 +63,7 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
       replyToNickname,
     });
     
-    const botMessage = createChatBotMessage(encoded);
+    const botMessage = createChatBotMessage(encoded, {});
     setState((prev: any) => ({
       ...prev,
       messages: [...prev.messages, botMessage],
