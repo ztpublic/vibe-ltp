@@ -24,3 +24,22 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Fix chatbot scrolling - ensure proper height constraints */
+.react-chatbot-kit-chat-container {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.react-chatbot-kit-chat-inner-container {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.react-chatbot-kit-chat-message-container {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
