@@ -2,7 +2,7 @@
  * Mock data generators for Storybook stories
  */
 
-import type { ChatHistoryMessage } from '../src/features/chatbot/controllers';
+import type { ChatMessage, UserMessage, BotMessage } from '@vibe-ltp/shared';
 
 export const samplePuzzle = {
   soupSurface: '一个男人走进酒吧，点了一杯水。酒保突然拔出枪指着他。男人说了声"谢谢"就离开了。',
@@ -29,7 +29,7 @@ export const longPuzzle = {
 /**
  * Generate a conversation with specified number of messages
  */
-export function generateMockConversation(count: number): ChatHistoryMessage[] {
+export function generateMockConversation(count: number): ChatMessage[] {
   const questions = [
     '这个男人认识酒保吗？',
     '男人来酒吧的目的是喝水吗？',
@@ -41,8 +41,8 @@ export function generateMockConversation(count: number): ChatHistoryMessage[] {
     '男人说谢谢是因为酒保帮了他吗？',
     '水有什么特殊作用吗？',
     '酒保开枪了吗？',
-    '这个男人有打嗝吗？',
-    '酒保用枪吓唬他是为了让他打嗝停止吗？',
+    '这个男人有打嘏吗？',
+    '酒保用枪吓弄他是为了让他打嘏停止吗？',
   ];
 
   const answers = [
@@ -55,12 +55,12 @@ export function generateMockConversation(count: number): ChatHistoryMessage[] {
     '是的，现代故事。',
     '是的，酒保帮助了他。',
     '水能够缓解他的症状。',
-    '没有开枪，只是吓唬。',
-    '是的，他在打嗝。',
+    '没有开枪，只是吓弄。',
+    '是的，他在打嘏。',
     '完全正确！',
   ];
 
-  const messages: ChatHistoryMessage[] = [];
+  const messages: ChatMessage[] = [];
   const messagesToGenerate = Math.min(count, questions.length * 2);
 
   for (let i = 0; i < messagesToGenerate; i++) {
@@ -68,24 +68,28 @@ export function generateMockConversation(count: number): ChatHistoryMessage[] {
     
     if (i % 2 === 0) {
       // User message
-      messages.push({
+      const userMsg: UserMessage = {
         id: `user_${i}`,
         type: 'user',
         content: questions[questionIndex] || `问题 ${i + 1}`,
         nickname: `玩家${(i % 3) + 1}`,
         timestamp: new Date(Date.now() - (messagesToGenerate - i) * 60000).toISOString(),
-      });
+      };
+      messages.push(userMsg);
     } else {
-      // Bot message
-      messages.push({
+      // Bot message with reply metadata
+      const botMsg: BotMessage = {
         id: `bot_${i}`,
         type: 'bot',
         content: answers[questionIndex] || `回答 ${i + 1}`,
-        replyToId: `user_${i - 1}`,
-        replyToPreview: (questions[questionIndex] || `问题 ${i}`).substring(0, 40),
-        replyToNickname: `玩家${((i - 1) % 3) + 1}`,
         timestamp: new Date(Date.now() - (messagesToGenerate - i) * 60000 + 5000).toISOString(),
-      });
+        replyMetadata: {
+          replyToId: `user_${i - 1}`,
+          replyToPreview: (questions[questionIndex] || `问题 ${i}`).substring(0, 40),
+          replyToNickname: `玩家${((i - 1) % 3) + 1}`,
+        },
+      };
+      messages.push(botMsg);
     }
   }
 
@@ -95,55 +99,66 @@ export function generateMockConversation(count: number): ChatHistoryMessage[] {
 /**
  * Generate messages with error examples
  */
-export function generateMessagesWithErrors(): ChatHistoryMessage[] {
-  return [
-    {
-      id: 'user_1',
-      type: 'user',
-      content: '这个男人认识酒保吗？',
-      nickname: '玩家1',
-      timestamp: new Date(Date.now() - 300000).toISOString(),
-    },
-    {
-      id: 'bot_1',
-      type: 'bot',
-      content: '不一定，可能不认识。',
+export function generateMessagesWithErrors(): ChatMessage[] {
+  const userMsg1: UserMessage = {
+    id: 'user_1',
+    type: 'user',
+    content: '这个男人认识酒保吗？',
+    nickname: '玩家1',
+    timestamp: new Date(Date.now() - 300000).toISOString(),
+  };
+
+  const botMsg1: BotMessage = {
+    id: 'bot_1',
+    type: 'bot',
+    content: '不一定，可能不认识。',
+    timestamp: new Date(Date.now() - 295000).toISOString(),
+    replyMetadata: {
       replyToId: 'user_1',
       replyToPreview: '这个男人认识酒保吗？',
       replyToNickname: '玩家1',
-      timestamp: new Date(Date.now() - 295000).toISOString(),
     },
-    {
-      id: 'user_2',
-      type: 'user',
-      content: '男人来酒吧的目的是喝水吗？',
-      nickname: '玩家2',
-      timestamp: new Date(Date.now() - 200000).toISOString(),
-    },
-    {
-      id: 'bot_2',
-      type: 'bot',
-      content: '❌ 错误: 服务器连接超时，请重试。',
+  };
+
+  const userMsg2: UserMessage = {
+    id: 'user_2',
+    type: 'user',
+    content: '男人来酒吧的目的是喝水吗？',
+    nickname: '玩家2',
+    timestamp: new Date(Date.now() - 200000).toISOString(),
+  };
+
+  const botMsg2: BotMessage = {
+    id: 'bot_2',
+    type: 'bot',
+    content: '❌ 错误: 服务器连接超时，请重试。',
+    timestamp: new Date(Date.now() - 195000).toISOString(),
+    replyMetadata: {
       replyToId: 'user_2',
       replyToPreview: '男人来酒吧的目的是喝水吗？',
       replyToNickname: '玩家2',
-      timestamp: new Date(Date.now() - 195000).toISOString(),
     },
-    {
-      id: 'user_3',
-      type: 'user',
-      content: '男人来酒吧的目的是喝水吗？',
-      nickname: '玩家2',
-      timestamp: new Date(Date.now() - 100000).toISOString(),
-    },
-    {
-      id: 'bot_3',
-      type: 'bot',
-      content: '是的，他确实想喝水。',
+  };
+
+  const userMsg3: UserMessage = {
+    id: 'user_3',
+    type: 'user',
+    content: '男人来酒吧的目的是喝水吗？',
+    nickname: '玩家2',
+    timestamp: new Date(Date.now() - 100000).toISOString(),
+  };
+
+  const botMsg3: BotMessage = {
+    id: 'bot_3',
+    type: 'bot',
+    content: '是的，他确实想喝水。',
+    timestamp: new Date(Date.now() - 95000).toISOString(),
+    replyMetadata: {
       replyToId: 'user_3',
       replyToPreview: '男人来酒吧的目的是喝水吗？',
       replyToNickname: '玩家2',
-      timestamp: new Date(Date.now() - 95000).toISOString(),
     },
-  ];
+  };
+
+  return [userMsg1, botMsg1, userMsg2, botMsg2, userMsg3, botMsg3];
 }

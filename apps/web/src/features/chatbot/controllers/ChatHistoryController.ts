@@ -1,26 +1,20 @@
 /**
  * ChatHistoryController Interface
  * Abstract interface for chat history management
+ * Now aligned with unified message types from @vibe-ltp/shared
  */
 
-export interface ChatHistoryMessage {
-  id: string;
-  type: 'user' | 'bot';
-  content: string;
-  nickname?: string;
-  replyToId?: string;
-  replyToPreview?: string;
-  replyToNickname?: string;
-  timestamp: string;
-}
+import type { ChatMessage } from '@vibe-ltp/shared';
+
+export type { ChatMessage as ChatHistoryMessage };
 
 export interface ChatHistoryController {
   /** Initial chat history messages */
-  messages: ChatHistoryMessage[];
+  messages: ChatMessage[];
   
   /** Callback when new message is added */
-  onMessageAdded: (message: ChatHistoryMessage) => void;
+  onMessageAdded: (message: ChatMessage) => void;
   
   /** Retrieve chat history (async for socket-based implementations) */
-  syncHistory: () => Promise<ChatHistoryMessage[]>;
+  syncHistory: () => Promise<ChatMessage[]>;
 }

@@ -157,10 +157,16 @@ const Chat = ({
       payload: messageObject.payload,
       actions,
     });
+    
+    // Generate message ID for scroll-to functionality
+    const messageId = `user_msg_${messageObject.id}`;
+    
     return (
       <>
         <UserChatMessage
           message={messageObject.message}
+          messageId={messageId}
+          nickname={messageObject.nickname}
           key={messageObject.id}
           customComponents={customComponents}
           currentUserNickname={currentUserNickname}
@@ -179,17 +185,20 @@ const Chat = ({
     }
 
     const chatbotMessageProps = {
-      ...messageObject,
+      message: messageObject.message,
+      replyToId: messageObject.replyToId,
+      replyToPreview: messageObject.replyToPreview,
+      replyToNickname: messageObject.replyToNickname,
+      loading: messageObject.loading,
+      delay: messageObject.delay,
+      id: messageObject.id,
       setState,
-      state,
       customComponents,
-      widgetRegistry,
       messages,
-      actions,
     };
 
     if (messageObject.widget) {
-      const widget = widgetRegistry.getWidget(chatbotMessageProps.widget, {
+      const widget = widgetRegistry.getWidget(messageObject.widget, {
         ...state,
         scrollIntoView,
         payload: messageObject.payload,
@@ -204,7 +213,7 @@ const Chat = ({
             key={messageObject.id}
           />
           <ConditionallyRender
-            condition={!chatbotMessageProps.loading}
+            condition={!messageObject.loading}
             show={widget ? widget : null}
           />
         </>
@@ -217,9 +226,6 @@ const Chat = ({
         key={messageObject.id}
         withAvatar={withAvatar}
         {...chatbotMessageProps}
-        customComponents={customComponents}
-        messages={messages}
-        setState={setState}
       />
     );
   };

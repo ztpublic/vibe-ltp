@@ -1,5 +1,10 @@
-import type { ChatMessage } from '@vibe-ltp/shared';
+import type { UserMessage, BotMessage } from '@vibe-ltp/shared';
 
 export interface ChatService {
-  sendMessage(message: string, history: ChatMessage[]): Promise<string>;
+  /**
+   * Send a user message and receive bot reply
+   * @param userMessage - Complete user message with metadata
+   * @returns Bot reply message content
+   */
+  sendMessage(userMessage: UserMessage): Promise<BotMessage>;
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useImperativeHandle, useRef, useState, useEffect, useMemo } from 'react';
-import { Chatbot, encodeBotMessage, encodeUserText, createChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
+import { Chatbot, createChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
 import '@vibe-ltp/react-chatbot-kit/build/main.css';
 import './chatbot.css';
 import config from './config';
@@ -10,6 +10,7 @@ import MessageParser from './MessageParser';
 import type { ChatService } from './services';
 import type { ChatHistoryController } from './controllers';
 import { useChatIdentity } from './identity/useChatIdentity';
+import { isUserMessage, isBotMessage, type ChatMessage } from '@vibe-ltp/shared';
 
 export type SoupBotChatProps = {
   chatService: ChatService;
@@ -38,32 +39,31 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
 
     const messages = chatHistoryController.messages;
     
-    const converted = messages.map((msg, idx) => {
-      if (msg.type === 'user') {
-        // User messages - encode with nickname
-        const encodedText = msg.nickname 
-          ? encodeUserText(msg.nickname, msg.content)
-          : msg.content;
-        
+    const converted = messages.map((msg: ChatMessage, idx: number) => {
+      if (isUserMessage(msg)) {
+        // User messages - pass structured fields (no encoding)
         return {
           loading: false,
           widget: undefined,
           delay: 0,
           type: 'user',
-          message: encodedText,
+          message: msg.content,
+          nickname: msg.nickname,
           id: Date.now() + idx,
         };
-      } else {
-        // Bot messages - encode with reply metadata
-        const encoded = encodeBotMessage({
-          content: msg.content,
-          replyToId: msg.replyToId,
-          replyToPreview: msg.replyToPreview,
-          replyToNickname: msg.replyToNickname,
-        });
-        return createChatBotMessage(encoded, {});
+      } else if (isBotMessage(msg)) {
+        // Bot messages - pass structured reply metadata (no encoding)
+        const botMsg = msg as Extract<ChatMessage, { type: 'bot' }>;
+        const botMessage = createChatBotMessage(botMsg.content, {
+          replyToId: botMsg.replyMetadata?.replyToId,
+          replyToPreview: botMsg.replyMetadata?.replyToPreview,
+          replyToNickname: botMsg.replyMetadata?.replyToNickname,
+        } as any); // Type assertion needed until react-chatbot-kit types are rebuilt
+        return botMessage;
       }
-    });
+      // System messages or other types - skip
+      return null;
+    }).filter((msg): msg is NonNullable<typeof msg> => msg !== null);
     
     return converted;
   }, [chatHistoryController, chatHistoryController?.messages]);
@@ -83,8 +83,8 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
   useImperativeHandle(ref, () => ({
     addBotMessage: (content: string) => {
       if (createChatBotMessageRef.current && setStateRef.current) {
-        const encoded = encodeBotMessage({ content });
-        const botMessage = createChatBotMessageRef.current(encoded, { withAvatar: true });
+        // Create bot message with plain content (no encoding)
+        const botMessage = createChatBotMessageRef.current(content, { withAvatar: true });
         setStateRef.current((prev: any) => ({
           ...prev,
           messages: [...prev.messages, botMessage],
@@ -92,12 +92,13 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
         
         // Persist message to server via chat history controller
         if (chatHistoryController) {
-          chatHistoryController.onMessageAdded({
+          const botChatMessage: ChatMessage = {
             id: `bot-${Date.now()}`,
-            type: 'bot',
+            type: 'bot' as const,
             content,
             timestamp: new Date().toISOString(),
-          });
+          };
+          chatHistoryController.onMessageAdded(botChatMessage);
         }
       }
     },

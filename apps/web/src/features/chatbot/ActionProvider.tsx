@@ -3,9 +3,10 @@
 import React, { ReactNode, useRef } from 'react';
 import type { ChatMessage } from '@vibe-ltp/shared';
 import type { ChatService } from './services';
-import { encodeBotMessage, encodeUserText, truncateText } from '@vibe-ltp/react-chatbot-kit';
+import { truncateText } from '@vibe-ltp/react-chatbot-kit';
 import { useChatIdentity } from './identity/useChatIdentity';
 import type { ChatHistoryController } from './controllers';
+import { v4 as uuidv4 } from 'uuid';
 
 type ActionProviderProps = {
   createChatBotMessage: any;
@@ -28,88 +29,62 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
   const lastUserMessageTextRef = useRef<string | null>(null);
   const lastUserMessageNicknameRef = useRef<string | null>(null);
 
-  const emitMessageToServer = (message: {
-    id: string;
-    type: 'user' | 'bot';
-    content: string;
-    nickname?: string;
-    replyToId?: string;
-    replyToPreview?: string;
-    replyToNickname?: string;
-  }) => {
+  const emitMessageToServer = (message: ChatMessage) => {
     if (chatHistoryController) {
-      chatHistoryController.onMessageAdded({
-        ...message,
-        timestamp: new Date().toISOString(),
-      });
+      chatHistoryController.onMessageAdded(message);
     }
   };
 
   const appendBotMessage = (content: string, replyToId?: string, replyToPreview?: string, replyToNickname?: string) => {
-    // Encode the bot message with metadata
-    const encoded = encodeBotMessage({
-      content,
+    // Create bot message with structured reply metadata (no encoding)
+    const botMessage = createChatBotMessage(content, {
       replyToId,
       replyToPreview,
       replyToNickname,
     });
     
-    const botMessage = createChatBotMessage(encoded, {});
     setState((prev: any) => ({
       ...prev,
       messages: [...prev.messages, botMessage],
     }));
     
     // Emit bot message to server for persistence
-    const botMessageId = `bot_${Date.now()}_${content.slice(0, 10).replace(/\s/g, '_')}`;
-    emitMessageToServer({
+    const botMessageId = uuidv4();
+    const botChatMessage: ChatMessage = {
       id: botMessageId,
-      type: 'bot',
+      type: 'bot' as const,
       content,
-      replyToId,
-      replyToPreview,
-      replyToNickname,
-    });
+      timestamp: new Date().toISOString(),
+      replyMetadata: replyToId ? {
+        replyToId,
+        replyToPreview: replyToPreview!,
+        replyToNickname: replyToNickname!,
+      } : undefined,
+    };
+    emitMessageToServer(botChatMessage);
   };
 
-  const handleUserMessage = async (encodedMessage: string) => {
-    // Message comes from MessageParser already encoded with nickname
-    // Decode it to get the raw text and nickname
-    const { nickname: msgNickname, text: userMessage } = (() => {
-      const decoded = encodedMessage.startsWith('__NICK__')
-        ? (() => {
-            const without = encodedMessage.slice('__NICK__'.length);
-            const idx = without.indexOf('::');
-            if (idx === -1) return { nickname, text: encodedMessage };
-            return { nickname: without.slice(0, idx), text: without.slice(idx + 2) };
-          })()
-        : { nickname, text: encodedMessage };
-      return decoded;
-    })();
+  const handleUserMessage = async (userMessage: string, msgNickname: string) => {
+    // Receive plain text and nickname separately (no decoding needed)
     
-    // CRITICAL: Replace the last user message in state with the encoded version
-    // react-chatbot-kit automatically adds a message with raw text,
-    // we need to replace it with our encoded version
+    // Update the last user message in state with nickname metadata
     setState((prev: any) => {
       const messages = [...prev.messages];
       if (messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
-        // Check if the last message is a user message with the raw text
+        // Add nickname to the user message
         if (lastMessage.type === 'user' && lastMessage.message === userMessage) {
-          // Replace with encoded version
           messages[messages.length - 1] = {
             ...lastMessage,
-            message: encodedMessage
+            nickname: msgNickname,
           };
         }
       }
       return { ...prev, messages };
     });
     
-    // Generate a deterministic ID for this user message (content-based, no timestamp)
-    // This must match the ID generation in PuzzleUserMessage component
-    const contentHash = userMessage.slice(0, 10).replace(/\s/g, '_');
-    const userMessageId = `user_${contentHash}_${userMessage.length}`;
+    // Generate UUID for this user message
+    const userMessageId = uuidv4();
     const userMessagePreview = truncateText(userMessage, 40);
     
     // Store for use when bot replies
@@ -118,30 +93,22 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     lastUserMessageNicknameRef.current = msgNickname;
     
     // Emit user message to server for persistence
-    emitMessageToServer({
+    const userChatMessage: ChatMessage = {
       id: userMessageId,
-      type: 'user',
+      type: 'user' as const,
       content: userMessage,
       nickname: msgNickname,
-    });
-
-    // Build history from state
-    let history: ChatMessage[] = [];
-
-    setState((prev: any) => {
-      history = prev.messages ?? [];
-      return prev;
-    });
+      timestamp: new Date().toISOString(),
+    };
+    emitMessageToServer(userChatMessage);
 
     // Add loading indicator message with reply metadata
-    // Encode the loading message with reply metadata so the label shows immediately
-    const loadingEncoded = encodeBotMessage({
-      content: '',
+    const loadingMessage = createChatBotMessage('', {
+      loading: true,
       replyToId: userMessageId,
       replyToPreview: userMessagePreview,
       replyToNickname: msgNickname,
     });
-    const loadingMessage = createChatBotMessage(loadingEncoded, { loading: true });
     setState((prev: any) => ({
       ...prev,
       messages: [...prev.messages, loadingMessage],
@@ -154,9 +121,9 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     });
 
     try {
-      // Race between API call and timeout
-      const reply = await Promise.race([
-        chatService.sendMessage(userMessage, history),
+      // Race between API call and timeout - send full user message object
+      const botReply = await Promise.race([
+        chatService.sendMessage(userChatMessage),
         timeoutPromise,
       ]);
 
@@ -167,7 +134,7 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
       }));
       
       // Append bot message with reply metadata including nickname
-      appendBotMessage(reply, userMessageId, userMessagePreview, msgNickname);
+      appendBotMessage(botReply.content, userMessageId, userMessagePreview, msgNickname);
     } catch (error) {
       // Remove loading message
       setState((prev: any) => ({

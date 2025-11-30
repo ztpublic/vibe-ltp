@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef } from 'react';
 import ConditionallyRender from 'react-conditionally-render';
 
 import { callIfExists } from '../Chat/chatUtils';
@@ -7,32 +7,30 @@ import UserIcon from '../../assets/icons/user-alt.svg';
 
 import './UserChatMessage.css';
 import { ICustomComponents } from '../../interfaces/IConfig';
-import { decodeUserText } from '../../utils/messageEncoding';
 import { registerMessageElement } from '../../utils/messageRegistry';
 
 interface IUserChatMessageProps {
+  /** Plain text message content (no encoding) */
   message: string;
+  
+  /** Message ID for scroll-to functionality */
+  messageId: string;
+  
+  /** User's display nickname */
+  nickname?: string;
+  
   customComponents: ICustomComponents;
   currentUserNickname?: string;
 }
 
 const UserChatMessage = ({
   message,
+  messageId,
+  nickname,
   customComponents,
   currentUserNickname,
 }: IUserChatMessageProps) => {
   const ref = useRef<HTMLDivElement | null>(null);
-
-  // Decode nickname and text from the encoded message
-  const { nickname, text } = useMemo(() => decodeUserText(message), [message]);
-  
-  // Use a consistent ID generation approach
-  const messageId = useMemo(() => {
-    // Create a deterministic ID based on message content only (no timestamp)
-    const actualText = text || message;
-    const contentHash = actualText.slice(0, 10).replace(/\s/g, '_');
-    return `user_${contentHash}_${actualText.length}`;
-  }, [text, message]);
 
   // Register the message element for scroll-to functionality
   useEffect(() => {
@@ -62,11 +60,11 @@ const UserChatMessage = ({
         <ConditionallyRender
           condition={!!customComponents.userChatMessage}
           show={callIfExists(customComponents.userChatMessage, {
-            message: text,
+            message,
           })}
           elseShow={
             <div className="react-chatbot-kit-user-chat-message">
-              {text}
+              {message}
               <div className="react-chatbot-kit-user-chat-message-arrow"></div>
             </div>
           }

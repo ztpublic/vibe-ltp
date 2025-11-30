@@ -45,8 +45,15 @@ export const createChatBotMessage = (
 ) => {
   return {
     ...createChatMessage(message, 'bot'),
-    ...options,
     loading: true,
+    // Extract reply metadata from options if provided
+    replyToId: options.replyToId,
+    replyToPreview: options.replyToPreview,
+    replyToNickname: options.replyToNickname,
+    // Spread remaining options
+    widget: options.widget,
+    delay: options.delay,
+    payload: options.payload,
   };
 };
 
@@ -62,7 +69,15 @@ export const createClientMessage = (
   message: string,
   options: IMessageOptions
 ) => {
-  return { ...createChatMessage(message, 'user'), ...options };
+  return { 
+    ...createChatMessage(message, 'user'), 
+    // Extract nickname from options if provided
+    nickname: options.nickname,
+    // Spread remaining options
+    widget: options.widget,
+    delay: options.delay,
+    payload: options.payload,
+  };
 };
 
 export const callIfExists = (func: any, ...args: any) => {

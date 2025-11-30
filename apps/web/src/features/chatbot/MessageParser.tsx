@@ -1,12 +1,11 @@
 'use client';
 
 import React, { ReactNode } from 'react';
-import { encodeUserText } from '@vibe-ltp/react-chatbot-kit';
 import { useChatIdentity } from './identity/useChatIdentity';
 
 type Actions = {
   greet: () => void;
-  handleUserMessage: (msg: string) => Promise<void> | void;
+  handleUserMessage: (text: string, nickname: string) => Promise<void> | void;
 };
 
 type MessageParserProps = {
@@ -21,12 +20,8 @@ const MessageParser: React.FC<MessageParserProps> = ({ children, actions }) => {
     const trimmed = message.trim();
     if (!trimmed) return;
     
-    // Encode the nickname into the message before it gets added to state
-    // This ensures the user message component can decode and display it
-    const encodedMessage = encodeUserText(nickname, trimmed);
-    
-    // Route all messages to the backend for now
-    actions.handleUserMessage(encodedMessage);
+    // Pass plain text and nickname separately (no encoding)
+    actions.handleUserMessage(trimmed, nickname);
   };
 
   return (

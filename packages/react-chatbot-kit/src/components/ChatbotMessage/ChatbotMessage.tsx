@@ -7,11 +7,17 @@ import Loader from '../Loader/Loader';
 import './ChatbotMessage.css';
 import { callIfExists } from '../Chat/chatUtils';
 import { ICustomComponents, ICustomStyles } from '../../interfaces/IConfig';
-import { decodeBotMessage } from '../../utils/messageEncoding';
 import { scrollToMessage } from '../../utils/messageRegistry';
 
 interface IChatbotMessageProps {
+  /** Plain text message content (no encoding) */
   message: string;
+  
+  /** Bot reply metadata */
+  replyToId?: string;
+  replyToPreview?: string;
+  replyToNickname?: string;
+  
   withAvatar?: boolean;
   loading?: boolean;
   messages: any[];
@@ -21,8 +27,12 @@ interface IChatbotMessageProps {
   customComponents?: ICustomComponents;
   customStyles: { backgroundColor: string };
 }
+
 const ChatbotMessage = ({
   message,
+  replyToId,
+  replyToPreview,
+  replyToNickname,
   withAvatar = true,
   loading,
   messages,
@@ -34,9 +44,6 @@ const ChatbotMessage = ({
 }: IChatbotMessageProps) => {
   const [show, toggleShow] = useState(false);
 
-  // Decode message to extract reply metadata
-  const { content, replyToId, replyToPreview, replyToNickname } = decodeBotMessage(message);
-
   const handleReplyClick = () => {
     if (!replyToId) return;
     console.log('Clicking reply label, scrolling to:', replyToId);
@@ -46,7 +53,7 @@ const ChatbotMessage = ({
   useEffect(() => {
     // Only auto-disable loading if the message has actual content
     // Empty content messages (loading placeholders) should keep loading state until replaced
-    if (!content || content.trim().length === 0 || !setState) {
+    if (!message || message.trim().length === 0 || !setState) {
       return; // Don't set any timeout for empty messages
     }
 
@@ -54,11 +61,11 @@ const ChatbotMessage = ({
     if (delay) defaultDisableTime += delay;
 
     const timeoutId = setTimeout(() => {
-      const newMessages = [...messages].map(message => {
-        if (message.id === id) {
-          return {...message, loading: false, delay: undefined};
+      const newMessages = [...messages].map(msg => {
+        if (msg.id === id) {
+          return {...msg, loading: false, delay: undefined};
         }
-        return message;
+        return msg;
       });
 
       setState((state: any) => ({...state, messages: newMessages}));
@@ -67,7 +74,7 @@ const ChatbotMessage = ({
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [content, delay, id]);
+  }, [message, delay, id]);
 
   useEffect(() => {
     if (delay) {
@@ -117,7 +124,7 @@ const ChatbotMessage = ({
             <ConditionallyRender
               condition={!!customComponents?.botChatMessage}
               show={callIfExists(customComponents?.botChatMessage, {
-                message: content,
+                message,
                 loader: <Loader />,
               })}
               elseShow={
@@ -128,7 +135,7 @@ const ChatbotMessage = ({
                   <ConditionallyRender
                     condition={loading}
                     show={<Loader />}
-                    elseShow={<span>{content}</span>}
+                    elseShow={<span>{message}</span>}
                   />
                   <ConditionallyRender
                     condition={withAvatar}

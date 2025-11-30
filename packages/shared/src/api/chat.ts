@@ -2,21 +2,31 @@
  * Chat API types for lateral thinking puzzle interactions
  */
 
-export type ChatRole = 'user' | 'bot' | 'system';
+import type { ChatMessage, UserMessage, BotMessage } from '../types/messages';
 
-export interface ChatMessage {
-  role: ChatRole;
-  content: string;
-  timestamp: string; // ISO string
-}
-
+/**
+ * Chat Request
+ * Sent from client to server when user sends a message
+ */
 export interface ChatRequest {
+  /** Optional puzzle identifier (if targeting specific puzzle) */
   puzzleId?: string;
-  message: string;
+  
+  /** The user message being sent */
+  message: UserMessage;
+  
+  /** Conversation history for context */
   history: ChatMessage[];
 }
 
+/**
+ * Chat Response
+ * Sent from server to client with bot reply
+ */
 export interface ChatResponse {
-  reply: ChatMessage;
-  newState?: Record<string, unknown>; // optional puzzle/session data
+  /** Bot's reply message with full metadata */
+  reply: BotMessage;
+  
+  /** Optional game/session state updates */
+  newState?: Record<string, unknown>;
 }
