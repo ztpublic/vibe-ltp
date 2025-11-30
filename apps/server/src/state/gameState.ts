@@ -50,7 +50,6 @@ const MAX_QUESTION_HISTORY = 100;
 interface QuestionHistory {
   question: string;
   answer: string;
-  tips?: string;
   timestamp: Date;
 }
 
@@ -120,13 +119,11 @@ export function setPuzzleContent(content: PuzzleContent | undefined): void {
  * 
  * @param question - The question text
  * @param answer - The answer type (yes/no/irrelevant/both/unknown)
- * @param tips - Optional tips or explanation
  */
-export function addQuestionToHistory(question: string, answer: string, tips?: string): void {
+export function addQuestionToHistory(question: string, answer: string): void {
   questionHistory.push({
     question,
     answer,
-    tips,
     timestamp: new Date(),
   });
   
@@ -137,33 +134,21 @@ export function addQuestionToHistory(question: string, answer: string, tips?: st
 }
 
 /**
+ * Get conversation history in the format expected by PuzzleContext
+ * Returns array of {question, answer} pairs
+ */
+export function getConversationHistory(): Array<{ question: string; answer: string }> {
+  return questionHistory.map(item => ({
+    question: item.question,
+    answer: item.answer,
+  }));
+}
+
+/**
  * Get question history
  */
 export function getQuestionHistory(): readonly QuestionHistory[] {
   return questionHistory;
-}
-
-/**
- * Generate a summary of what players have learned so far
- * This helps keep the agent context compact (agent-flow.md section C2)
- */
-export function getHistorySummary(): string {
-  if (questionHistory.length === 0) {
-    return '';
-  }
-
-  const summaryLines: string[] = [];
-  
-  for (const item of questionHistory) {
-    if (item.answer === 'yes') {
-      summaryLines.push(`✓ ${item.question}`);
-    } else if (item.answer === 'no') {
-      summaryLines.push(`✗ ${item.question}`);
-    }
-    // Skip irrelevant/both/unknown for summary brevity
-  }
-
-  return summaryLines.join('\n');
 }
 
 /**

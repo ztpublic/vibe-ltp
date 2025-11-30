@@ -10,6 +10,14 @@ import { createEvaluateQuestionTool, EvaluateQuestionArgsSchema, type EvaluateQu
 import type { ChatMessage } from './types.js';
 
 /**
+ * Question-answer pair in conversation history
+ */
+export interface QuestionAnswerPair {
+  question: string;
+  answer: string;
+}
+
+/**
  * Context for puzzle evaluation
  */
 export interface PuzzleContext {
@@ -17,8 +25,8 @@ export interface PuzzleContext {
   surface: string;
   /** The puzzle truth/solution (汤底) - the full story */
   truth: string;
-  /** Optional history summary of what players have learned so far */
-  historySummary?: string;
+  /** Structured conversation history as question-answer pairs */
+  conversationHistory: QuestionAnswerPair[];
 }
 
 /**
@@ -27,10 +35,6 @@ export interface PuzzleContext {
 export interface PuzzleEvaluationResult {
   /** The canonical answer type */
   answer: 'yes' | 'no' | 'irrelevant' | 'both' | 'unknown';
-  /** Optional tips for players */
-  tips?: string;
-  /** Full conversation history including tool calls */
-  conversationHistory: Array<ChatMessage | any>;
 }
 
 /**
@@ -52,12 +56,6 @@ ANSWER SEMANTICS:
 - "irrelevant": The answer doesn't matter for solving the puzzle (standard in situation puzzles)
 - "both": Both yes and no apply in different senses that matter to the puzzle
 - "unknown": The truth doesn't specify, or any yes/no would be misleading
-
-TIPS GUIDANCE:
-- Use tips sparingly to guide players when they're stuck or going off-track
-- Tips should be brief hints, not direct answers
-- Examples: "Focus on WHERE this happened" or "The time of day matters here"
-- Leave tips blank when the question is on the right track
 
 OUTPUT FORMAT REQUIREMENT:
 You MUST always respond ONLY by calling the tool "evaluate_question_against_truth". Do not chat directly to the user.`;
@@ -82,11 +80,16 @@ function buildContextMessages(context: PuzzleContext): ChatMessage[] {
     content: `PUZZLE TRUTH (汤底):\n${context.truth}`,
   });
 
-  // Add history summary if available
-  if (context.historySummary) {
+  // Add latest 10 conversation history entries if available
+  if (context.conversationHistory.length > 0) {
+    const recentHistory = context.conversationHistory.slice(-10);
+    const historyText = recentHistory
+      .map(item => `Q: ${item.question}\nA: ${item.answer}`)
+      .join('\n\n');
+    
     messages.push({
       role: 'assistant',
-      content: `SO FAR, PLAYERS KNOW:\n${context.historySummary}`,
+      content: `RECENT CONVERSATION HISTORY (latest 10):\n${historyText}`,
     });
   }
 
@@ -98,9 +101,9 @@ function buildContextMessages(context: PuzzleContext): ChatMessage[] {
  * This is the main entry point for the simplified agent (agent-flow.md section D)
  * 
  * @param question - The player's question
- * @param context - Puzzle context (surface, truth, history)
+ * @param context - Puzzle context (surface, truth, conversationHistory)
  * @param model - LLM model to use
- * @returns Evaluation result with answer and optional tips
+ * @returns Evaluation result with answer
  */
 export async function evaluatePuzzleQuestion(
   question: string,
@@ -129,15 +132,8 @@ export async function evaluatePuzzleQuestion(
     },
   };
 
-  console.log('\n🧩 Puzzle Agent - Evaluating Question');
-  console.log('═'.repeat(60));
-  console.log('📝 Question:', question);
-  console.log('🎭 Surface:', context.surface.substring(0, 100) + '...');
-  console.log('🔍 Truth:', context.truth.substring(0, 100) + '...');
-  if (context.historySummary) {
-    console.log('📜 History:', context.historySummary.substring(0, 100) + '...');
-  }
-  console.log('═'.repeat(60));
+  console.log('\n[Puzzle Agent]');
+  console.log('Input:', question);
 
   try {
     // Call LLM with tool
@@ -151,37 +147,25 @@ export async function evaluatePuzzleQuestion(
       maxSteps: 1, // Single step - we only need the tool call
     });
 
-    console.log('\n✅ Agent Response:');
-    console.log('─'.repeat(60));
-
     // Extract tool call result
     if (result.toolCalls && result.toolCalls.length > 0) {
       const toolCall = result.toolCalls[0];
       if (toolCall) {
         const args = toolCall.args as EvaluateQuestionArgs;
         
-        console.log('📊 Answer:', args.answer.toUpperCase());
-        if (args.tips) {
-          console.log('💡 Tips:', args.tips);
-        }
-        console.log('─'.repeat(60));
+        console.log('Output:', args.answer.toUpperCase());
 
         return {
           answer: args.answer,
-          tips: args.tips,
-          conversationHistory: messages,
         };
       }
     }
 
     // Fallback if no tool call (shouldn't happen with proper prompt)
-    console.warn('⚠️  No tool call received from LLM');
-    console.log('─'.repeat(60));
+    console.log('Output: UNKNOWN (no tool call)');
     
     return {
       answer: 'unknown',
-      tips: 'Unable to evaluate this question.',
-      conversationHistory: messages,
     };
   } catch (error) {
     console.error('❌ Error evaluating puzzle question:', error);
@@ -195,18 +179,12 @@ export async function evaluatePuzzleQuestion(
  */
 export function formatEvaluationReply(result: PuzzleEvaluationResult): string {
   const answerLabels = {
-    yes: '是 (Yes)',
-    no: '否 (No)',
-    irrelevant: '无关 (Irrelevant)',
-    both: '两者都是 (Both)',
-    unknown: '未知 (Unknown)',
+    yes: '是',
+    no: '否',
+    irrelevant: '无关',
+    both: '两者都是',
+    unknown: '未知',
   };
 
-  const answerLine = `**回答: ${answerLabels[result.answer]}**`;
-  
-  if (result.tips) {
-    return `${answerLine}\n\n*${result.tips}*`;
-  }
-  
-  return answerLine;
+  return answerLabels[result.answer];
 }

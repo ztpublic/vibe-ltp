@@ -9,7 +9,7 @@ import {
   getChatMessages,
   addQuestionToHistory,
   getQuestionHistory,
-  getHistorySummary,
+  getConversationHistory,
   type PersistedMessage
 } from './gameState.js';
 
@@ -106,14 +106,23 @@ describe('Game State Management', () => {
 
   describe('Question History', () => {
     it('should add questions to history', () => {
-      addQuestionToHistory('Is it day?', 'yes', 'Good observation');
+      addQuestionToHistory('Is it day?', 'yes');
       const history = getQuestionHistory();
       
       expect(history).toHaveLength(1);
       expect(history[0]?.question).toBe('Is it day?');
       expect(history[0]?.answer).toBe('yes');
-      expect(history[0]?.tips).toBe('Good observation');
       expect(history[0]?.timestamp).toBeInstanceOf(Date);
+    });
+
+    it('should provide conversation history in correct format', () => {
+      addQuestionToHistory('Is it day?', 'yes');
+      addQuestionToHistory('Is it night?', 'no');
+      
+      const convHistory = getConversationHistory();
+      expect(convHistory).toHaveLength(2);
+      expect(convHistory[0]).toEqual({ question: 'Is it day?', answer: 'yes' });
+      expect(convHistory[1]).toEqual({ question: 'Is it night?', answer: 'no' });
     });
 
     it('should trim question history when exceeding limit', () => {
@@ -125,32 +134,6 @@ describe('Game State Management', () => {
       const history = getQuestionHistory();
       expect(history.length).toBe(100);
       expect(history[0]?.question).toBe('Question 1?'); // First question (0) trimmed
-    });
-
-    it('should generate correct summary', () => {
-      addQuestionToHistory('Is it day?', 'yes');
-      addQuestionToHistory('Is it night?', 'no');
-      addQuestionToHistory('What time?', 'irrelevant');
-      
-      const summary = getHistorySummary();
-      expect(summary).toContain('✓ Is it day?');
-      expect(summary).toContain('✗ Is it night?');
-      expect(summary).not.toContain('What time?');
-    });
-
-    it('should return empty string for no history', () => {
-      expect(getHistorySummary()).toBe('');
-    });
-
-    it('should include yes and no answers in summary', () => {
-      addQuestionToHistory('Question 1?', 'yes');
-      addQuestionToHistory('Question 2?', 'no');
-      addQuestionToHistory('Question 3?', 'both');
-      addQuestionToHistory('Question 4?', 'unknown');
-      
-      const summary = getHistorySummary();
-      const lines = summary.split('\n');
-      expect(lines.length).toBe(2); // Only yes/no questions
     });
   });
 

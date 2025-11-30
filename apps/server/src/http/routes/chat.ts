@@ -29,7 +29,7 @@ router.post('/chat', async (req, res) => {
     const puzzleContext: PuzzleContext = {
       surface: puzzleContent.soupSurface,
       truth: puzzleContent.soupTruth,
-      historySummary: gameState.getHistorySummary(),
+      conversationHistory: gameState.getConversationHistory(),
     };
 
     // Use puzzle agent to evaluate question
@@ -44,8 +44,7 @@ router.post('/chat', async (req, res) => {
     // Add to question history
     gameState.addQuestionToHistory(
       userMessage,
-      evaluation.answer,
-      evaluation.tips
+      evaluation.answer
     );
 
     // Format reply for chat UI
