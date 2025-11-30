@@ -247,3 +247,27 @@ export const Started_Interactive: Story = {
     );
   },
 };
+
+// Story 11: All facts revealed to showcase progress indicator
+export const Started_AllFactsRevealed: Story = {
+  render: () => {
+    const gameStateController = useMockGameStateController({
+      gameState: 'Started',
+      puzzleContent: {
+        ...samplePuzzle,
+        facts: samplePuzzle.facts?.map((fact) => ({ ...fact, revealed: true })),
+      },
+      isConnected: true,
+    });
+    const chatHistoryController = useMockChatHistoryController(generateMockConversation(6));
+    const chatService = new MockChatService();
+
+    return (
+      <ChatHome
+        gameStateController={gameStateController}
+        chatService={chatService}
+        chatHistoryController={chatHistoryController}
+      />
+    );
+  },
+};

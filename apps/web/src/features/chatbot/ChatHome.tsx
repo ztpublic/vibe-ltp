@@ -5,7 +5,7 @@ import { SoupBotChat, type SoupBotChatRef } from './index';
 import type { ChatService } from './services';
 import type { GameStateController, ChatHistoryController } from './controllers';
 import { IdentityProvider } from './identity/useChatIdentity';
-import { PuzzleInputDialog } from './components';
+import { FactsList, PuzzleInputDialog } from './components';
 import type { BotMessage } from '@vibe-ltp/shared';
 import type { Toast } from './utils/notifications';
 
@@ -89,13 +89,15 @@ export const ChatHome = ({
           </div>
           <div className="flex flex-row gap-4 h-full w-full max-w-screen-xl">
             {/* Left side - Puzzle Surface (汤面) */}
-            <div className="w-[30vw] h-full flex flex-col">
-              <div className="h-full border border-[#3e3e42] rounded-lg bg-[#252526] p-4 flex flex-col">
+            <div className="w-[30vw] h-full flex flex-col gap-4">
+              <div className="flex-1 min-h-0 border border-[#3e3e42] rounded-lg bg-[#252526] p-4 flex flex-col">
                 <h2 className="text-xl font-semibold text-white mb-4">汤面</h2>
                 <div className="text-[#cccccc] whitespace-pre-wrap flex-1 overflow-auto">
                   {puzzleContent?.soupSurface || '等待开始新汤...'}
                 </div>
               </div>
+
+              <FactsList facts={puzzleContent?.facts} isGameStarted={isGameStarted} />
             </div>
             
             {/* Center - Chatbot */}

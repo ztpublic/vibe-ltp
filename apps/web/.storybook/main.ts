@@ -7,7 +7,8 @@ const dirname =
   typeof __dirname !== 'undefined'
     ? __dirname
     : path.dirname(fileURLToPath(import.meta.url));
-const workspaceRoot = path.resolve(dirname, '..', '..');
+// .storybook lives at apps/web/.storybook, so three levels up is repo root
+const workspaceRoot = path.resolve(dirname, '..', '..', '..');
 const chatbotKitPath = path.resolve(workspaceRoot, 'packages', 'react-chatbot-kit');
 
 const config: StorybookConfig = {
