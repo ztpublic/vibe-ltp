@@ -1,4 +1,14 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import type { StorybookConfig } from '@storybook/nextjs-vite';
+
+const dirname =
+  typeof __dirname !== 'undefined'
+    ? __dirname
+    : path.dirname(fileURLToPath(import.meta.url));
+const workspaceRoot = path.resolve(dirname, '..', '..');
+const chatbotKitPath = path.resolve(workspaceRoot, 'packages', 'react-chatbot-kit');
 
 const config: StorybookConfig = {
   "stories": [
@@ -22,8 +32,16 @@ const config: StorybookConfig = {
     config.resolve = config.resolve || {};
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@vibe-ltp/react-chatbot-kit/build/main.css': '/Users/zt/projects/vibe-ltp/packages/react-chatbot-kit/build/main.css',
-      '@vibe-ltp/react-chatbot-kit': '/Users/zt/projects/vibe-ltp/packages/react-chatbot-kit/build/index.js',
+      '@vibe-ltp/react-chatbot-kit/build/main.css': path.resolve(
+        chatbotKitPath,
+        'build',
+        'main.css',
+      ),
+      '@vibe-ltp/react-chatbot-kit': path.resolve(
+        chatbotKitPath,
+        'build',
+        'index.js',
+      ),
     };
     
     // Ensure CommonJS interop
