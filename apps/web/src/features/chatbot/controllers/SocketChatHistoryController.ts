@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Socket } from 'socket.io-client';
 import { SOCKET_EVENTS } from '@vibe-ltp/shared';
 import { acquireSocket, releaseSocket } from '../../../lib/socketManager';
+import type { Toast } from '../utils/notifications';
 import type { ChatHistoryController, ChatHistoryMessage } from './ChatHistoryController';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${process.env.NEXT_PUBLIC_BACKEND_PORT || 4000}`;
@@ -18,10 +19,11 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${p
  * Hook that provides a socket-based chat history controller for production
  * Handles chat history sync and message persistence via Socket.IO
  */
-export function useSocketChatHistoryController(): ChatHistoryController {
+export function useSocketChatHistoryController(onNotify?: (toast: Toast) => void): ChatHistoryController {
   const [messages, setMessages] = useState<ChatHistoryMessage[]>([]);
   const socketRef = useRef<Socket | null>(null);
   const hasRestoredRef = useRef(false);
+  const everConnectedRef = useRef(false);
   const pendingRestoreResolvers = useRef<((msgs: ChatHistoryMessage[]) => void)[]>([]);
   const pendingRestoreRejectors = useRef<((err: Error) => void)[]>([]);
 
@@ -67,6 +69,7 @@ export function useSocketChatHistoryController(): ChatHistoryController {
 
     const handleConnect = () => {
       hasRestoredRef.current = false;
+      everConnectedRef.current = true;
     };
 
     const handleDisconnect = () => {
@@ -76,7 +79,10 @@ export function useSocketChatHistoryController(): ChatHistoryController {
 
     // Listen for chat history sync (initial load)
     const handleChatHistorySync = (data: { messages: ChatHistoryMessage[] }) => {
-      console.log('[SocketChatHistoryController] Received history:', data.messages.length, 'messages');
+      onNotify?.({
+        type: 'info',
+        message: `已同步历史消息 (${data.messages.length} 条)`,
+      });
       mergeAndSortMessages(data.messages);
       hasRestoredRef.current = true;
       resolvePendingRestores(data.messages);
@@ -84,7 +90,6 @@ export function useSocketChatHistoryController(): ChatHistoryController {
 
     // Listen for new messages broadcast from server
     const handleMessageAdded = (data: { message: ChatHistoryMessage }) => {
-      console.log('[SocketChatHistoryController] Received new message:', data.message.type, data.message.id);
       mergeAndSortMessages([data.message]);
     };
 
@@ -106,7 +111,6 @@ export function useSocketChatHistoryController(): ChatHistoryController {
   const onMessageAdded = useCallback((message: ChatHistoryMessage) => {
     const socket = socketRef.current;
     if (socket?.connected) {
-      console.log('[SocketChatHistoryController] Emitting message to server:', message.type, message.id);
       socket.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, {
         message: {
           ...message,
@@ -114,7 +118,12 @@ export function useSocketChatHistoryController(): ChatHistoryController {
         },
       });
     } else {
-      console.warn('[SocketChatHistoryController] Socket not connected, cannot emit message');
+      if (everConnectedRef.current) {
+        onNotify?.({
+          type: 'warning',
+          message: '连接已断开，暂存消息未发送',
+        });
+      }
     }
   }, []);
 
@@ -125,7 +134,12 @@ export function useSocketChatHistoryController(): ChatHistoryController {
 
     const socket = socketRef.current;
     if (!socket || !socket.connected) {
-      console.warn('[SocketChatHistoryController] Cannot sync history: socket disconnected');
+      if (everConnectedRef.current) {
+        onNotify?.({
+          type: 'warning',
+          message: '连接已断开，无法同步聊天记录',
+        });
+      }
       return messages;
     }
 
@@ -144,7 +158,10 @@ export function useSocketChatHistoryController(): ChatHistoryController {
       return restored;
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
-      console.warn('[SocketChatHistoryController] History sync failed:', error.message);
+      onNotify?.({
+        type: 'warning',
+        message: `聊天记录同步失败：${error.message}`,
+      });
       rejectPendingRestores(error);
       return messages;
     }

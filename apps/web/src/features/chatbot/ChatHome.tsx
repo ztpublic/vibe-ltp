@@ -7,6 +7,7 @@ import type { GameStateController, ChatHistoryController } from './controllers';
 import { IdentityProvider } from './identity/useChatIdentity';
 import { PuzzleInputDialog } from './components';
 import type { BotMessage } from '@vibe-ltp/shared';
+import type { Toast } from './utils/notifications';
 
 export interface ChatHomeProps {
   gameStateController: GameStateController;
@@ -14,6 +15,7 @@ export interface ChatHomeProps {
   chatHistoryController?: ChatHistoryController;
   onStartGame?: (content: { soupSurface: string; soupTruth: string }) => void;
   onResetGame?: () => void;
+  toasts?: Toast[];
 }
 
 export const ChatHome = ({ 
@@ -22,6 +24,7 @@ export const ChatHome = ({
   chatHistoryController,
   onStartGame,
   onResetGame,
+  toasts = [],
 }: ChatHomeProps) => {
   const { gameState, puzzleContent, startGame, resetGame } = gameStateController;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -67,7 +70,23 @@ export const ChatHome = ({
   return (
     <IdentityProvider>
       <div className="h-screen bg-[#1e1e1e] flex flex-col">
-        <main className="flex-1 flex items-center justify-center p-4 overflow-hidden">
+        <main className="flex-1 flex items-center justify-center p-4 overflow-hidden relative">
+          <div className="absolute top-4 right-4 space-y-2">
+            {toasts.map((toast) => (
+              <div
+                key={toast.id}
+                className={`px-3 py-2 rounded text-xs shadow transition ${
+                  toast.type === 'error'
+                    ? 'bg-red-500/20 text-red-200 border border-red-500/40'
+                    : toast.type === 'warning'
+                      ? 'bg-amber-500/20 text-amber-200 border border-amber-500/40'
+                      : 'bg-sky-500/20 text-sky-200 border border-sky-500/40'
+                }`}
+              >
+                {toast.message}
+              </div>
+            ))}
+          </div>
           <div className="flex flex-row gap-4 h-full w-full max-w-screen-xl">
             {/* Left side - Puzzle Surface (汤面) */}
             <div className="w-[30vw] h-full flex flex-col">

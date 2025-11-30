@@ -99,6 +99,9 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
     if (!chatHistoryController) return;
 
     const runSync = async () => {
+      if (messageStoreRef.current?.getMessages().length) {
+        return;
+      }
       try {
         const synced = await chatHistoryController.syncHistory();
         if (!isActive || !messageStoreRef.current) return;
