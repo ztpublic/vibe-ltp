@@ -75,3 +75,26 @@ export interface ConnectionDistillerRunnerOptions {
   systemPrompt?: string;
   cases: ConnectionCase[];
 }
+
+export interface FactCase {
+  id: string;
+  truth: string;
+  notes?: string;
+}
+
+export interface FactDistillerRunResult {
+  caseId: string;
+  facts: string[];
+  durationMs: number;
+  startedAt: string;
+  completedAt: string;
+  error?: string;
+  notes?: string;
+}
+
+export interface FactDistillerRunnerOptions {
+  model: string;
+  fallbackModel?: string;
+  systemPrompt?: string;
+  cases: FactCase[];
+}

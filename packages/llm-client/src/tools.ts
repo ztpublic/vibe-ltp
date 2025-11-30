@@ -39,6 +39,17 @@ export const DistillConnectionsArgsSchema = z.object({
 export type DistillConnectionsArgs = z.infer<typeof DistillConnectionsArgsSchema>;
 
 /**
+ * Arguments for distill_facts tool
+ */
+export const DistillFactsArgsSchema = z.object({
+  facts: z.array(z.string().min(3)).length(3).describe(
+    'Exactly three essential factual statements that capture the core of the puzzle truth without spoilers.'
+  ),
+});
+
+export type DistillFactsArgs = z.infer<typeof DistillFactsArgsSchema>;
+
+/**
  * Tool for evaluating puzzle questions against the truth
  * This is the core tool for the question validator agent
  */
@@ -63,6 +74,18 @@ export function createDistillConnectionsTool(): AgentTool<DistillConnectionsArgs
     description:
       'Extract 3-6 concise connection statements that bridge the puzzle surface to the underlying truth, ordered from surface-adjacent to truth-adjacent.',
     argsSchema: DistillConnectionsArgsSchema,
+    execute: async (args) => args,
+  });
+}
+
+/**
+ * Tool for extracting core facts from the puzzle truth
+ */
+export function createDistillFactsTool(): AgentTool<DistillFactsArgs, DistillFactsArgs> {
+  return defineTool({
+    name: 'distill_facts',
+    description: 'Extract exactly 3 key factual statements that summarize the core of the puzzle truth.',
+    argsSchema: DistillFactsArgsSchema,
     execute: async (args) => args,
   });
 }

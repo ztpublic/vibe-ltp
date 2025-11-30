@@ -34,7 +34,7 @@ ROLE:
 - Your job is to propose concise bridging statements ("connections") that make it easier for players to infer the truth without directly revealing it.
 
 CONNECTION RULES:
-- Each connection is a single clear statement (no numbering).
+- Each connection is a single clear statement in Chinese (no numbering).
 - Not a copy of the surface or truth; instead, a missing link that can be reasoned to from the surface and truth combined.
 - Ordered from closest to the surface toward closest to the truth.
 - 3-6 connections depending on puzzle complexity.
