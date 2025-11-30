@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import React from 'react';
-import Chatbot from 'react-chatbot-kit';
-import 'react-chatbot-kit/build/main.css';
+import { Chatbot } from '@vibe-ltp/react-chatbot-kit';
+import '@vibe-ltp/react-chatbot-kit/build/main.css';
 import '../src/features/chatbot/chatbot.css';
 import config from '../src/features/chatbot/config';
 import ActionProvider from '../src/features/chatbot/ActionProvider';
 import MessageParser from '../src/features/chatbot/MessageParser';
 import { MockChatService } from '../src/features/chatbot/services';
 import { encodeBotMessage, encodeUserText, generateMessageId, truncateText } from '../src/features/chatbot/utils/chatEncoding';
-import { createChatBotMessage, createClientMessage } from 'react-chatbot-kit';
+import { createChatBotMessage, createClientMessage } from '@vibe-ltp/react-chatbot-kit';
 import { IdentityProvider } from '../src/features/chatbot/identity';
 
 // Q&A pairs for the story

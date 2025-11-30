@@ -1,6 +1,6 @@
 'use client';
 
-import { createChatBotMessage } from 'react-chatbot-kit';
+import { createChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
 import { PuzzleBotMessage } from './components/PuzzleBotMessage';
 import { PuzzleUserMessage } from './components/PuzzleUserMessage';
 import { NicknameBadge } from './components/NicknameBadge';

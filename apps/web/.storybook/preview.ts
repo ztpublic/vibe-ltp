@@ -1,5 +1,5 @@
 import type { Preview } from '@storybook/nextjs-vite';
-import 'react-chatbot-kit/build/main.css';
+import '@vibe-ltp/react-chatbot-kit/build/main.css';
 import '../app/globals.css';
 
 const preview: Preview = {

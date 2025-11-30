@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useImperativeHandle, useRef, useState, useEffect } from 'react';
-import Chatbot from 'react-chatbot-kit';
-import 'react-chatbot-kit/build/main.css';
+import { Chatbot } from '@vibe-ltp/react-chatbot-kit';
+import '@vibe-ltp/react-chatbot-kit/build/main.css';
 import './chatbot.css';
 import config from './config';
 import ActionProvider from './ActionProvider';

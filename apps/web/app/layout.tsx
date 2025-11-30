@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import 'react-chatbot-kit/build/main.css';
+import '@vibe-ltp/react-chatbot-kit/build/main.css';
 import './globals.css';
 
 export const metadata: Metadata = {

@@ -16,6 +16,16 @@ const config: StorybookConfig = {
   "framework": "@storybook/nextjs-vite",
   "staticDirs": [
     "../public"
-  ]
+  ],
+  async viteFinal(config) {
+    // Ensure CommonJS interop for react-chatbot-kit
+    if (config.optimizeDeps) {
+      config.optimizeDeps.include = [
+        ...(config.optimizeDeps.include || []),
+        '@vibe-ltp/react-chatbot-kit',
+      ];
+    }
+    return config;
+  },
 };
 export default config;
