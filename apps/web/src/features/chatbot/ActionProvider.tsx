@@ -142,12 +142,54 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
       return prev;
     });
 
-    // Note: In the future, we can pass nickname to the backend in the request
-    // For now, it's encoded in the message text for display purposes
-    const reply = await chatService.sendMessage(userMessage, history);
-    
-    // Append bot message with reply metadata including nickname
-    appendBotMessage(reply, userMessageId, userMessagePreview, msgNickname);
+    // Add loading indicator message
+    const loadingMessage = createChatBotMessage('', {});
+    setState((prev: any) => ({
+      ...prev,
+      messages: [...prev.messages, loadingMessage],
+    }));
+
+    // Create a timeout promise
+    const TIMEOUT_MS = 30000; // 30 seconds
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Response timeout')), TIMEOUT_MS);
+    });
+
+    try {
+      // Race between API call and timeout
+      const reply = await Promise.race([
+        chatService.sendMessage(userMessage, history),
+        timeoutPromise,
+      ]);
+
+      // Remove loading message and add actual reply
+      setState((prev: any) => ({
+        ...prev,
+        messages: prev.messages.slice(0, -1),
+      }));
+      
+      // Append bot message with reply metadata including nickname
+      appendBotMessage(reply, userMessageId, userMessagePreview, msgNickname);
+    } catch (error) {
+      // Remove loading message
+      setState((prev: any) => ({
+        ...prev,
+        messages: prev.messages.slice(0, -1),
+      }));
+
+      // Show error message - timeout or actual remote error
+      let errorMsg: string;
+      if (error instanceof Error && error.message === 'Response timeout') {
+        errorMsg = '⏱️ 请求超时（30秒），请重试。';
+      } else if (error instanceof Error) {
+        // Show the actual error from remote server
+        errorMsg = `❌ 错误: ${error.message}`;
+      } else {
+        errorMsg = '❌ 发生未知错误，请稍后重试。';
+      }
+      
+      appendBotMessage(errorMsg, userMessageId, userMessagePreview, msgNickname);
+    }
   };
 
   const actions = {

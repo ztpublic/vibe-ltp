@@ -21,7 +21,8 @@ export class ApiChatService implements ChatService {
       return data.reply.content;
     } catch (err) {
       console.error(err);
-      return '服务器好像出了点问题，请稍后再试。';
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      return `服务器错误: ${errorMessage}`;
     }
   }
 }
