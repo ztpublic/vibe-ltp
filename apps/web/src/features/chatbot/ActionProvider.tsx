@@ -8,6 +8,7 @@ import type { ChatHistoryController } from './controllers';
 import { v4 as uuidv4 } from 'uuid';
 import type { ChatbotMessageStore, ChatbotUiMessage } from './messageStore';
 import { createTimeoutController } from './utils/timeoutController';
+import { buildReplyMetadata, type PendingUserContext } from './replyMetadata';
 
 type ActionProviderProps = {
   createChatBotMessage: any;
@@ -24,10 +25,8 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
   chatHistoryController,
   messageStore,
 }) => {
-  // Track the last user message ID and nickname for reply linking
-  const lastUserMessageIdRef = useRef<string | null>(null);
-  const lastUserMessageTextRef = useRef<string | null>(null);
-  const lastUserMessageNicknameRef = useRef<string | null>(null);
+  // Track the last user message context for reply metadata
+  const pendingUserContextRef = useRef<PendingUserContext | null>(null);
 
   const emitMessageToServer = (message: ChatMessage) => {
     if (chatHistoryController) {
@@ -72,9 +71,11 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     const userMessagePreview = truncateText(userMessage, 40);
     
     // Store for use when bot replies
-    lastUserMessageIdRef.current = userMessageId;
-    lastUserMessageTextRef.current = userMessagePreview;
-    lastUserMessageNicknameRef.current = msgNickname;
+    pendingUserContextRef.current = {
+      id: userMessageId,
+      preview: userMessagePreview,
+      nickname: msgNickname,
+    };
     
     // Emit user message to server for persistence
     const userChatMessage: ChatMessage = {
@@ -117,13 +118,7 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
       // Append bot message with reply metadata including nickname
       const botReplyWithMetadata: BotMessage = {
         ...botReply,
-        replyMetadata: botReply.replyMetadata ?? (lastUserMessageIdRef.current && lastUserMessageTextRef.current && lastUserMessageNicknameRef.current
-          ? {
-              replyToId: lastUserMessageIdRef.current,
-              replyToPreview: lastUserMessageTextRef.current,
-              replyToNickname: lastUserMessageNicknameRef.current,
-            }
-          : undefined),
+        replyMetadata: botReply.replyMetadata ?? buildReplyMetadata(pendingUserContextRef.current),
       };
       appendBotMessage(botReplyWithMetadata);
     } catch (error) {
@@ -146,13 +141,7 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
         type: 'bot',
         content: errorMsg,
         timestamp: new Date().toISOString(),
-        replyMetadata: lastUserMessageIdRef.current && lastUserMessageTextRef.current && lastUserMessageNicknameRef.current
-          ? {
-              replyToId: lastUserMessageIdRef.current,
-              replyToPreview: lastUserMessageTextRef.current,
-              replyToNickname: lastUserMessageNicknameRef.current,
-            }
-          : undefined,
+        replyMetadata: buildReplyMetadata(pendingUserContextRef.current),
       };
       appendBotMessage(errorMessage);
     } finally {

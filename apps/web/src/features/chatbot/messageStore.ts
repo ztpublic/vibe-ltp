@@ -27,6 +27,7 @@ export type ChatbotMessageStore = {
   replaceMessages: (messages: ChatbotUiMessage[], options?: { preserveTrailingLoading?: boolean }) => void;
   mutateMessages: (updater: (messages: ChatbotUiMessage[]) => ChatbotUiMessage[]) => void;
   getTrailingLoadingMessage: () => ChatbotUiMessage | null;
+  getLatestUserMessage: () => ChatbotUiMessage | null;
 };
 
 type StoreDeps = {
@@ -84,6 +85,15 @@ export function createChatbotMessageStore({ getState, setState }: StoreDeps): Ch
     );
   };
 
+  const getLatestUserMessage = () => {
+    const messages = getMessages();
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const msg = messages[i];
+      if (msg?.type === 'user') return msg;
+    }
+    return null;
+  };
+
   const replaceMessages = (
     messages: ChatbotUiMessage[],
     options?: { preserveTrailingLoading?: boolean }
@@ -101,5 +111,6 @@ export function createChatbotMessageStore({ getState, setState }: StoreDeps): Ch
     replaceMessages,
     mutateMessages,
     getTrailingLoadingMessage,
+    getLatestUserMessage,
   };
 }
