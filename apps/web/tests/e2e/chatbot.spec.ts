@@ -152,83 +152,33 @@ test.describe('Chatbot Puzzle Flow', () => {
     await expect(chatInput).toBeVisible();
     await expect(chatInput).not.toBeDisabled();
     
-    // 3. Ask questions and verify responses
-    const questions = [
-      '这个男人之前遭遇过海难吗？',
-      '他在海上的时候吃过海龟汤吗？',
-      '他的朋友还活着吗？',
-      '汤里的肉是人肉吗？',
-      '他是因为知道了真相才自杀的吗？'
-    ];
+    // 3. Ask a single question and verify response (keep test fast)
+    const question = '这是海难导致的吗？';
+    const sendButton = page.locator('.react-chatbot-kit-chat-btn-send');
+    const botMessages = page.locator('.react-chatbot-kit-chat-bot-message span');
+    const initialBotCount = await botMessages.count();
     
-    // Track the number of bot messages before we start
-    let previousBotMessageCount = await page.locator('.react-chatbot-kit-chat-bot-message span').count();
+    await expect(chatInput).not.toBeDisabled();
+    await expect(chatInput).toBeEditable();
+    await chatInput.click();
+    await chatInput.fill(question);
+    await sendButton.click();
     
-    // Add a small wait to ensure the chatbot is fully initialized
-    await page.waitForTimeout(500);
+    await expect(
+      page.locator('.react-chatbot-kit-user-chat-message-container').filter({ hasText: question })
+    ).toBeVisible({ timeout: 10000 });
     
-    for (let i = 0; i < questions.length; i++) {
-      const question = questions[i]!;
-      
-      // Make sure the input is not disabled before interacting
-      await expect(chatInput).not.toBeDisabled();
-      await expect(chatInput).toBeEditable();
-      
-      // Type the question and click send button
-      await chatInput.click(); // Focus the input first
-      await chatInput.fill(question);
-      
-      // Wait a moment for the input to register
-      await page.waitForTimeout(100);
-      
-      // Click the send button instead of pressing Enter
-      const sendButton = page.locator('.react-chatbot-kit-chat-btn-send');
-      await expect(sendButton).toBeVisible();
-      await sendButton.click();
-      
-      // Wait for the user message to appear in the chat
-      await expect(
-        page.locator('.react-chatbot-kit-user-chat-message-container')
-          .filter({ hasText: question })
-      ).toBeVisible({ timeout: 10000 });
-      
-      // Try to wait for bot response, but don't fail the whole test if it times out
-      // This allows the test to continue even if the API is slow or fails
-      try {
-        const expectedBotMessageCount = previousBotMessageCount + 1;
-        await expect(async () => {
-          const currentCount = await page.locator('.react-chatbot-kit-chat-bot-message span').count();
-          expect(currentCount).toBeGreaterThanOrEqual(expectedBotMessageCount);
-        }).toPass({ timeout: 35000 });
-        
-        // Get the latest bot message and verify it has content
-        const botMessageSpans = page.locator('.react-chatbot-kit-chat-bot-message span');
-        const latestBotMessage = botMessageSpans.last();
-        
-        // Wait for the message to have actual content (not empty, not just loading)
-        await expect(async () => {
-          const text = await latestBotMessage.textContent();
-          expect(text).toBeTruthy();
-          expect(text!.trim().length).toBeGreaterThan(0);
-        }).toPass({ timeout: 35000 });
-        
-        const responseText = await latestBotMessage.textContent();
-        expect(responseText).toBeTruthy();
-        expect(responseText!.trim().length).toBeGreaterThan(0);
-        
-        // Update the count for the next iteration
-        previousBotMessageCount = await page.locator('.react-chatbot-kit-chat-bot-message span').count();
-      } catch (error) {
-        console.log(`Question ${i + 1} timed out or failed, continuing to next question...`);
-        // Update count anyway in case a partial response was added
-        previousBotMessageCount = await page.locator('.react-chatbot-kit-chat-bot-message span').count();
-      }
-    }
+    await expect(async () => {
+      const currentCount = await botMessages.count();
+      expect(currentCount).toBeGreaterThan(initialBotCount);
+    }).toPass({ timeout: 20000 });
     
-    // Verify we received responses for most questions (at least 3 out of 5)
-    // This allows for some API timeouts while still validating the gameplay flow
-    const finalBotMessageCount = await page.locator('.react-chatbot-kit-chat-bot-message span').count();
-    expect(finalBotMessageCount).toBeGreaterThanOrEqual(3);
+    const latestBotMessage = botMessages.last();
+    await expect(async () => {
+      const text = await latestBotMessage.textContent();
+      expect(text).toBeTruthy();
+      expect(text!.trim().length).toBeGreaterThan(0);
+    }).toPass({ timeout: 20000 });
     
     // 4. Reveal the truth
     await expect(revealButton).toBeEnabled();

@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:agent": "node test-puzzle-agent.mjs",
     "e2e": "playwright test",
+    "e2e:complete": "playwright test apps/web/tests/e2e/chatbot.spec.ts -g \"should handle complete gameplay flow with questions and answers\" --headed",
     "format": "prettier --write .",
     "sb": "pnpm -C apps/web storybook",
     "storybook:web": "pnpm -C apps/web storybook",
