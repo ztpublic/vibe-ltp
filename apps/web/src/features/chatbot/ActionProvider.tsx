@@ -7,6 +7,7 @@ import { truncateText } from '@vibe-ltp/react-chatbot-kit';
 import type { ChatHistoryController } from './controllers';
 import { v4 as uuidv4 } from 'uuid';
 import type { ChatbotMessageStore, ChatbotUiMessage } from './messageStore';
+import { createTimeoutController } from './utils/timeoutController';
 
 type ActionProviderProps = {
   createChatBotMessage: any;
@@ -94,11 +95,12 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     });
     messageStore.appendMessage(loadingMessage);
 
-    // Create a timeout promise
+    // Create a cancellable timeout
     const TIMEOUT_MS = 30000; // 30 seconds
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Response timeout')), TIMEOUT_MS);
-    });
+    const { promise: timeoutPromise, cancel: cancelTimeout } = createTimeoutController<never>(
+      TIMEOUT_MS,
+      'Response timeout'
+    );
 
     try {
       // Race between API call and timeout - send full user message object
@@ -153,6 +155,8 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
           : undefined,
       };
       appendBotMessage(errorMessage);
+    } finally {
+      cancelTimeout();
     }
   };
 
