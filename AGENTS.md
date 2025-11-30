@@ -4,12 +4,13 @@ This document provides context and guidance for AI agents working on the vibe-lt
 
 ## Project Overview
 
-**vibe-ltp** is a lateral thinking puzzle game built as a pnpm monorepo. Players solve mystery puzzles by asking yes/no questions to uncover hidden solutions.
+**vibe-ltp** is a lateral thinking puzzle game built as a pnpm monorepo. Players solve mystery puzzles by asking yes/no questions to uncover hidden solutions, with an LLM acting as the host/judge for player questions.
 
 ### Tech Stack
-- **Frontend**: Next.js 16 (App Router), React 18, Tailwind CSS
-- **Backend**: Node.js, Express, Socket.IO
+- **Frontend**: Next.js 16 (App Router), React 18, Tailwind CSS v4, TanStack Query
+- **Backend**: Node.js, Express, Socket.IO (websocket transport)
 - **Real-time**: Socket.IO for live rooms and Q&A
+- **LLM**: OpenRouter + AI SDK in `packages/llm-client`
 - **Monorepo**: pnpm workspaces with TypeScript project references
 
 ---
@@ -25,6 +26,9 @@ vibe-ltp/
 │   ├── puzzle-core/      # Domain logic (framework-free)
 │   ├── shared/           # Shared types, DTOs, Zod schemas
 │   ├── ui/               # Shared React components
+│   ├── llm-client/       # OpenRouter client + puzzle agents
+│   ├── agent-lab/        # CLI harness + fixtures for LLM experiments
+│   ├── react-chatbot-kit/ # Vendored chatbot kit used by the web UI
 │   └── config/           # Shared configs (ESLint, TS, Tailwind)
 └── .github/workflows/    # CI/CD
 ```
@@ -36,8 +40,11 @@ vibe-ltp/
 | `puzzle-core` | Pure domain logic (Puzzle, Session models) | `@vibe-ltp/shared` |
 | `shared` | Types, API constants, Zod schemas | `zod` |
 | `ui` | Reusable React components | `react`, `@vibe-ltp/shared` |
-| `server` | REST API + Socket.IO | `express`, `socket.io` |
-| `web` | Next.js UI | `next`, `@vibe-ltp/ui`, `@vibe-ltp/shared` |
+| `llm-client` | OpenRouter client + question validator agent helpers | `ai`, `@openrouter/ai-sdk-provider`, `zod` |
+| `agent-lab` | CLI experiments for LLM agents | `@vibe-ltp/llm-client`, `dotenv` |
+| `react-chatbot-kit` | Vendored chatbot kit | `react-conditionally-render` |
+| `server` | REST API + Socket.IO + LLM question validator | `express`, `socket.io`, `@vibe-ltp/llm-client` |
+| `web` | Next.js UI | `next`, `@vibe-ltp/ui`, `@vibe-ltp/shared`, `@vibe-ltp/react-chatbot-kit` |
 
 ---
 
@@ -54,15 +61,11 @@ vibe-ltp/
    pnpm install
    ```
 
-2. **Configure environment variables**
+2. **Configure environment variables** (root `.env`, copied from `.env.example`)
    ```bash
-   # Copy example env file
    cp .env.example .env
-   
-   # Edit .env and set required variables:
-   # - OPENROUTER_API_KEY (required for LLM features)
-   # - BACKEND_PORT (optional, default: 4000)
-   # - FRONTEND_PORT (optional, default: 3000)
+   # Required: OPENROUTER_API_KEY (needed for chat replies)
+   # Optional: LLM_MODEL_ID, BACKEND_PORT (default: 4000), FRONTEND_PORT (default: 3000), CORS_ORIGIN
    ```
 
 3. **Start dev servers**
@@ -71,8 +74,8 @@ vibe-ltp/
    pnpm dev
 
    # Or run individually
-   pnpm dev:web      # Frontend only (localhost:3000)
-   pnpm dev:server   # Backend only (localhost:4000)
+   pnpm dev:web      # Frontend only (defaults to localhost:3000)
+   pnpm dev:server   # Backend only (defaults to localhost:4000)
    
    # With custom ports
    FRONTEND_PORT=8080 BACKEND_PORT=8081 pnpm dev
@@ -88,6 +91,8 @@ pnpm e2e           # Run e2e tests (Playwright)
 pnpm format        # Format code with Prettier
 pnpm storybook:web # Run Storybook for visual component development
 pnpm build-storybook:web # Build Storybook for deployment
+pnpm agent-lab:demo # Run sample LLM agent experiments (OpenRouter)
+pnpm agent-lab:demo:connections # Connection-puzzle agent demo
 ```
 
 ---
@@ -107,17 +112,35 @@ pnpm build-storybook:web # Build Storybook for deployment
 
 **Note:** This project uses a simplified single-session architecture with global state management in the server instead of Session domain models. This approach better fits the single-page, single-game design.
 
-### 2. Shared Types in `shared`
+### 2. LLM Clients in `llm-client`
+
+- Use `packages/llm-client` for all OpenRouter calls (question validator, connection distiller, formatting helpers).
+- `validatePuzzleQuestion` is the entry point for judging player questions.
+- `formatValidationReply` turns agent output into chat-friendly responses.
+- Keep prompts/config centralized here; avoid duplicating prompt strings elsewhere.
+
+### 3. Shared Types in `shared`
 
 - Define all DTOs, API response types here
 - Use Zod for runtime validation
 - Import in both `server` and `web`
 
-### 3. UI Components in `ui`
+### 4. UI Components in `ui`
 
 - Reusable React components
 - No app-specific logic
 - Use Tailwind for styling
+
+### 5. Agent Experiments in `agent-lab`
+
+- Use `packages/agent-lab` to run offline/CLI experiments against OpenRouter.
+- Fixtures live in `packages/agent-lab/src/fixtures`.
+- Keep experiments out of runtime packages; they are for evaluation only.
+
+### 6. Server State
+
+- Backend currently runs a single-room, in-memory game state (`apps/server/src/state`).
+- Socket.IO uses websocket transport only; keep payloads lean to avoid reconnect thrash.
 
 ---
 
@@ -143,6 +166,13 @@ pnpm build-storybook:web # Build Storybook for deployment
 2. **Add handler** in `apps/server/src/sockets/index.ts`
 3. **Emit/listen** in `apps/web` components
 
+### Run an LLM Question Evaluation
+
+1. Ensure `.env` has `OPENROUTER_API_KEY`.
+2. Call `validatePuzzleQuestion` from `@vibe-ltp/llm-client` with puzzle context (surface, truth, conversation history).
+3. Use `formatValidationReply` for UI-friendly responses.
+4. Keep agent prompts/settings close to `llm-client`; avoid duplicating prompt text in app code.
+
 ---
 
 ## Testing Guidelines
@@ -157,26 +187,19 @@ pnpm build-storybook:web # Build Storybook for deployment
 - `packages/puzzle-core/src/models/Puzzle.test.ts` - Puzzle domain model
 - `apps/server/src/state/gameState.test.ts` - Game state management with validation
 - `apps/server/src/utils/errorHandler.test.ts` - Socket error handling utilities
-
-**Example:**
-```ts
-// packages/puzzle-core/src/models/Puzzle.test.ts
-import { describe, it, expect } from 'vitest';
-import { Puzzle } from './Puzzle';
-
-describe('Puzzle Model', () => {
-  it('should check for tag existence', () => {
-    const puzzle = new Puzzle(/*...*/);
-    expect(puzzle.hasTag('classic')).toBe(true);
-  });
-});
-```
+- `packages/llm-client` - Keep pure helpers testable without hitting network (mock AI SDK)
 
 ### E2E Tests (Playwright)
 
 - Test critical user flows
 - Run: `pnpm e2e`
 - See `AGENT_TIPS_PLAYWRIGHT.md` for details
+
+### Agent Lab Experiments
+
+- `pnpm agent-lab:demo` runs the sample question validator suite.
+- `pnpm agent-lab:demo:connections` targets connection puzzles.
+- These hit OpenRouter; expect network/model costs.
 
 ---
 
@@ -190,7 +213,7 @@ Storybook is integrated into `apps/web` for visual component development and tes
 
 - **Config location**: `apps/web/.storybook/`
   - `main.ts` - Storybook configuration (Next.js + Vite framework)
-  - `preview.ts` - Global decorators and parameters (includes Tailwind CSS)
+  - `preview.ts` - Global decorators and parameters (includes Tailwind CSS v4)
   - `vitest.setup.ts` - Vitest integration for component testing
 
 - **Stories location**: 
@@ -320,29 +343,6 @@ export const Mocked: Story = {
 
 ---
 
-## Code Style & Conventions
-
-### TypeScript
-
-- ✅ Enable `strict` mode
-- ✅ Use explicit types for function parameters
-- ✅ Avoid `any` (use `unknown` if needed)
-- ✅ Use `const` over `let`
-
-### Naming
-
-- Files: `camelCase.ts` or `PascalCase.tsx` (components)
-- Variables/functions: `camelCase`
-- Types/interfaces: `PascalCase`
-- Constants: `SCREAMING_SNAKE_CASE`
-
-### Imports
-
-- Use absolute imports from `@vibe-ltp/*` packages
-- Group imports: external → workspace → relative
-
----
-
 ## Troubleshooting
 
 ### TypeScript Errors After Adding Dependencies
@@ -393,6 +393,7 @@ All environment variables are documented in `.env.example`:
 3. **Domain logic first**
    - Start with `puzzle-core` when adding features
    - Then wire up server → web
+   - Keep LLM agents centralized in `llm-client`
 
 4. **Ask before major architectural changes**
    - This project follows a specific structure
@@ -404,11 +405,11 @@ All environment variables are documented in `.env.example`:
 
 See the initialization plan for roadmap phases:
 1. ✅ Scaffold monorepo
-2. ✅ Add puzzle-core models
-3. 🚧 Wire up backend (Prisma, routes, sockets)
-4. ⏸ Seed content & DB
-5. ⏸ Basic frontend (puzzle list, room UI)
-6. ⏸ Full Q&A flow
+2. ✅ Add puzzle-core/shared models
+3. 🚧 Wire up backend + LLM question validation (Express routes, sockets)
+4. 🚧 Frontend chatbot UX and room flow
+5. ⏸ Seed content & DB
+6. ⏸ Full Q&A flow + persistence
 7. ⏸ Polish & testing
 
 ---

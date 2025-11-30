@@ -1,23 +1,21 @@
 # Vibe LTP - Lateral Thinking Puzzle Game
 
-A multiplayer lateral thinking puzzle game built with Next.js, Express, and Socket.IO.
+Multiplayer lateral thinking puzzles with an LLM host, real-time rooms, and a Next.js 16 UI. The monorepo uses pnpm workspaces with shared TypeScript packages.
 
 ## Features
 
-- 🧩 Browse and solve lateral thinking puzzles
-- 👥 Real-time multiplayer rooms
-- 💡 Interactive Q&A system (yes/no questions)
-- 🎯 Host and player roles
-- 📊 Multiple difficulty levels
-- 🏷️ Puzzle categorization with tags
+- 🧩 Lateral thinking puzzles with yes/no question flow
+- 🤖 LLM question validator and reply formatter powered by OpenRouter
+- 👥 Real-time rooms via Socket.IO (single-room state for now)
+- 💬 Chat-style UI built on a customized chatbot kit
+- 🧪 Storybook for components and a CLI agent lab for LLM experiments
 
 ## Tech Stack
 
-- **Frontend**: Next.js 16, React 18, Tailwind CSS, TanStack Query
-- **Backend**: Node.js, Express, Socket.IO
-- **Monorepo**: pnpm workspaces
+- **Frontend**: Next.js 16 (App Router), React 18, Tailwind CSS v4, TanStack Query
+- **Backend**: Node.js, Express, Socket.IO (websocket transport)
+- **Shared packages**: `puzzle-core`, `shared`, `ui`, `llm-client`, `agent-lab`, vendored `react-chatbot-kit`
 - **Testing**: Vitest (unit), Playwright (e2e)
-- **CI/CD**: GitHub Actions
 
 ## Getting Started
 
@@ -26,93 +24,91 @@ A multiplayer lateral thinking puzzle game built with Next.js, Express, and Sock
 - Node.js 20+
 - pnpm 9+
 
-### Installation
+### Setup
 
 ```bash
-# Clone repository
 git clone <repo-url>
 cd vibe-ltp
-
-# Install dependencies
 pnpm install
 
-# Setup environment variables
+# Configure environment variables
 cp .env.example .env
-# Edit .env and add your OPENROUTER_API_KEY
+# Set OPENROUTER_API_KEY (required for chat replies) and adjust ports if needed
 
-# Start development servers
+# Start both frontend and backend
 pnpm dev
 ```
 
-The application will be available at:
+Defaults:
 - Frontend: http://localhost:3000
-- Backend API: http://localhost:4000
-
-### Environment Variables
-
-Copy `.env.example` to `.env` and configure:
-
-```bash
-# Server ports
-BACKEND_PORT=4000        # Backend server port
-FRONTEND_PORT=3000       # Frontend dev server port
-
-# CORS configuration
-CORS_ORIGIN=http://localhost:3000
-
-# LLM Configuration (required)
-OPENROUTER_API_KEY=sk-or-v1-your-key-here
-LLM_MODEL_ID=x-ai/grok-4.1-fast:free
-
-# Frontend API configuration
-NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
-```
+- Backend: http://localhost:4000
 
 To use custom ports:
 ```bash
 FRONTEND_PORT=8080 BACKEND_PORT=8081 pnpm dev
 ```
 
-### Available Commands
+### Environment Variables
 
-```bash
-pnpm dev          # Start both frontend and backend
-pnpm dev:web      # Start frontend only
-pnpm dev:server   # Start backend only
-pnpm lint         # Lint all packages
-pnpm typecheck    # TypeScript type checking
-pnpm test         # Run unit tests
-pnpm e2e          # Run e2e tests
-pnpm format       # Format code
-```
+Key values from `.env.example`:
+- `OPENROUTER_API_KEY` (required) – OpenRouter key for LLM calls
+- `LLM_MODEL_ID` – defaults to `x-ai/grok-4.1-fast:free`
+- `BACKEND_PORT`, `FRONTEND_PORT` – ports for server and web
+- `CORS_ORIGIN` – comma-separated allowed origins (defaults to frontend origin)
+- `NEXT_PUBLIC_API_BASE_URL` – browser-facing API URL
+- `OPENROUTER_REFERRER`, `OPENROUTER_APP_TITLE` – optional OpenRouter metadata
 
-## Project Structure
+## Monorepo Layout
 
 ```
 vibe-ltp/
 ├── apps/
-│   ├── web/              # Next.js frontend
+│   ├── web/              # Next.js frontend (App Router)
 │   └── server/           # Express + Socket.IO backend
 ├── packages/
-│   ├── puzzle-core/      # Domain logic
-│   ├── shared/           # Shared types & utils
-│   ├── ui/               # React components
-│   └── config/           # Shared configurations
+│   ├── puzzle-core/      # Domain logic (pure TS)
+│   ├── shared/           # Shared types, DTOs, Zod schemas
+│   ├── ui/               # Shared React components
+│   ├── llm-client/       # OpenRouter client + question validator agents
+│   ├── agent-lab/        # CLI harness for LLM experiments
+│   ├── react-chatbot-kit/ # Vendored chatbot kit used by web UI
+│   └── config/           # Shared config (ESLint, TS, Tailwind)
 └── .github/workflows/    # CI/CD
 ```
 
+## Scripts
+
+```bash
+pnpm dev                 # Run web + server in parallel
+pnpm dev:web             # Frontend only
+pnpm dev:server          # Backend only
+pnpm build               # Build packages then apps
+pnpm lint                # ESLint across workspace
+pnpm typecheck           # TypeScript project references
+pnpm test                # Vitest unit tests
+pnpm e2e                 # Playwright e2e tests
+pnpm storybook:web       # Storybook (apps/web)
+pnpm agent-lab:demo      # Run sample LLM agent suite
+pnpm format              # Prettier format
+```
+
+## Testing
+
+- **Unit**: `pnpm test` (puzzle-core models, server game state, error handling)
+- **E2E**: `pnpm e2e` (Playwright; see `apps/web/tests/e2e`)
+- **Agent experiments**: `pnpm agent-lab:demo` or `pnpm agent-lab:demo:connections` for OpenRouter-backed validator runs
+
 ## Documentation
 
-- [AGENTS.md](./AGENTS.md) - Guide for AI code agents
-- [AGENT_TIPS_PLAYWRIGHT.md](./AGENT_TIPS_PLAYWRIGHT.md) - E2E testing guide
+- `AGENTS.md` – workspace guide and conventions
+- `AGENT_TIPS_PLAYWRIGHT.md` – Playwright usage notes
 
 ## Development Workflow
 
-1. Create a feature branch
-2. Make changes following the architecture in `AGENTS.md`
-3. Add tests
-4. Run `pnpm lint` and `pnpm typecheck`
-5. Create a pull request
+- Work in feature branches
+- Follow package boundaries in `AGENTS.md`
+- Add tests alongside changes
+- Run `pnpm lint` and `pnpm typecheck` before PRs
 
 ## License
 
