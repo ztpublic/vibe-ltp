@@ -2,21 +2,17 @@
 
 import React, { ReactNode, useRef } from 'react';
 import type { ChatMessage } from '@vibe-ltp/shared';
-import { SOCKET_EVENTS } from '@vibe-ltp/shared';
 import type { ChatService } from './services';
 import { encodeBotMessage, encodeUserText, truncateText } from '@vibe-ltp/react-chatbot-kit';
 import { useChatIdentity } from './identity/useChatIdentity';
-import { acquireSocket, releaseSocket } from '../../lib/socketManager';
-import { Socket } from 'socket.io-client';
-
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${process.env.NEXT_PUBLIC_BACKEND_PORT || 4000}`;
+import type { ChatHistoryController } from './controllers';
 
 type ActionProviderProps = {
   createChatBotMessage: any;
   setState: React.Dispatch<React.SetStateAction<any>>;
   children: ReactNode;
   chatService: ChatService;
-  socket?: Socket | null;
+  chatHistoryController?: ChatHistoryController;
 };
 
 const ActionProvider: React.FC<ActionProviderProps> = ({
@@ -24,7 +20,7 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
   setState,
   children,
   chatService,
-  socket,
+  chatHistoryController,
 }) => {
   const { nickname } = useChatIdentity();
   // Track the last user message ID and nickname for reply linking
@@ -41,16 +37,11 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     replyToPreview?: string;
     replyToNickname?: string;
   }) => {
-    if (socket?.connected) {
-      console.log('[ActionProvider] Emitting message to server:', message.type, message.id);
-      socket.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, {
-        message: {
-          ...message,
-          timestamp: new Date().toISOString(),
-        },
+    if (chatHistoryController) {
+      chatHistoryController.onMessageAdded({
+        ...message,
+        timestamp: new Date().toISOString(),
       });
-    } else {
-      console.warn('[ActionProvider] Socket not connected, cannot emit message');
     }
   };
 

@@ -3,16 +3,26 @@
 import React, { useState, useRef } from 'react';
 import { SoupBotChat, type SoupBotChatRef } from './index';
 import type { ChatService } from './services';
+import type { GameStateController, ChatHistoryController } from './controllers';
 import { IdentityProvider } from './identity/useChatIdentity';
-import { useGameState } from './hooks/useGameState';
 import { PuzzleInputDialog } from './components';
 
 export interface ChatHomeProps {
+  gameStateController: GameStateController;
   chatService: ChatService;
+  chatHistoryController?: ChatHistoryController;
+  onStartGame?: (content: { soupSurface: string; soupTruth: string }) => void;
+  onResetGame?: () => void;
 }
 
-export const ChatHome: React.FC<ChatHomeProps> = ({ chatService }) => {
-  const { gameState, puzzleContent, startGame, resetGame } = useGameState();
+export const ChatHome = ({ 
+  gameStateController,
+  chatService, 
+  chatHistoryController,
+  onStartGame,
+  onResetGame,
+}: ChatHomeProps) => {
+  const { gameState, puzzleContent, startGame, resetGame } = gameStateController;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const chatbotRef = useRef<SoupBotChatRef>(null);
   
@@ -26,6 +36,7 @@ export const ChatHome: React.FC<ChatHomeProps> = ({ chatService }) => {
   const handleDialogConfirm = (soupSurface: string, soupTruth: string) => {
     startGame({ soupSurface, soupTruth });
     setIsDialogOpen(false);
+    onStartGame?.({ soupSurface, soupTruth });
   };
 
   const handleDialogClose = () => {
@@ -41,6 +52,7 @@ export const ChatHome: React.FC<ChatHomeProps> = ({ chatService }) => {
     
     // Reset game state
     resetGame();
+    onResetGame?.();
   };
 
   return (
@@ -60,7 +72,12 @@ export const ChatHome: React.FC<ChatHomeProps> = ({ chatService }) => {
             
             {/* Center - Chatbot */}
             <div className="w-[40vw] h-full flex flex-col">
-              <SoupBotChat ref={chatbotRef} chatService={chatService} disabled={isGameNotStarted} />
+              <SoupBotChat 
+                ref={chatbotRef} 
+                chatService={chatService} 
+                chatHistoryController={chatHistoryController}
+                disabled={isGameNotStarted} 
+              />
             </div>
             
             {/* Right side - Action Buttons */}

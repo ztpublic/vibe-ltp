@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, createContext, useContext } from 'react';
+import { useState, createContext, useContext, type ReactNode } from 'react';
 
 type Identity = {
   nickname: string;
@@ -10,7 +10,7 @@ type Identity = {
 const IdentityContext = createContext<Identity | null>(null);
 const STORAGE_KEY = 'puzzle_nickname';
 
-export const IdentityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function IdentityProvider({ children }: { children: ReactNode }) {
   const [nickname, setNicknameState] = useState(() => {
     // Initialize from localStorage during first render
     if (typeof window !== 'undefined') {
@@ -25,8 +25,9 @@ export const IdentityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     window.localStorage.setItem(STORAGE_KEY, trimmed);
   };
 
+  // @ts-expect-error React 19 type compatibility issue with Context.Provider
   return (
-    <IdentityContext.Provider value={{ nickname, setNickname }}>
+    <IdentityContext.Provider value={{ nickname, setNickname } as Identity}>
       {children}
     </IdentityContext.Provider>
   );

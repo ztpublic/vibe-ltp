@@ -18,13 +18,22 @@ const config: StorybookConfig = {
     "../public"
   ],
   async viteFinal(config) {
-    // Ensure CommonJS interop for react-chatbot-kit
+    // Alias to use built package with proper path resolution
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@vibe-ltp/react-chatbot-kit/build/main.css': '/Users/zt/projects/vibe-ltp/packages/react-chatbot-kit/build/main.css',
+      '@vibe-ltp/react-chatbot-kit': '/Users/zt/projects/vibe-ltp/packages/react-chatbot-kit/build/index.js',
+    };
+    
+    // Ensure CommonJS interop
     if (config.optimizeDeps) {
       config.optimizeDeps.include = [
         ...(config.optimizeDeps.include || []),
         '@vibe-ltp/react-chatbot-kit',
       ];
     }
+    
     return config;
   },
 };

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useChatIdentity } from '../identity/useChatIdentity';
 
-export const NicknameBadge: React.FC = () => {
+export const NicknameBadge = () => {
   const { nickname, setNickname } = useChatIdentity();
   const [mounted, setMounted] = useState(false);
 

@@ -20,14 +20,10 @@ const MessageParser: React.FC<MessageParserProps> = ({ children, actions }) => {
   const parse = (message: string) => {
     const trimmed = message.trim();
     if (!trimmed) return;
-
-    console.log('[MessageParser] Received message:', trimmed);
-    console.log('[MessageParser] Current nickname:', nickname);
     
     // Encode the nickname into the message before it gets added to state
     // This ensures the user message component can decode and display it
     const encodedMessage = encodeUserText(nickname, trimmed);
-    console.log('[MessageParser] Encoded message:', encodedMessage.substring(0, 100));
     
     // Route all messages to the backend for now
     actions.handleUserMessage(encodedMessage);

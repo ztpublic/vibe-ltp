@@ -1,22 +1,19 @@
 'use client';
 
-import React, { useImperativeHandle, useRef, useState, useEffect } from 'react';
-import { Chatbot, encodeBotMessage, encodeUserText } from '@vibe-ltp/react-chatbot-kit';
+import React, { useImperativeHandle, useRef, useState, useEffect, useMemo } from 'react';
+import { Chatbot, encodeBotMessage, encodeUserText, createChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
 import '@vibe-ltp/react-chatbot-kit/build/main.css';
 import './chatbot.css';
 import config from './config';
 import ActionProvider from './ActionProvider';
 import MessageParser from './MessageParser';
 import type { ChatService } from './services';
-import { acquireSocket, releaseSocket } from '../../lib/socketManager';
-import { SOCKET_EVENTS } from '@vibe-ltp/shared';
-import { Socket } from 'socket.io-client';
+import type { ChatHistoryController } from './controllers';
 import { useChatIdentity } from './identity/useChatIdentity';
-
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${process.env.NEXT_PUBLIC_BACKEND_PORT || 4000}`;
 
 export type SoupBotChatProps = {
   chatService: ChatService;
+  chatHistoryController?: ChatHistoryController;
   disabled?: boolean;
 };
 
@@ -25,114 +22,62 @@ export interface SoupBotChatRef {
 }
 
 export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
-  { chatService, disabled = false },
+  { chatService, chatHistoryController, disabled = false },
   ref
 ) => {
   const { nickname } = useChatIdentity();
   const createChatBotMessageRef = useRef<any>(null);
   const setStateRef = useRef<any>(null);
-  const socketRef = useRef<Socket | null>(null);
-  const [chatConfig, setChatConfig] = useState(config);
   const [chatKey, setChatKey] = useState(0);
-  const hasRestoredRef = useRef(false);
   
-  // Set up socket connection and listen for chat history
+  // Convert chat history messages to chatbot format
+  const initialMessages = useMemo(() => {
+    if (!chatHistoryController || chatHistoryController.messages.length === 0) {
+      return [];
+    }
+
+    const messages = chatHistoryController.messages;
+    
+    const converted = messages.map((msg, idx) => {
+      if (msg.type === 'user') {
+        // User messages - encode with nickname
+        const encodedText = msg.nickname 
+          ? encodeUserText(msg.nickname, msg.content)
+          : msg.content;
+        
+        return {
+          loading: false,
+          widget: undefined,
+          delay: 0,
+          type: 'user',
+          message: encodedText,
+          id: Date.now() + idx,
+        };
+      } else {
+        // Bot messages - encode with reply metadata
+        const encoded = encodeBotMessage({
+          content: msg.content,
+          replyToId: msg.replyToId,
+          replyToPreview: msg.replyToPreview,
+          replyToNickname: msg.replyToNickname,
+        });
+        return createChatBotMessage(encoded, {});
+      }
+    });
+    
+    return converted;
+  }, [chatHistoryController, chatHistoryController?.messages]);
+  
+  // Create config with initial messages
+  const chatConfig = useMemo(() => ({
+    ...config,
+    initialMessages,
+  }), [initialMessages]);
+  
+  // Force remount when messages change
   useEffect(() => {
-    const socket = acquireSocket(SOCKET_URL);
-    socketRef.current = socket;
-    
-    // Listen for chat history sync
-    const handleChatHistorySync = (data: { messages: Array<{
-      id: string;
-      type: 'user' | 'bot';
-      content: string;
-      nickname?: string;
-      replyToId?: string;
-      replyToPreview?: string;
-      replyToNickname?: string;
-      timestamp: string;
-    }> }) => {
-      console.log('[ChatHistory] Received history:', data.messages.length, 'messages');
-      
-      if (hasRestoredRef.current) {
-        console.log('[ChatHistory] Already restored, skipping');
-        return;
-      }
-      
-      if (data.messages.length === 0) {
-        console.log('[ChatHistory] No messages to restore');
-        hasRestoredRef.current = true;
-        return;
-      }
-      
-      // Wait for createChatBotMessage to be available
-      const waitForInit = setInterval(() => {
-        if (createChatBotMessageRef.current) {
-          clearInterval(waitForInit);
-          
-          console.log('[ChatHistory] Restoring messages...');
-          const restoredMessages = data.messages.map((msg, idx) => {
-            console.log(`[ChatHistory] Message ${idx}:`, {
-              type: msg.type,
-              content: msg.content.substring(0, 50),
-              nickname: msg.nickname
-            });
-            
-            if (msg.type === 'user') {
-              // User messages are stored with raw content on server
-              // We need to encode them for display (adds __NICK__ prefix for our component)
-              const encodedText = msg.nickname 
-                ? encodeUserText(msg.nickname, msg.content)
-                : msg.content;
-              
-              console.log(`[ChatHistory] User message - raw content: "${msg.content}", encoded: "${encodedText.substring(0, 50)}"`);
-              
-              // Create a proper user message object
-              // react-chatbot-kit expects user messages to have specific structure
-              return {
-                loading: false,
-                widget: undefined,
-                delay: 0,
-                type: 'user',
-                message: encodedText,
-                id: Date.now() + idx,
-              };
-            } else {
-              // Encode bot message with reply metadata
-              const encoded = encodeBotMessage({
-                content: msg.content,
-                replyToId: msg.replyToId,
-                replyToPreview: msg.replyToPreview,
-                replyToNickname: msg.replyToNickname,
-              });
-              return createChatBotMessageRef.current(encoded);
-            }
-          });
-          
-          console.log('[ChatHistory] Restored', restoredMessages.length, 'messages');
-          
-          // Update config with restored messages and force re-mount
-          setChatConfig({
-            ...config,
-            initialMessages: restoredMessages as any,
-          });
-          setChatKey(prev => prev + 1);
-          hasRestoredRef.current = true;
-        }
-      }, 50);
-      
-      // Cleanup timeout after 3 seconds
-      setTimeout(() => clearInterval(waitForInit), 3000);
-    };
-    
-    socket.on(SOCKET_EVENTS.CHAT_HISTORY_SYNC, handleChatHistorySync);
-    
-    return () => {
-      socket.off(SOCKET_EVENTS.CHAT_HISTORY_SYNC, handleChatHistorySync);
-      releaseSocket(socket);
-      socketRef.current = null;
-    };
-  }, []);
+    setChatKey(prev => prev + 1);
+  }, [initialMessages]);
   
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -148,15 +93,14 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
     },
   }));
 
-  // Create a wrapper that injects the chatService and captures refs
+  // Create a wrapper that injects the chatService and chatHistoryController
   const ActionProviderWithService = React.useMemo(
     () => (props: any) => {
       createChatBotMessageRef.current = props.createChatBotMessage;
       setStateRef.current = props.setState;
-      // Always get the current socket reference
-      return <ActionProvider {...props} chatService={chatService} socket={socketRef.current} />;
+      return <ActionProvider {...props} chatService={chatService} chatHistoryController={chatHistoryController} />;
     },
-    [chatService]
+    [chatService, chatHistoryController]
   );
 
   // Validator function to intercept and encode user messages before they're added to state

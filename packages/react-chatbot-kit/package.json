@@ -5,6 +5,13 @@
   "description": "Fully customizable chatbot kit for react.",
   "main": "build/index.js",
   "types": "build/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./build/src/index.d.ts",
+      "default": "./build/index.js"
+    },
+    "./build/main.css": "./build/main.css"
+  },
   "dependencies": {
     "react-conditionally-render": "^1.0.2"
   },
