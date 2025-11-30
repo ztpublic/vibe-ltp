@@ -25,6 +25,7 @@
     "build-storybook:web": "pnpm -C apps/web build-storybook"
   },
   "devDependencies": {
+    "@vibe-ltp/config": "workspace:*",
     "@playwright/test": "^1.48.0",
     "@types/node": "^20.16.11",
     "@types/uuid": "^11.0.0",

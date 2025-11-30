@@ -1,9 +1,8 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "@vibe-ltp/config/typescript",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
-    "composite": true
+    "rootDir": "./src"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
