@@ -23,7 +23,7 @@ class WidgetRegistry {
 
     if (!widgetObject) return;
 
-    let props = {
+    const props = {
       scrollIntoView: options.scrollIntoView,
       ...widgetObject.parentProps,
       ...getObject(widgetObject.props),
