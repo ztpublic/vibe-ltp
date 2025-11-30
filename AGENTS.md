@@ -26,7 +26,6 @@ vibe-ltp/
 │   ├── shared/           # Shared types, DTOs, Zod schemas
 │   ├── ui/               # Shared React components
 │   └── config/           # Shared configs (ESLint, TS, Tailwind)
-├── puzzle-content/       # JSON puzzle library
 └── .github/workflows/    # CI/CD
 ```
 

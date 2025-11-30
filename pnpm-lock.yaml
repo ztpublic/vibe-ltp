@@ -51,9 +51,6 @@ importers:
       '@vibe-ltp/llm-client':
         specifier: workspace:*
         version: link:../../packages/llm-client
-      '@vibe-ltp/puzzle-content':
-        specifier: workspace:*
-        version: link:../../puzzle-content
       '@vibe-ltp/puzzle-core':
         specifier: workspace:*
         version: link:../../packages/puzzle-core
@@ -304,16 +301,6 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.1
         version: 18.3.7(@types/react@18.3.27)
-      typescript:
-        specifier: ^5.6.3
-        version: 5.9.3
-
-  puzzle-content:
-    dependencies:
-      '@vibe-ltp/shared':
-        specifier: workspace:*
-        version: link:../packages/shared
-    devDependencies:
       typescript:
         specifier: ^5.6.3
         version: 5.9.3

@@ -98,7 +98,6 @@ vibe-ltp/
 │   ├── shared/           # Shared types & utils
 │   ├── ui/               # React components
 │   └── config/           # Shared configurations
-├── puzzle-content/       # Puzzle data (JSON)
 └── .github/workflows/    # CI/CD
 ```
 
