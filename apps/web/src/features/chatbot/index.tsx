@@ -92,6 +92,30 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
     const historyMessages = convertHistoryMessages(chatHistoryController.messages);
     messageStoreRef.current.replaceMessages(historyMessages, { preserveTrailingLoading: true });
   }, [chatHistoryController?.messages]);
+
+  // Trigger initial history sync lifecycle
+  useEffect(() => {
+    let isActive = true;
+    if (!chatHistoryController) return;
+
+    const runSync = async () => {
+      try {
+        const synced = await chatHistoryController.syncHistory();
+        if (!isActive || !messageStoreRef.current) return;
+        if (synced.length > 0) {
+          const historyMessages = convertHistoryMessages(synced);
+          messageStoreRef.current.replaceMessages(historyMessages, { preserveTrailingLoading: true });
+        }
+      } catch (error) {
+        console.warn('[SoupBotChat] History sync failed', error);
+      }
+    };
+
+    runSync();
+    return () => {
+      isActive = false;
+    };
+  }, [chatHistoryController]);
   
   // Expose methods to parent component
   useImperativeHandle(
