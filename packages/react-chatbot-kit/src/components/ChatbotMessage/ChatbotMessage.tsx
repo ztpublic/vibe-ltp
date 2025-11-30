@@ -44,32 +44,30 @@ const ChatbotMessage = ({
   };
 
   useEffect(() => {
-    let timeoutId: any;
-    const disableLoading = (
-      messages: any[],
-      setState: React.Dispatch<React.SetStateAction<any>>
-    ) => {
-      let defaultDisableTime = 750;
-      if (delay) defaultDisableTime += delay;
+    // Only auto-disable loading if the message has actual content
+    // Empty content messages (loading placeholders) should keep loading state until replaced
+    if (!content || content.trim().length === 0 || !setState) {
+      return; // Don't set any timeout for empty messages
+    }
 
-      timeoutId = setTimeout(() => {
-        const newMessages = [...messages].map(message => {
-          if (message.id === id) {
-            return {...message, loading: false, delay: undefined};
-          }
+    let defaultDisableTime = 750;
+    if (delay) defaultDisableTime += delay;
 
-          return message;
-        });
+    const timeoutId = setTimeout(() => {
+      const newMessages = [...messages].map(message => {
+        if (message.id === id) {
+          return {...message, loading: false, delay: undefined};
+        }
+        return message;
+      });
 
-        setState((state: any) => ({...state, messages: newMessages}));
-      }, defaultDisableTime);
-    };
+      setState((state: any) => ({...state, messages: newMessages}));
+    }, defaultDisableTime);
 
-    disableLoading(messages, setState);
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [delay, id]);
+  }, [content, delay, id]);
 
   useEffect(() => {
     if (delay) {

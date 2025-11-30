@@ -133,8 +133,15 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
       return prev;
     });
 
-    // Add loading indicator message
-    const loadingMessage = createChatBotMessage('', {});
+    // Add loading indicator message with reply metadata
+    // Encode the loading message with reply metadata so the label shows immediately
+    const loadingEncoded = encodeBotMessage({
+      content: '',
+      replyToId: userMessageId,
+      replyToPreview: userMessagePreview,
+      replyToNickname: msgNickname,
+    });
+    const loadingMessage = createChatBotMessage(loadingEncoded, { loading: true });
     setState((prev: any) => ({
       ...prev,
       messages: [...prev.messages, loadingMessage],

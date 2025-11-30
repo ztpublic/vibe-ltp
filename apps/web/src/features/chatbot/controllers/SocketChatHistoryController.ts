@@ -27,7 +27,7 @@ export function useSocketChatHistoryController(): ChatHistoryController {
     const socket = acquireSocket(SOCKET_URL);
     socketRef.current = socket;
 
-    // Listen for chat history sync
+    // Listen for chat history sync (initial load)
     const handleChatHistorySync = (data: { messages: ChatHistoryMessage[] }) => {
       console.log('[SocketChatHistoryController] Received history:', data.messages.length, 'messages');
       
@@ -46,10 +46,18 @@ export function useSocketChatHistoryController(): ChatHistoryController {
       hasRestoredRef.current = true;
     };
 
+    // Listen for new messages broadcast from server
+    const handleMessageAdded = (data: { message: ChatHistoryMessage }) => {
+      console.log('[SocketChatHistoryController] Received new message:', data.message.type, data.message.id);
+      setMessages(prev => [...prev, data.message]);
+    };
+
     socket.on(SOCKET_EVENTS.CHAT_HISTORY_SYNC, handleChatHistorySync);
+    socket.on(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, handleMessageAdded);
 
     return () => {
       socket.off(SOCKET_EVENTS.CHAT_HISTORY_SYNC, handleChatHistorySync);
+      socket.off(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, handleMessageAdded);
       releaseSocket(socket);
       socketRef.current = null;
     };

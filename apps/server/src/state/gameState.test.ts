@@ -5,6 +5,7 @@ import {
   getPuzzleContent,
   setPuzzleContent,
   resetGameState,
+  clearAllState,
   addChatMessage,
   getChatMessages,
   addQuestionToHistory,
@@ -15,7 +16,7 @@ import {
 
 describe('Game State Management', () => {
   beforeEach(() => {
-    resetGameState();
+    clearAllState();
   });
 
   describe('State Transitions', () => {
@@ -39,7 +40,7 @@ describe('Game State Management', () => {
       expect(() => setGameState('Started')).toThrow('Game already started. Reset before starting new game.');
     });
 
-    it('should reset state and clear history', () => {
+    it('should reset state and clear question history but preserve chat messages', () => {
       setPuzzleContent({ soupSurface: 'Test', soupTruth: 'Answer' });
       setGameState('Started');
       addChatMessage({
@@ -48,12 +49,15 @@ describe('Game State Management', () => {
         content: 'Hello',
         timestamp: new Date().toISOString()
       });
+      addQuestionToHistory('Is it day?', 'yes');
       
       resetGameState();
       
       expect(getGameState()).toBe('NotStarted');
       expect(getPuzzleContent()).toBeUndefined();
-      expect(getChatMessages()).toHaveLength(0);
+      expect(getQuestionHistory()).toHaveLength(0);
+      // Chat messages should be preserved to maintain conversation history
+      expect(getChatMessages()).toHaveLength(1);
     });
   });
 

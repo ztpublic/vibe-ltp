@@ -89,9 +89,19 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
           ...prev,
           messages: [...prev.messages, botMessage],
         }));
+        
+        // Persist message to server via chat history controller
+        if (chatHistoryController) {
+          chatHistoryController.onMessageAdded({
+            id: `bot-${Date.now()}`,
+            type: 'bot',
+            content,
+            timestamp: new Date().toISOString(),
+          });
+        }
       }
     },
-  }));
+  }), [chatHistoryController]);
 
   // Create a wrapper that injects the chatService and chatHistoryController
   const ActionProviderWithService = React.useMemo(

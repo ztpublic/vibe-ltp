@@ -43,14 +43,17 @@ export const ChatHome = ({
     setIsDialogOpen(false);
   };
 
-  const handleRevealTruth = () => {
+  const handleRevealTruth = async () => {
     // Send truth to chatbot
     if (puzzleContent?.soupTruth && chatbotRef.current) {
       const truthMessage = `💡 谜题真相：\n\n${puzzleContent.soupTruth}`;
       chatbotRef.current.addBotMessage(truthMessage);
+      
+      // Wait a bit to ensure message is sent to server before resetting
+      await new Promise(resolve => setTimeout(resolve, 150));
     }
     
-    // Reset game state
+    // Reset game state (chat history is preserved on server)
     resetGame();
     onResetGame?.();
   };

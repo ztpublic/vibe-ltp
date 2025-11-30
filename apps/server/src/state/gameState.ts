@@ -175,8 +175,19 @@ export function getChatMessages(): readonly PersistedMessage[] {
 
 /**
  * Reset game state and history
+ * Note: Chat messages are preserved to maintain conversation history
  */
 export function resetGameState(): void {
+  globalGameState = 'NotStarted';
+  globalPuzzleContent = undefined;
+  questionHistory = [];
+  // Do NOT clear chatMessages - preserve conversation history including truth reveal
+}
+
+/**
+ * Clear all state including chat messages (for testing only)
+ */
+export function clearAllState(): void {
   globalGameState = 'NotStarted';
   globalPuzzleContent = undefined;
   questionHistory = [];
