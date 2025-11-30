@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useImperativeHandle, useRef, useEffect, useMemo } from 'react';
-import { Chatbot, createChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
+import { Chatbot, createChatBotMessage, type CreateChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
 import '@vibe-ltp/react-chatbot-kit/build/main.css';
 import './chatbot.css';
 import config from './config';
@@ -13,7 +13,9 @@ import { useChatIdentity } from './identity/useChatIdentity';
 import { isUserMessage, isBotMessage, type BotMessage, type ChatMessage } from '@vibe-ltp/shared';
 import { createChatbotMessageStore, type ChatbotMessageStore } from './messageStore';
 
-const convertHistoryMessages = (messages: ChatMessage[]) => {
+type ChatbotKitMessage = ReturnType<CreateChatBotMessage>;
+
+const convertHistoryMessages = (messages: ChatMessage[]): ChatbotKitMessage[] => {
   return messages
     .map((msg) => {
       if (isUserMessage(msg)) {
@@ -24,7 +26,7 @@ const convertHistoryMessages = (messages: ChatMessage[]) => {
           type: 'user',
           message: msg.content,
           nickname: msg.nickname,
-          id: (msg as any).id ?? Date.now(),
+          id: msg.id ?? Date.now(),
         };
       }
 
@@ -34,12 +36,12 @@ const convertHistoryMessages = (messages: ChatMessage[]) => {
           replyToId: botMsg.replyMetadata?.replyToId,
           replyToPreview: botMsg.replyMetadata?.replyToPreview,
           replyToNickname: botMsg.replyMetadata?.replyToNickname,
-        } as any);
+        });
 
         return {
           ...botMessage,
           loading: false,
-          id: (botMsg as any).id ?? botMessage.id,
+          id: botMsg.id ?? botMessage.id,
         };
       }
 
@@ -63,9 +65,9 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
   ref
 ) => {
   const { nickname } = useChatIdentity();
-  const createChatBotMessageRef = useRef<any>(null);
-  const setStateRef = useRef<any>(null);
-  const chatbotStateRef = useRef<any>(null);
+  const createChatBotMessageRef = useRef<CreateChatBotMessage | null>(null);
+  const setStateRef = useRef<React.Dispatch<React.SetStateAction<{ messages: ChatbotKitMessage[] }>> | null>(null);
+  const chatbotStateRef = useRef<{ messages: ChatbotKitMessage[] } | null>(null);
   const messageStoreRef = useRef<ChatbotMessageStore | null>(null);
   
   // Convert chat history messages to chatbot format
@@ -149,35 +151,39 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
 
   // Create a wrapper that injects the chatService and chatHistoryController
   const ActionProviderWithService = React.useMemo(
-    () => (props: any) => {
-      createChatBotMessageRef.current = props.createChatBotMessage;
-      setStateRef.current = props.setState;
-      chatbotStateRef.current = props.state;
+    () =>
+      (props: {
+        createChatBotMessage: CreateChatBotMessage;
+        setState: React.Dispatch<React.SetStateAction<{ messages: ChatbotKitMessage[] }>>;
+        state: { messages: ChatbotKitMessage[] };
+        children?: React.ReactNode;
+      }) => {
+        createChatBotMessageRef.current = props.createChatBotMessage;
+        setStateRef.current = props.setState;
+        chatbotStateRef.current = props.state;
 
-      if (!messageStoreRef.current && setStateRef.current) {
-        messageStoreRef.current = createChatbotMessageStore({
-          getState: () => chatbotStateRef.current,
-          setState: setStateRef.current,
-        });
-      }
+        if (!messageStoreRef.current && setStateRef.current) {
+          messageStoreRef.current = createChatbotMessageStore({
+            getState: () => chatbotStateRef.current,
+            setState: setStateRef.current,
+          });
+        }
 
-      return (
-        <ActionProvider
-          {...props}
-          chatService={chatService}
-          chatHistoryController={chatHistoryController}
-          messageStore={messageStoreRef.current!}
-        />
-      );
-    },
+        return (
+          <ActionProvider
+            {...props}
+            chatService={chatService}
+            chatHistoryController={chatHistoryController}
+            messageStore={messageStoreRef.current!}
+          />
+        );
+      },
     [chatService, chatHistoryController]
   );
 
   // Validator function to intercept and encode user messages before they're added to state
-  const validateAndEncodeMessage = (message: string) => {
+  const validateAndEncodeMessage: (message: string) => boolean = (message: string) => {
     if (!message || typeof message !== 'string') return true;
-    // This validator is called before the message is added to state
-    // Return true to allow the message to be added
     return true;
   };
 

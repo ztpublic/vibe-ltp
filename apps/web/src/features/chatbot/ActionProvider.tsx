@@ -3,7 +3,7 @@
 import React, { ReactNode, useRef } from 'react';
 import type { BotMessage, ChatMessage } from '@vibe-ltp/shared';
 import type { ChatService } from './services';
-import { truncateText } from '@vibe-ltp/react-chatbot-kit';
+import { truncateText, type CreateChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
 import type { ChatHistoryController } from './controllers';
 import { v4 as uuidv4 } from 'uuid';
 import type { ChatbotMessageStore, ChatbotUiMessage } from './messageStore';
@@ -11,7 +11,7 @@ import { createTimeoutController } from './utils/timeoutController';
 import { buildReplyMetadata, type PendingUserContext } from './replyMetadata';
 
 type ActionProviderProps = {
-  createChatBotMessage: any;
+  createChatBotMessage: CreateChatBotMessage;
   children: ReactNode;
   chatService: ChatService;
   chatHistoryController?: ChatHistoryController;
