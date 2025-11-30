@@ -40,6 +40,7 @@ interface IChatProps {
   parse?: (message: string) => void;
   actions?: object;
   messageContainerRef: React.MutableRefObject<HTMLDivElement>;
+  currentUserNickname?: string;
 }
 
 const Chat = ({
@@ -60,6 +61,7 @@ const Chat = ({
   messageHistory,
   actions,
   messageContainerRef,
+  currentUserNickname,
 }: IChatProps) => {
   const { messages } = state;
 
@@ -161,6 +163,7 @@ const Chat = ({
           message={messageObject.message}
           key={messageObject.id}
           customComponents={customComponents}
+          currentUserNickname={currentUserNickname}
         />
         {widget ? widget : null}
       </>

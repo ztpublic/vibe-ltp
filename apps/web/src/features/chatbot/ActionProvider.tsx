@@ -4,7 +4,7 @@ import React, { ReactNode, useRef } from 'react';
 import type { ChatMessage } from '@vibe-ltp/shared';
 import { SOCKET_EVENTS } from '@vibe-ltp/shared';
 import type { ChatService } from './services';
-import { encodeBotMessage, encodeUserText, truncateText } from './utils/chatEncoding';
+import { encodeBotMessage, encodeUserText, truncateText } from '@vibe-ltp/react-chatbot-kit';
 import { useChatIdentity } from './identity/useChatIdentity';
 import { acquireSocket, releaseSocket } from '../../lib/socketManager';
 import { Socket } from 'socket.io-client';

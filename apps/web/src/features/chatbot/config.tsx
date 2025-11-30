@@ -1,8 +1,5 @@
 'use client';
 
-import { createChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
-import { PuzzleBotMessage } from './components/PuzzleBotMessage';
-import { PuzzleUserMessage } from './components/PuzzleUserMessage';
 import { NicknameBadge } from './components/NicknameBadge';
 
 export const BOT_NAME = '主持人';
@@ -19,25 +16,6 @@ const config = {
         </div>
       </div>
     ),
-    botChatMessage: (props: any) => <PuzzleBotMessage {...props} />,
-    userChatMessage: (props: any) => <PuzzleUserMessage {...props} />,
-  },
-  customStyles: {
-    botMessageBox: {
-      backgroundColor: '#2d2d30',
-      color: '#cccccc',
-    },
-    userMessageBox: {
-      backgroundColor: '#094771',
-      color: '#ffffff',
-    },
-    chatButton: {
-      backgroundColor: '#0e639c',
-    },
-    chatContainer: {
-      height: '100%',
-      width: '100%',
-    },
   },
 };
 

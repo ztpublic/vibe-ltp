@@ -1,7 +1,7 @@
 'use client';
 
 import React, { ReactNode } from 'react';
-import { encodeUserText } from './utils/chatEncoding';
+import { encodeUserText } from '@vibe-ltp/react-chatbot-kit';
 import { useChatIdentity } from './identity/useChatIdentity';
 
 type Actions = {

@@ -6,6 +6,10 @@ import {
 } from './components/Chat/chatUtils';
 import useChatbot from './hooks/useChatbot';
 
+// Export utilities
+export * from './utils/messageEncoding';
+export * from './utils/messageRegistry';
+
 export {
   Chatbot,
   createChatBotMessage,

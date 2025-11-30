@@ -7,6 +7,8 @@ import Loader from '../Loader/Loader';
 import './ChatbotMessage.css';
 import { callIfExists } from '../Chat/chatUtils';
 import { ICustomComponents, ICustomStyles } from '../../interfaces/IConfig';
+import { decodeBotMessage } from '../../utils/messageEncoding';
+import { scrollToMessage } from '../../utils/messageRegistry';
 
 interface IChatbotMessageProps {
   message: string;
@@ -31,6 +33,15 @@ const ChatbotMessage = ({
   id,
 }: IChatbotMessageProps) => {
   const [show, toggleShow] = useState(false);
+
+  // Decode message to extract reply metadata
+  const { content, replyToId, replyToPreview, replyToNickname } = decodeBotMessage(message);
+
+  const handleReplyClick = () => {
+    if (!replyToId) return;
+    console.log('Clicking reply label, scrolling to:', replyToId);
+    scrollToMessage(replyToId);
+  };
 
   useEffect(() => {
     let timeoutId: any;
@@ -81,45 +92,59 @@ const ChatbotMessage = ({
       condition={show}
       show={
         <div className="react-chatbot-kit-chat-bot-message-container">
-          <ConditionallyRender
-            condition={withAvatar}
-            show={
-              <ConditionallyRender
-                condition={!!customComponents?.botAvatar}
-                show={callIfExists(customComponents?.botAvatar)}
-                elseShow={<ChatbotMessageAvatar />}
-              />
-            }
-          />
+          {/* Reply label if metadata exists */}
+          {replyToId && replyToPreview && (
+            <button
+              type="button"
+              className="chatbot-reply-label"
+              onClick={handleReplyClick}
+              title="点击跳转到问题"
+            >
+              ↩ 回复 {replyToNickname || 'visitor'}: &quot;{replyToPreview}&quot;
+            </button>
+          )}
+          
+          <div className="chatbot-message-wrapper">
+            <ConditionallyRender
+              condition={withAvatar}
+              show={
+                <ConditionallyRender
+                  condition={!!customComponents?.botAvatar}
+                  show={callIfExists(customComponents?.botAvatar)}
+                  elseShow={<ChatbotMessageAvatar />}
+                />
+              }
+            />
 
-          <ConditionallyRender
-            condition={!!customComponents?.botChatMessage}
-            show={callIfExists(customComponents?.botChatMessage, {
-              message,
-              loader: <Loader />,
-            })}
-            elseShow={
-              <div
-                className="react-chatbot-kit-chat-bot-message"
-                style={chatBoxCustomStyles}
-              >
-                <ConditionallyRender
-                  condition={loading}
-                  show={<Loader />}
-                  elseShow={<span>{message}</span>}
-                />
-                <ConditionallyRender
-                  condition={withAvatar}
-                  show={
-                    <div
-                      className="react-chatbot-kit-chat-bot-message-arrow"
-                      style={arrowCustomStyles}
-                    ></div>
-                  }
-                />
-              </div>
-            }
-          />
+            <ConditionallyRender
+              condition={!!customComponents?.botChatMessage}
+              show={callIfExists(customComponents?.botChatMessage, {
+                message: content,
+                loader: <Loader />,
+              })}
+              elseShow={
+                <div
+                  className="react-chatbot-kit-chat-bot-message"
+                  style={chatBoxCustomStyles}
+                >
+                  <ConditionallyRender
+                    condition={loading}
+                    show={<Loader />}
+                    elseShow={<span>{content}</span>}
+                  />
+                  <ConditionallyRender
+                    condition={withAvatar}
+                    show={
+                      <div
+                        className="react-chatbot-kit-chat-bot-message-arrow"
+                        style={arrowCustomStyles}
+                      ></div>
+                    }
+                  />
+                </div>
+              }
+            />
+          </div>
         </div>
       }
     />

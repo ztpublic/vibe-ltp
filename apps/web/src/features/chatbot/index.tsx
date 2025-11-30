@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useImperativeHandle, useRef, useState, useEffect } from 'react';
-import { Chatbot } from '@vibe-ltp/react-chatbot-kit';
+import { Chatbot, encodeBotMessage, encodeUserText } from '@vibe-ltp/react-chatbot-kit';
 import '@vibe-ltp/react-chatbot-kit/build/main.css';
 import './chatbot.css';
 import config from './config';
 import ActionProvider from './ActionProvider';
 import MessageParser from './MessageParser';
 import type { ChatService } from './services';
-import { encodeBotMessage, encodeUserText } from './utils/chatEncoding';
 import { acquireSocket, releaseSocket } from '../../lib/socketManager';
 import { SOCKET_EVENTS } from '@vibe-ltp/shared';
 import { Socket } from 'socket.io-client';
@@ -178,6 +177,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
           actionProvider={ActionProviderWithService}
           placeholderText={disabled ? "游戏未开始" : "向主持人提问"}
           validator={validateAndEncodeMessage}
+          currentUserNickname={nickname}
         />
       </div>
     </div>
