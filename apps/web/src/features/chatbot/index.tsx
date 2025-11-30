@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useImperativeHandle, useRef, useState, useEffect, useMemo } from 'react';
+import React, { useImperativeHandle, useRef, useEffect, useMemo } from 'react';
 import { Chatbot, createChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
 import '@vibe-ltp/react-chatbot-kit/build/main.css';
 import './chatbot.css';
@@ -11,6 +11,41 @@ import type { ChatService } from './services';
 import type { ChatHistoryController } from './controllers';
 import { useChatIdentity } from './identity/useChatIdentity';
 import { isUserMessage, isBotMessage, type ChatMessage } from '@vibe-ltp/shared';
+
+const convertHistoryMessages = (messages: ChatMessage[]) => {
+  return messages
+    .map((msg) => {
+      if (isUserMessage(msg)) {
+        return {
+          loading: false,
+          widget: undefined,
+          delay: 0,
+          type: 'user',
+          message: msg.content,
+          nickname: msg.nickname,
+          id: (msg as any).id ?? Date.now(),
+        };
+      }
+
+      if (isBotMessage(msg)) {
+        const botMsg = msg as Extract<ChatMessage, { type: 'bot' }>;
+        const botMessage = createChatBotMessage(botMsg.content, {
+          replyToId: botMsg.replyMetadata?.replyToId,
+          replyToPreview: botMsg.replyMetadata?.replyToPreview,
+          replyToNickname: botMsg.replyMetadata?.replyToNickname,
+        } as any);
+
+        return {
+          ...botMessage,
+          loading: false,
+          id: (botMsg as any).id ?? botMessage.id,
+        };
+      }
+
+      return null;
+    })
+    .filter((msg): msg is NonNullable<typeof msg> => msg !== null);
+};
 
 export type SoupBotChatProps = {
   chatService: ChatService;
@@ -29,7 +64,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
   const { nickname } = useChatIdentity();
   const createChatBotMessageRef = useRef<any>(null);
   const setStateRef = useRef<any>(null);
-  const [chatKey, setChatKey] = useState(0);
+  const chatbotStateRef = useRef<any>(null);
   
   // Convert chat history messages to chatbot format
   const initialMessages = useMemo(() => {
@@ -37,35 +72,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
       return [];
     }
 
-    const messages = chatHistoryController.messages;
-    
-    const converted = messages.map((msg: ChatMessage, idx: number) => {
-      if (isUserMessage(msg)) {
-        // User messages - pass structured fields (no encoding)
-        return {
-          loading: false,
-          widget: undefined,
-          delay: 0,
-          type: 'user',
-          message: msg.content,
-          nickname: msg.nickname,
-          id: Date.now() + idx,
-        };
-      } else if (isBotMessage(msg)) {
-        // Bot messages - pass structured reply metadata (no encoding)
-        const botMsg = msg as Extract<ChatMessage, { type: 'bot' }>;
-        const botMessage = createChatBotMessage(botMsg.content, {
-          replyToId: botMsg.replyMetadata?.replyToId,
-          replyToPreview: botMsg.replyMetadata?.replyToPreview,
-          replyToNickname: botMsg.replyMetadata?.replyToNickname,
-        } as any); // Type assertion needed until react-chatbot-kit types are rebuilt
-        return botMessage;
-      }
-      // System messages or other types - skip
-      return null;
-    }).filter((msg): msg is NonNullable<typeof msg> => msg !== null);
-    
-    return converted;
+    return convertHistoryMessages(chatHistoryController.messages);
   }, [chatHistoryController, chatHistoryController?.messages]);
   
   // Create config with initial messages
@@ -74,10 +81,24 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
     initialMessages,
   }), [initialMessages]);
   
-  // Force remount when messages change
+  // Sync incoming history updates into the chatbot state without wiping loading placeholders
   useEffect(() => {
-    setChatKey(prev => prev + 1);
-  }, [initialMessages]);
+    if (!chatHistoryController || !setStateRef.current) {
+      return;
+    }
+
+    const historyMessages = convertHistoryMessages(chatHistoryController.messages);
+    const pendingLoadingMessage = chatbotStateRef.current?.messages?.find(
+      (msg: any) => msg.loading && (!msg.message || !msg.message.trim())
+    );
+
+    setStateRef.current((prev: any) => ({
+      ...prev,
+      messages: pendingLoadingMessage
+        ? [...historyMessages, pendingLoadingMessage]
+        : historyMessages,
+    }));
+  }, [chatHistoryController?.messages]);
   
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -109,6 +130,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
     () => (props: any) => {
       createChatBotMessageRef.current = props.createChatBotMessage;
       setStateRef.current = props.setState;
+      chatbotStateRef.current = props.state;
       return <ActionProvider {...props} chatService={chatService} chatHistoryController={chatHistoryController} />;
     },
     [chatService, chatHistoryController]
@@ -126,7 +148,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
     <div className="w-full h-full flex flex-col border border-[#3e3e42] rounded-lg overflow-hidden">
       <div className={`h-full flex flex-col ${disabled ? 'chatbot-disabled' : ''}`}>
         <Chatbot
-          key={chatKey}
+          key="chatbot"
           config={chatConfig}
           messageParser={MessageParser}
           actionProvider={ActionProviderWithService}
