@@ -1,29 +1,28 @@
 'use client';
 
 import React, { ReactNode, useRef } from 'react';
-import type { ChatMessage } from '@vibe-ltp/shared';
+import type { BotMessage, ChatMessage } from '@vibe-ltp/shared';
 import type { ChatService } from './services';
 import { truncateText } from '@vibe-ltp/react-chatbot-kit';
-import { useChatIdentity } from './identity/useChatIdentity';
 import type { ChatHistoryController } from './controllers';
 import { v4 as uuidv4 } from 'uuid';
+import type { ChatbotMessageStore, ChatbotUiMessage } from './messageStore';
 
 type ActionProviderProps = {
   createChatBotMessage: any;
-  setState: React.Dispatch<React.SetStateAction<any>>;
   children: ReactNode;
   chatService: ChatService;
   chatHistoryController?: ChatHistoryController;
+  messageStore: ChatbotMessageStore;
 };
 
 const ActionProvider: React.FC<ActionProviderProps> = ({
   createChatBotMessage,
-  setState,
   children,
   chatService,
   chatHistoryController,
+  messageStore,
 }) => {
-  const { nickname } = useChatIdentity();
   // Track the last user message ID and nickname for reply linking
   const lastUserMessageIdRef = useRef<string | null>(null);
   const lastUserMessageTextRef = useRef<string | null>(null);
@@ -35,52 +34,36 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     }
   };
 
-  const appendBotMessage = (content: string, replyToId?: string, replyToPreview?: string, replyToNickname?: string) => {
-    // Create bot message with structured reply metadata (no encoding)
-    const botMessage = createChatBotMessage(content, {
-      replyToId,
-      replyToPreview,
-      replyToNickname,
+  const appendBotMessage = (message: BotMessage) => {
+    const botMessageNode: ChatbotUiMessage = createChatBotMessage(message.content, {
+      replyToId: message.replyMetadata?.replyToId,
+      replyToPreview: message.replyMetadata?.replyToPreview,
+      replyToNickname: message.replyMetadata?.replyToNickname,
     });
-    
-    setState((prev: any) => ({
-      ...prev,
-      messages: [...prev.messages, botMessage],
-    }));
-    
-    // Emit bot message to server for persistence
-    const botMessageId = uuidv4();
-    const botChatMessage: ChatMessage = {
-      id: botMessageId,
-      type: 'bot' as const,
-      content,
-      timestamp: new Date().toISOString(),
-      replyMetadata: replyToId ? {
-        replyToId,
-        replyToPreview: replyToPreview!,
-        replyToNickname: replyToNickname!,
-      } : undefined,
+
+    messageStore.appendMessage(botMessageNode);
+
+    const messageWithTimestamp: BotMessage = {
+      ...message,
+      timestamp: message.timestamp ?? new Date().toISOString(),
     };
-    emitMessageToServer(botChatMessage);
+
+    emitMessageToServer(messageWithTimestamp);
   };
 
   const handleUserMessage = async (userMessage: string, msgNickname: string) => {
-    // Receive plain text and nickname separately (no decoding needed)
-    
     // Update the last user message in state with nickname metadata
-    setState((prev: any) => {
-      const messages = [...prev.messages];
-      if (messages.length > 0) {
-        const lastMessage = messages[messages.length - 1];
-        // Add nickname to the user message
-        if (lastMessage.type === 'user' && lastMessage.message === userMessage) {
-          messages[messages.length - 1] = {
-            ...lastMessage,
-            nickname: msgNickname,
-          };
-        }
+    messageStore.mutateMessages((messages) => {
+      if (messages.length === 0) return messages;
+      const next = [...messages];
+      const last = next[next.length - 1];
+      if (last?.type === 'user' && last.message === userMessage) {
+        next[next.length - 1] = {
+          ...last,
+          nickname: msgNickname,
+        };
       }
-      return { ...prev, messages };
+      return next;
     });
     
     // Generate UUID for this user message
@@ -103,16 +86,13 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     emitMessageToServer(userChatMessage);
 
     // Add loading indicator message with reply metadata
-    const loadingMessage = createChatBotMessage('', {
+    const loadingMessage: ChatbotUiMessage = createChatBotMessage('', {
       loading: true,
       replyToId: userMessageId,
       replyToPreview: userMessagePreview,
       replyToNickname: msgNickname,
     });
-    setState((prev: any) => ({
-      ...prev,
-      messages: [...prev.messages, loadingMessage],
-    }));
+    messageStore.appendMessage(loadingMessage);
 
     // Create a timeout promise
     const TIMEOUT_MS = 30000; // 30 seconds
@@ -128,19 +108,23 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
       ]);
 
       // Remove loading message and add actual reply
-      setState((prev: any) => ({
-        ...prev,
-        messages: prev.messages.slice(0, -1),
-      }));
+      messageStore.removeLastMessage((msg) => Boolean(msg.loading));
       
       // Append bot message with reply metadata including nickname
-      appendBotMessage(botReply.content, userMessageId, userMessagePreview, msgNickname);
+      const botReplyWithMetadata: BotMessage = {
+        ...botReply,
+        replyMetadata: botReply.replyMetadata ?? (lastUserMessageIdRef.current && lastUserMessageTextRef.current && lastUserMessageNicknameRef.current
+          ? {
+              replyToId: lastUserMessageIdRef.current,
+              replyToPreview: lastUserMessageTextRef.current,
+              replyToNickname: lastUserMessageNicknameRef.current,
+            }
+          : undefined),
+      };
+      appendBotMessage(botReplyWithMetadata);
     } catch (error) {
       // Remove loading message
-      setState((prev: any) => ({
-        ...prev,
-        messages: prev.messages.slice(0, -1),
-      }));
+      messageStore.removeLastMessage((msg) => Boolean(msg.loading));
 
       // Show error message - timeout or actual remote error
       let errorMsg: string;
@@ -153,12 +137,31 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
         errorMsg = '❌ 发生未知错误，请稍后重试。';
       }
       
-      appendBotMessage(errorMsg, userMessageId, userMessagePreview, msgNickname);
+      const errorMessage: BotMessage = {
+        id: `bot-error-${Date.now()}`,
+        type: 'bot',
+        content: errorMsg,
+        timestamp: new Date().toISOString(),
+        replyMetadata: lastUserMessageIdRef.current && lastUserMessageTextRef.current && lastUserMessageNicknameRef.current
+          ? {
+              replyToId: lastUserMessageIdRef.current,
+              replyToPreview: lastUserMessageTextRef.current,
+              replyToNickname: lastUserMessageNicknameRef.current,
+            }
+          : undefined,
+      };
+      appendBotMessage(errorMessage);
     }
   };
 
   const actions = {
-    greet: () => appendBotMessage('欢迎来到海龟汤游戏！'),
+    greet: () =>
+      appendBotMessage({
+        id: `bot-greet-${Date.now()}`,
+        type: 'bot',
+        content: '欢迎来到海龟汤游戏！',
+        timestamp: new Date().toISOString(),
+      }),
     handleUserMessage,
   };
 

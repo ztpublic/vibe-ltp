@@ -6,6 +6,7 @@ import type { ChatService } from './services';
 import type { GameStateController, ChatHistoryController } from './controllers';
 import { IdentityProvider } from './identity/useChatIdentity';
 import { PuzzleInputDialog } from './components';
+import type { BotMessage } from '@vibe-ltp/shared';
 
 export interface ChatHomeProps {
   gameStateController: GameStateController;
@@ -46,7 +47,12 @@ export const ChatHome = ({
   const handleRevealTruth = async () => {
     // Send truth to chatbot
     if (puzzleContent?.soupTruth && chatbotRef.current) {
-      const truthMessage = `💡 谜题真相：\n\n${puzzleContent.soupTruth}`;
+      const truthMessage: BotMessage = {
+        id: `bot-truth-${Date.now()}`,
+        type: 'bot',
+        content: `💡 谜题真相：\n\n${puzzleContent.soupTruth}`,
+        timestamp: new Date().toISOString(),
+      };
       chatbotRef.current.addBotMessage(truthMessage);
       
       // Wait a bit to ensure message is sent to server before resetting

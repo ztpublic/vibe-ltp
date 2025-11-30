@@ -2,13 +2,13 @@
 
 import { ChatHome } from '@/src/features/chatbot/ChatHome';
 import { ApiChatService } from '@/src/features/chatbot/services';
-import { useSocketGameStateController, useSocketChatHistoryController } from '@/src/features/chatbot/controllers';
+import { useGameStateController, useChatHistoryController } from '@/src/features/chatbot/controllers';
 
 const chatService = new ApiChatService();
 
 export default function Home() {
-  const gameStateController = useSocketGameStateController();
-  const chatHistoryController = useSocketChatHistoryController();
+  const gameStateController = useGameStateController();
+  const chatHistoryController = useChatHistoryController();
   
   return (
     <ChatHome 
