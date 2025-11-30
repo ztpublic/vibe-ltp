@@ -1,13 +1,13 @@
-import type { ChatRequest, ChatResponse, UserMessage, BotMessage } from '@vibe-ltp/shared';
+import type { ChatRequest, ChatResponse, UserMessage, BotMessage, ChatMessage } from '@vibe-ltp/shared';
 import type { ChatService } from './chatService';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${process.env.NEXT_PUBLIC_BACKEND_PORT || 4000}`;
 
 export class ApiChatService implements ChatService {
-  async sendMessage(userMessage: UserMessage): Promise<BotMessage> {
+  async sendMessage(userMessage: UserMessage, history: ChatMessage[] = []): Promise<BotMessage> {
     const body: ChatRequest = {
       message: userMessage,
-      history: [], // TODO: Pass actual conversation history
+      history,
     };
 
     try {

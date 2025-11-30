@@ -102,8 +102,10 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
 
     try {
       // Race between API call and timeout - send full user message object
+      const historyForContext = chatHistoryController?.messages ?? [];
+
       const botReply = await Promise.race([
-        chatService.sendMessage(userChatMessage),
+        chatService.sendMessage(userChatMessage, historyForContext),
         timeoutPromise,
       ]);
 

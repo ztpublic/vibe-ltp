@@ -1,9 +1,9 @@
-import type { UserMessage, BotMessage } from '@vibe-ltp/shared';
+import type { UserMessage, BotMessage, ChatMessage } from '@vibe-ltp/shared';
 import type { ChatService } from './chatService';
 import { v4 as uuidv4 } from 'uuid';
 
 export class MockChatService implements ChatService {
-  async sendMessage(userMessage: UserMessage): Promise<BotMessage> {
+  async sendMessage(userMessage: UserMessage, _history?: ChatMessage[]): Promise<BotMessage> {
     // Simulate network delay
     await new Promise((resolve) => setTimeout(resolve, 500));
     
