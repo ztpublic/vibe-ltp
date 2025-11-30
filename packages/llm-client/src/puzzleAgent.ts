@@ -103,12 +103,14 @@ function buildContextMessages(context: PuzzleContext): ChatMessage[] {
  * @param question - The player's question
  * @param context - Puzzle context (surface, truth, conversationHistory)
  * @param model - LLM model to use
+ * @param fallbackModel - Fallback LLM model to use if primary model fails
  * @returns Evaluation result with answer
  */
 export async function evaluatePuzzleQuestion(
   question: string,
   context: PuzzleContext,
-  model: string = 'x-ai/grok-4.1-fast:free'
+  model: string = 'x-ai/grok-4.1-fast:free',
+  fallbackModel: string = 'google/gemini-2.0-flash-exp:free'
 ): Promise<PuzzleEvaluationResult> {
   const openRouter = getOpenRouterClient();
   const evaluateTool = createEvaluateQuestionTool();
@@ -135,10 +137,10 @@ export async function evaluatePuzzleQuestion(
   console.log('\n[Puzzle Agent]');
   console.log('Input:', question);
 
-  try {
-    // Call LLM with tool
+  // Helper function to call LLM with tool
+  const callModel = async (modelToUse: string) => {
     const result = await generateText({
-      model: openRouter(model) as any,
+      model: openRouter(modelToUse) as any,
       messages: messages.map(m => ({
         role: m.role,
         content: m.content,
@@ -165,11 +167,30 @@ export async function evaluatePuzzleQuestion(
     console.log('Output: UNKNOWN (no tool call)');
     
     return {
-      answer: 'unknown',
+      answer: 'unknown' as const,
     };
-  } catch (error) {
-    console.error('❌ Error evaluating puzzle question:', error);
-    throw new Error('Failed to evaluate puzzle question');
+  };
+
+  try {
+    // Try with primary model
+    return await callModel(model);
+  } catch (primaryError) {
+    console.warn(`⚠️ Primary model (${model}) failed, trying fallback model (${fallbackModel})...`, primaryError);
+    
+    try {
+      // Retry with fallback model
+      return await callModel(fallbackModel);
+    } catch (fallbackError) {
+      console.error('❌ Both primary and fallback models failed');
+      console.error('Primary error:', primaryError);
+      console.error('Fallback error:', fallbackError);
+      
+      // Shorten error messages to 50 chars max
+      const primaryMsg = String(primaryError).slice(0, 50);
+      const fallbackMsg = String(fallbackError).slice(0, 50);
+      
+      throw new Error(`Failed to evaluate puzzle question: Primary(${primaryMsg}), Fallback(${fallbackMsg})`);
+    }
   }
 }
 
