@@ -1,0 +1,29 @@
+[
+  {
+    "id": "monopoly-bankrupt",
+    "question": "Is he playing a board game?",
+    "expectedAnswer": "yes",
+    "context": {
+      "surface": "A man pushes his car to a hotel and tells the owner he is bankrupt. Why?",
+      "truth": "He is playing Monopoly. The \"car\" is his game token, the \"hotel\" is a property with a hotel built on it, and he owes more than he can pay."
+    }
+  },
+  {
+    "id": "cat-fishbowl",
+    "question": "Did a cat knock over the bowl?",
+    "expectedAnswer": "yes",
+    "context": {
+      "surface": "A room contains a shattered fishbowl and water on the floor. The goldfish is dead. What happened?",
+      "truth": "A curious cat jumped onto the table, knocked the fishbowl off, and it shattered on the floor before anyone noticed."
+    }
+  },
+  {
+    "id": "failed-parachute",
+    "question": "Was his parachute defective?",
+    "expectedAnswer": "yes",
+    "context": {
+      "surface": "A hiker is found dead in an open field wearing a backpack. There are no tracks or signs of struggle nearby.",
+      "truth": "He was skydiving. His parachute pack failed to open, and he fell into the field."
+    }
+  }
+]

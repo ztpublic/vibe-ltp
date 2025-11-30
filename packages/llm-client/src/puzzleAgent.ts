@@ -35,13 +35,27 @@ export interface PuzzleContext {
 export interface PuzzleEvaluationResult {
   /** The canonical answer type */
   answer: 'yes' | 'no' | 'irrelevant' | 'both' | 'unknown';
+  /** Optional hint surfaced by the agent */
+  tip?: string;
+}
+
+/**
+ * Configuration options for running the puzzle agent
+ */
+export interface PuzzleAgentOptions {
+  /** Primary model to call (required) */
+  model: string;
+  /** Fallback model if primary fails */
+  fallbackModel?: string;
+  /** Override system prompt for experiments */
+  systemPrompt?: string;
 }
 
 /**
  * Build the system prompt for the puzzle host agent
  * Following the guidelines from agent-flow.md section C
  */
-function buildSystemPrompt(): string {
+export function buildSystemPrompt(): string {
   return `You are a lateral thinking puzzle host (situation puzzle / 海龟汤).
 
 ROLE & RULES:
@@ -102,21 +116,33 @@ function buildContextMessages(context: PuzzleContext): ChatMessage[] {
  * 
  * @param question - The player's question
  * @param context - Puzzle context (surface, truth, conversationHistory)
- * @param model - LLM model to use
- * @param fallbackModel - Fallback LLM model to use if primary model fails
+ * @param modelOrOptions - Required LLM model to use, or options bag (model required)
+ * @param fallbackModel - Optional fallback LLM model to use if primary model fails (only used when modelOrOptions is string)
  * @returns Evaluation result with answer
  */
 export async function evaluatePuzzleQuestion(
   question: string,
   context: PuzzleContext,
-  model: string = 'x-ai/grok-4.1-fast:free',
-  fallbackModel: string = 'google/gemini-2.0-flash-exp:free'
+  modelOrOptions: string | PuzzleAgentOptions,
+  fallbackModel?: string
 ): Promise<PuzzleEvaluationResult> {
+  const options: PuzzleAgentOptions =
+    typeof modelOrOptions === 'string'
+      ? { model: modelOrOptions, fallbackModel }
+      : modelOrOptions;
+
+  if (!options || !options.model) {
+    throw new Error('Puzzle agent requires a model to be specified.');
+  }
+
+  const model = options.model;
+  const fallbackModelToUse = options.fallbackModel;
+  const systemPrompt = options.systemPrompt ?? buildSystemPrompt();
+
   const openRouter = getOpenRouterClient();
   const evaluateTool = createEvaluateQuestionTool();
 
   // Build messages following agent-flow.md structure
-  const systemPrompt = buildSystemPrompt();
   const contextMessages = buildContextMessages(context);
   
   const messages = [
@@ -159,6 +185,7 @@ export async function evaluatePuzzleQuestion(
 
         return {
           answer: args.answer,
+          tip: args.tips,
         };
       }
     }
@@ -175,11 +202,16 @@ export async function evaluatePuzzleQuestion(
     // Try with primary model
     return await callModel(model);
   } catch (primaryError) {
-    console.warn(`⚠️ Primary model (${model}) failed, trying fallback model (${fallbackModel})...`, primaryError);
+    if (!fallbackModelToUse) {
+      console.error(`❌ Primary model (${model}) failed and no fallbackModel was provided`);
+      throw primaryError;
+    }
+
+    console.warn(`⚠️ Primary model (${model}) failed, trying fallback model (${fallbackModelToUse})...`, primaryError);
     
     try {
       // Retry with fallback model
-      return await callModel(fallbackModel);
+      return await callModel(fallbackModelToUse);
     } catch (fallbackError) {
       console.error('❌ Both primary and fallback models failed');
       console.error('Primary error:', primaryError);

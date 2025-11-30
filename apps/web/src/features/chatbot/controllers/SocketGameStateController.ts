@@ -72,55 +72,61 @@ export function useSocketGameStateController(onNotify?: (toast: ToastInput) => v
       releaseSocket(socket);
       socketRef.current = null;
     };
-  }, []);
+  }, [onNotify]);
 
-  const startGame = useCallback((content: PuzzleContent) => {
-    const socket = socketRef.current;
-    if (!socket || !isSocketConnected(socket)) {
-      onNotify?.({ type: 'warning', message: '无法开始：未连接服务器' });
-      return;
-    }
-    
-    // Optimistically update local state for responsive UI
-    setGameState('Started');
-    setPuzzleContent(content);
-    
-    // Emit with acknowledgment callback
-    socket.emit(
-      SOCKET_EVENTS.GAME_STARTED, 
-      { puzzleContent: content },
-      (response: { success: boolean; error?: string }) => {
-        if (!response.success) {
-          onNotify?.({ type: 'error', message: `开始失败：${response.error || '未知错误'}` });
-          // Revert optimistic update on failure
-          setGameState('NotStarted');
-          setPuzzleContent(null);
-        }
+  const startGame = useCallback(
+    (content: PuzzleContent) => {
+      const socket = socketRef.current;
+      if (!socket || !isSocketConnected(socket)) {
+        onNotify?.({ type: 'warning', message: '无法开始：未连接服务器' });
+        return;
       }
-    );
-  }, []);
+      
+      // Optimistically update local state for responsive UI
+      setGameState('Started');
+      setPuzzleContent(content);
+      
+      // Emit with acknowledgment callback
+      socket.emit(
+        SOCKET_EVENTS.GAME_STARTED, 
+        { puzzleContent: content },
+        (response: { success: boolean; error?: string }) => {
+          if (!response.success) {
+            onNotify?.({ type: 'error', message: `开始失败：${response.error || '未知错误'}` });
+            // Revert optimistic update on failure
+            setGameState('NotStarted');
+            setPuzzleContent(null);
+          }
+        }
+      );
+    },
+    [onNotify]
+  );
 
-  const resetGame = useCallback(() => {
-    const socket = socketRef.current;
-    if (!socket || !isSocketConnected(socket)) {
-      onNotify?.({ type: 'warning', message: '无法重置：未连接服务器' });
-      return;
-    }
-    
-    // Optimistically update local state
-    setGameState('NotStarted');
-    setPuzzleContent(null);
-    
-    // Emit with acknowledgment callback
-    socket.emit(
-      SOCKET_EVENTS.GAME_RESET,
-      (response: { success: boolean; error?: string }) => {
-        if (!response.success) {
-          onNotify?.({ type: 'error', message: `重置失败：${response.error || '未知错误'}` });
-        }
+  const resetGame = useCallback(
+    () => {
+      const socket = socketRef.current;
+      if (!socket || !isSocketConnected(socket)) {
+        onNotify?.({ type: 'warning', message: '无法重置：未连接服务器' });
+        return;
       }
-    );
-  }, []);
+      
+      // Optimistically update local state
+      setGameState('NotStarted');
+      setPuzzleContent(null);
+      
+      // Emit with acknowledgment callback
+      socket.emit(
+        SOCKET_EVENTS.GAME_RESET,
+        (response: { success: boolean; error?: string }) => {
+          if (!response.success) {
+            onNotify?.({ type: 'error', message: `重置失败：${response.error || '未知错误'}` });
+          }
+        }
+      );
+    },
+    [onNotify]
+  );
 
   return {
     gameState,
