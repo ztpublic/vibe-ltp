@@ -11,3 +11,4 @@ export * from './agent.js';
 export * from './questionValidatorAgent.js';
 export * from './connectionDistillerAgent.js';
 export * from './factDistillerAgent.js';
+export * from './keyPointsDistillerAgent.js';
