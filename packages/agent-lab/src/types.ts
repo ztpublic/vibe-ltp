@@ -73,6 +73,22 @@ export interface ConnectionDistillerRunnerOptions {
   cases: ConnectionCase[];
 }
 
+export interface LogicChainRunResult {
+  caseId: string;
+  chain: string[];
+  durationMs: number;
+  startedAt: string;
+  completedAt: string;
+  error?: string;
+}
+
+export interface LogicChainRunnerOptions {
+  model: string;
+  fallbackModel?: string;
+  systemPrompt?: string;
+  cases: ConnectionCase[];
+}
+
 export interface FactCase {
   id: string;
   truth: string;

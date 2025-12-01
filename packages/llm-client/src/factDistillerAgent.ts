@@ -1,6 +1,6 @@
 /**
  * Fact Distiller Agent
- * Extracts up to three most important facts from a puzzle truth
+ * Extracts 3-5 most important facts from a puzzle truth
  */
 
 import { generateText } from 'ai';
@@ -27,10 +27,10 @@ export function buildFactDistillerSystemPrompt(): string {
 
 ROLE:
 - You see the full hidden truth (汤底).
-- Extract 1-3 critical factual statements that anchor the story (at least 1, never more than 3).
+- Extract 3-5 critical factual statements that anchor the story.
 
 FACT RULES:
-- 1-3 facts, each a concise standalone statement in Chinese (no numbering).
+- 3-5 facts, each a concise standalone statement in Chinese (no numbering).
 - Prioritize causal pivots, key roles, and events that make the truth understandable.
 - Avoid spoilers of twists; keep details precise but not exhaustive.
 - Do not copy the surface; focus on the truth's substance.

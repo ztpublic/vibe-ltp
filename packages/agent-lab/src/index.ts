@@ -1,6 +1,7 @@
 export * from './types.js';
 export * from './runner.js';
 export * from './connectionRunner.js';
+export * from './logicChainRunner.js';
 export * from './factRunner.js';
 export * from './historySummaryRunner.js';
 export { sampleAgents } from './fixtures/sampleAgents.js';

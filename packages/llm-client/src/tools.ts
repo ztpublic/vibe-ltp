@@ -42,12 +42,23 @@ export type DistillConnectionsArgs = z.infer<typeof DistillConnectionsArgsSchema
  * Arguments for distill_facts tool
  */
 export const DistillFactsArgsSchema = z.object({
-  facts: z.array(z.string().min(3)).min(1).max(3).describe(
-    '1-3 essential factual statements that capture the core of the puzzle truth without spoilers.'
+  facts: z.array(z.string().min(3)).min(3).max(5).describe(
+    '3-5 essential factual statements that capture the core of the puzzle truth without spoilers.'
   ),
 });
 
 export type DistillFactsArgs = z.infer<typeof DistillFactsArgsSchema>;
+
+/**
+ * Arguments for distill_logic_chain tool
+ */
+export const DistillLogicChainArgsSchema = z.object({
+  chain: z.array(z.string().min(3)).min(3).max(5).describe(
+    '3-5 progressive reasoning steps that form a chain from the surface toward the truth.'
+  ),
+});
+
+export type DistillLogicChainArgs = z.infer<typeof DistillLogicChainArgsSchema>;
 
 /**
  * Arguments for summarize_history tool
@@ -98,7 +109,7 @@ export function createDistillConnectionsTool(): AgentTool<DistillConnectionsArgs
 export function createDistillFactsTool(): AgentTool<DistillFactsArgs, DistillFactsArgs> {
   return defineTool({
     name: 'distill_facts',
-    description: 'Extract 1-3 key factual statements that summarize the core of the puzzle truth.',
+    description: 'Extract 3-5 key factual statements that summarize the core of the puzzle truth.',
     argsSchema: DistillFactsArgsSchema,
     execute: async (args) => args,
   });
@@ -144,6 +155,19 @@ export function createMatchKeyPointsTool(): AgentTool<MatchKeyPointsArgs, MatchK
     description:
       'Given the player question, the host answer (yes/no/irrelevant/both/unknown), and the list of distilled key points, select which key points the player would now understand.',
     argsSchema: MatchKeyPointsArgsSchema,
+    execute: async (args) => args,
+  });
+}
+
+/**
+ * Tool for generating a progressive logic chain bridging surface to truth
+ */
+export function createDistillLogicChainTool(): AgentTool<DistillLogicChainArgs, DistillLogicChainArgs> {
+  return defineTool({
+    name: 'distill_logic_chain',
+    description:
+      'Generate 3-5 progressive reasoning steps that start from the surface and move toward the truth, each step building on the previous.',
+    argsSchema: DistillLogicChainArgsSchema,
     execute: async (args) => args,
   });
 }
