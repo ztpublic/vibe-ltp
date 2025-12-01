@@ -1,7 +1,5 @@
 import type { Server } from 'socket.io';
-import { SOCKET_EVENTS, type PuzzleContent, type GameStateData, type PuzzleFact } from '@vibe-ltp/shared';
-import { distillPuzzleKeyPoints } from '@vibe-ltp/llm-client';
-import { randomUUID } from 'node:crypto';
+import { SOCKET_EVENTS, type PuzzleContent } from '@vibe-ltp/shared';
 import * as gameState from '../state/gameState.js';
 import type { PersistedMessage } from '../state/gameState.js';
 import { handleSocketError, sendSocketSuccess } from '../utils/errorHandler.js';
@@ -49,43 +47,15 @@ export function setupSocketIO(io: Server): void {
       const { puzzleContent } = data;
 
       try {
-        const model = 'x-ai/grok-4-fast';
-
-        let enrichedPuzzleContent: PuzzleContent = puzzleContent;
-
-        try {
-          const keyPointsResult = await distillPuzzleKeyPoints(
-            {
-              surface: puzzleContent.soupSurface,
-              truth: puzzleContent.soupTruth,
-              conversationHistory: [],
-            },
-            model
-          );
-
-          const facts: PuzzleFact[] = keyPointsResult.keyPoints.map((text) => ({
-            id: randomUUID(),
-            text,
-            revealed: false,
-          }));
-
-          enrichedPuzzleContent = {
-            ...puzzleContent,
-            facts,
-          };
-        } catch (agentError) {
-          console.error('[Socket] Key points distillation failed; starting without facts', agentError);
-        }
-
         // IMPORTANT: Set puzzle content BEFORE setting state to 'Started'
         // The validateStateTransition function requires puzzle content to exist
-        gameState.setPuzzleContent(enrichedPuzzleContent);
+        gameState.setPuzzleContent(puzzleContent);
         gameState.setGameState('Started');
         
         // Notify all connected clients
         io.emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
           state: 'Started',
-          puzzleContent: enrichedPuzzleContent,
+          puzzleContent,
         });
         
         sendSocketSuccess(callback);

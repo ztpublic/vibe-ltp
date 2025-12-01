@@ -1,14 +1,12 @@
 import { Router, type Router as RouterType } from 'express';
-import { SOCKET_EVENTS, type ChatRequest, type ChatResponse, type PuzzleContent } from '@vibe-ltp/shared';
+import { type ChatRequest, type ChatResponse } from '@vibe-ltp/shared';
 import {
   formatValidationReply,
   type PuzzleContext,
   validatePuzzleQuestion,
-  matchKeyPoints,
 } from '@vibe-ltp/llm-client';
 import * as gameState from '../../state/gameState.js';
 import { v4 as uuidv4 } from 'uuid';
-import { getSocketServer } from '../../sockets/ioReference.js';
 
 const router = Router();
 const model = 'x-ai/grok-4-fast';
@@ -58,81 +56,6 @@ router.post('/chat', async (req, res) => {
       userText,
       evaluation.answer
     );
-
-    const updatedConversationHistory = gameState.getConversationHistory();
-
-    // Attempt to match any key points revealed by current knowledge (only check unrevealed)
-    const currentPuzzleContent = gameState.getPuzzleContent();
-    const unrevealedFacts =
-      currentPuzzleContent?.facts?.map((fact, idx) => ({ fact, idx })).filter(item => !item.fact.revealed) ?? [];
-    const keyPoints = unrevealedFacts.map(item => item.fact.text);
-    let matchedIndexes: number[] = [];
-
-    if (keyPoints.length > 0) {
-      try {
-        const latestTurn = updatedConversationHistory.at(-1);
-        if (latestTurn) {
-          const matchResult = await matchKeyPoints(
-            {
-              question: latestTurn.question,
-              answer: latestTurn.answer,
-              keyPoints,
-            },
-            model
-          );
-
-          matchedIndexes = (matchResult.matchedIndexes || []).filter(
-            (idx) => Number.isInteger(idx) && idx >= 0 && idx < keyPoints.length
-          );
-        }
-      } catch (matcherError) {
-        console.error('Key points matcher failed; continuing without revealing facts', matcherError);
-      }
-    }
-
-    if (matchedIndexes.length > 0 && currentPuzzleContent?.facts) {
-      const globalMatchedIndexes = matchedIndexes.map(localIdx => unrevealedFacts[localIdx]?.idx).filter(
-        (idx): idx is number => typeof idx === 'number'
-      );
-
-      const updatedFacts = currentPuzzleContent.facts.map((fact, idx) => {
-        if (globalMatchedIndexes.includes(idx)) {
-          return { ...fact, revealed: true };
-        }
-        return fact;
-      });
-
-      const updatedPuzzleContent: PuzzleContent = {
-        ...currentPuzzleContent,
-        facts: updatedFacts,
-      };
-
-      gameState.setPuzzleContent(updatedPuzzleContent);
-
-      const io = getSocketServer();
-      if (io) {
-        io.emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
-          state: gameState.getGameState(),
-          puzzleContent: updatedPuzzleContent,
-        });
-      }
-
-      const allRevealed = updatedFacts.length > 0 && updatedFacts.every(f => f.revealed);
-      if (allRevealed) {
-        gameState.resetGameState();
-
-        // Preserve revealed puzzle content for clients until a new game starts
-        gameState.setPuzzleContent(updatedPuzzleContent);
-
-        const ioReset = getSocketServer();
-        if (ioReset) {
-          ioReset.emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
-            state: 'NotStarted',
-            puzzleContent: updatedPuzzleContent,
-          });
-        }
-      }
-    }
 
     // Format reply for chat UI
     const replyText = formatValidationReply(evaluation);
