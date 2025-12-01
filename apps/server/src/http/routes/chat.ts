@@ -5,7 +5,6 @@ import {
   type PuzzleContext,
   validatePuzzleQuestion,
   matchKeyPoints,
-  summarizePuzzleHistory,
 } from '@vibe-ltp/llm-client';
 import * as gameState from '../../state/gameState.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -71,25 +70,21 @@ router.post('/chat', async (req, res) => {
 
     if (keyPoints.length > 0) {
       try {
-        const historySummary = await summarizePuzzleHistory(
-          {
-            surface: puzzleContext.surface,
-            conversationHistory: updatedConversationHistory,
-          },
-          model
-        );
+        const latestTurn = updatedConversationHistory.at(-1);
+        if (latestTurn) {
+          const matchResult = await matchKeyPoints(
+            {
+              question: latestTurn.question,
+              answer: latestTurn.answer,
+              keyPoints,
+            },
+            model
+          );
 
-        const matchResult = await matchKeyPoints(
-          {
-            summary: historySummary.summary,
-            keyPoints,
-          },
-          model
-        );
-
-        matchedIndexes = (matchResult.matchedIndexes || []).filter(
-          (idx) => Number.isInteger(idx) && idx >= 0 && idx < keyPoints.length
-        );
+          matchedIndexes = (matchResult.matchedIndexes || []).filter(
+            (idx) => Number.isInteger(idx) && idx >= 0 && idx < keyPoints.length
+          );
+        }
       } catch (matcherError) {
         console.error('Key points matcher failed; continuing without revealing facts', matcherError);
       }

@@ -1,6 +1,6 @@
 /**
  * Key Points Matcher Agent
- * Maps a knowledge summary to which distilled key points are now known
+ * Maps a single Q/A turn to which distilled key points are now known
  */
 
 import { generateText } from 'ai';
@@ -13,7 +13,8 @@ import {
 import type { ChatMessage } from './types.js';
 
 export interface KeyPointsMatchInput {
-  summary: string;
+  question: string;
+  answer: string;
   keyPoints: string[];
 }
 
@@ -31,17 +32,18 @@ export function buildKeyPointsMatcherSystemPrompt(): string {
   return `You are a "key points matcher" for a lateral thinking puzzle.
 
 INPUTS:
-- Summary of what players know so far (from surface + Q/A history)
+- A single player question and the host's answer
 - Distilled key points of the puzzle truth
 
 TASK:
-- Decide which key points are now understood given the provided summary.
+- Decide which key points are now understood given this Q/A turn.
 - Return ONLY the indexes (0-based) of known key points via the tool "match_key_points".
 
 RULES:
-- Include a key point ONLY if the summary explicitly states it or leaves no plausible alternative.
-- If the summary is vague, partial, or missing a clear link, do NOT mark the point as known.
-- Prefer under-inclusion over guessing; avoid speculative leaps.
+- If the answer is "no", first convert the Q/A into an equivalent single statement (e.g., Q: "他是凶手吗？" A: "不是" -> "他不是凶手") and match that statement.
+- Include a key point ONLY if the Q/A pair explicitly establishes it or leaves no plausible alternative.
+- If the Q/A is vague, partial, or missing a clear link, do NOT mark the point as known.
+- Prefer under-inclusion over guessing; avoid speculative leaps or extrapolations beyond this single turn.
 - Keep the list minimal and strictly evidence-based.`;
 }
 
@@ -53,7 +55,7 @@ function buildContextMessages(input: KeyPointsMatchInput): ChatMessage[] {
   return [
     {
       role: 'assistant',
-      content: `SUMMARY OF KNOWN INFO:\n${input.summary}`,
+      content: `PLAYER QUESTION:\n${input.question}\n\nHOST ANSWER:\n${input.answer}`,
     },
     {
       role: 'assistant',
@@ -78,8 +80,18 @@ export async function matchKeyPoints(
   const fallbackModelToUse = options.fallbackModel;
   const systemPrompt = options.systemPrompt ?? buildKeyPointsMatcherSystemPrompt();
 
-  if (!input.summary || input.summary.trim().length === 0) {
-    throw new Error('Key points matcher requires a non-empty summary input.');
+  if (!input.question || input.question.trim().length === 0) {
+    throw new Error('Key points matcher requires a non-empty question input.');
+  }
+
+  if (!input.answer || input.answer.trim().length === 0) {
+    throw new Error('Key points matcher requires a non-empty answer input.');
+  }
+
+  // Short-circuit for non-informative answers
+  const normalizedAnswer = input.answer.trim().toLowerCase();
+  if (normalizedAnswer === 'unknown' || normalizedAnswer === 'irrelevant') {
+    return { matchedIndexes: [] };
   }
 
   const openRouter = getOpenRouterClient();
@@ -99,7 +111,8 @@ export async function matchKeyPoints(
   };
 
   console.log('\n[Key Points Matcher Agent]');
-  console.log('Summary:', input.summary);
+  console.log('Question:', input.question);
+  console.log('Answer:', input.answer);
 
   const callModel = async (modelToUse: string) => {
     const result = await generateText({

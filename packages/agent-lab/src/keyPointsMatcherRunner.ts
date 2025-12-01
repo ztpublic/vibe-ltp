@@ -18,17 +18,23 @@ export async function runKeyPointMatcherSuite(
   for (const testCase of cases) {
     const startedAt = Date.now();
     let matchedIndexes: number[] = [];
-    const summary = testCase.summary?.trim();
+    const question = testCase.question?.trim();
+    const answer = testCase.answer?.trim();
     let error: string | undefined;
 
     try {
-      if (!summary) {
-        throw new Error('KeyPointMatchCase.summary is required for matcher demo.');
+      if (!question) {
+        throw new Error('KeyPointMatchCase.question is required for matcher demo.');
+      }
+
+      if (!answer) {
+        throw new Error('KeyPointMatchCase.answer is required for matcher demo.');
       }
 
       const result = await matchKeyPoints(
         {
-          summary: summary,
+          question,
+          answer,
           keyPoints: testCase.keyPoints,
         },
         {
@@ -49,7 +55,8 @@ export async function runKeyPointMatcherSuite(
     runs.push({
       caseId: testCase.id,
       matchedIndexes,
-      summary,
+      question,
+      answer,
       durationMs,
       startedAt: new Date(startedAt).toISOString(),
       completedAt: new Date(completedAt).toISOString(),
@@ -81,9 +88,8 @@ export function logKeyPointMatchResults(results: KeyPointMatchRunResult[]): void
       console.log(`   expected: ${JSON.stringify(result.expectedMatchedIndexes)}`);
     }
 
-    if (result.summary) {
-      console.log(`   summary: ${result.summary}`);
-    }
+    console.log(`   Q: ${result.question ?? '(missing question)'}`);
+    console.log(`   A: ${result.answer ?? '(missing answer)'}`);
 
     if (result.error) {
       console.log(`   error: ${result.error}`);

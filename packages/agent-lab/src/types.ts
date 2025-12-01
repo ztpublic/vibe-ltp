@@ -113,7 +113,8 @@ export interface FactDistillerRunnerOptions {
 export interface KeyPointMatchCase {
   id: string;
   surface: string;
-  summary: string;
+  question: string;
+  answer: string;
   keyPoints: string[];
   expectedMatchedIndexes?: number[];
 }
@@ -121,7 +122,8 @@ export interface KeyPointMatchCase {
 export interface KeyPointMatchRunResult {
   caseId: string;
   matchedIndexes: number[];
-  summary?: string;
+  question?: string;
+  answer?: string;
   durationMs: number;
   startedAt: string;
   completedAt: string;
