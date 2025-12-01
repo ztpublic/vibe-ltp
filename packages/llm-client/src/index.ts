@@ -13,3 +13,4 @@ export * from './connectionDistillerAgent.js';
 export * from './factDistillerAgent.js';
 export * from './keyPointsDistillerAgent.js';
 export * from './keyPointsMatcherAgent.js';
+export * from './historySummarizerAgent.js';

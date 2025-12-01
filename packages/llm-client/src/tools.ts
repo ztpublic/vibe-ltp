@@ -50,6 +50,20 @@ export const DistillFactsArgsSchema = z.object({
 export type DistillFactsArgs = z.infer<typeof DistillFactsArgsSchema>;
 
 /**
+ * Arguments for summarize_history tool
+ */
+export const SummarizeHistoryArgsSchema = z.object({
+  summary: z
+    .string()
+    .min(10)
+    .describe(
+      'Concise Chinese summary (2-4 sentences or bullet-style lines) of what is now known or confidently inferred from the surface and Q/A history. Do NOT restate the surface text.'
+    ),
+});
+
+export type SummarizeHistoryArgs = z.infer<typeof SummarizeHistoryArgsSchema>;
+
+/**
  * Tool for evaluating puzzle questions against the truth
  * This is the core tool for the question validator agent
  */
@@ -86,6 +100,19 @@ export function createDistillFactsTool(): AgentTool<DistillFactsArgs, DistillFac
     name: 'distill_facts',
     description: 'Extract exactly 3 key factual statements that summarize the core of the puzzle truth.',
     argsSchema: DistillFactsArgsSchema,
+    execute: async (args) => args,
+  });
+}
+
+/**
+ * Tool for summarizing conversation history against the surface
+ */
+export function createSummarizeHistoryTool(): AgentTool<SummarizeHistoryArgs, SummarizeHistoryArgs> {
+  return defineTool({
+    name: 'summarize_history',
+    description:
+      'Summarize what the host and players collectively know so far based on the puzzle surface and the Q/A history, excluding any details already given in the surface.',
+    argsSchema: SummarizeHistoryArgsSchema,
     execute: async (args) => args,
   });
 }

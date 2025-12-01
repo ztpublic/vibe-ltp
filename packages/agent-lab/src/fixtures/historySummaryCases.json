@@ -1,0 +1,29 @@
+[
+  {
+    "id": "monopoly-progress",
+    "surface": "A man pushes his car to a hotel and tells the owner he is bankrupt. Why?",
+    "conversationHistory": [
+      { "question": "Is he playing a board game?", "answer": "yes" },
+      { "question": "Is this about Monopoly?", "answer": "yes" },
+      { "question": "Did he land on someone else's property and owe more than he can pay?", "answer": "yes" }
+    ]
+  },
+  {
+    "id": "fishbowl-progress",
+    "surface": "A room contains a shattered fishbowl and water on the floor. The goldfish is dead. What happened?",
+    "conversationHistory": [
+      { "question": "Was there a cat involved?", "answer": "yes" },
+      { "question": "Did the cat knock the bowl over?", "answer": "yes" },
+      { "question": "Did anyone intentionally harm the fish?", "answer": "no" }
+    ]
+  },
+  {
+    "id": "failed-parachute-progress",
+    "surface": "A hiker is found dead in an open field wearing a backpack. There are no tracks or signs of struggle nearby.",
+    "conversationHistory": [
+      { "question": "Was he skydiving?", "answer": "yes" },
+      { "question": "Was the backpack actually a parachute?", "answer": "yes" },
+      { "question": "Did the parachute fail to open?", "answer": "yes" }
+    ]
+  }
+]

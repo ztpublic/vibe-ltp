@@ -17,7 +17,8 @@
     "demo": "tsx src/demo.ts",
     "demo:connections": "tsx src/connectionDemo.ts",
     "demo:facts": "tsx src/factDemo.ts",
-    "demo:keypoints": "tsx src/keyPointsMatcherDemo.ts"
+    "demo:keypoints": "tsx src/keyPointsMatcherDemo.ts",
+    "demo:history": "tsx src/historySummaryDemo.ts"
   },
   "dependencies": {
     "@vibe-ltp/llm-client": "workspace:*",

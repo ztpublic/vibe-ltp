@@ -1,4 +1,4 @@
-import type { AnswerType, PuzzleContext } from '@vibe-ltp/llm-client';
+import type { AnswerType, PuzzleContext, QuestionAnswerPair } from '@vibe-ltp/llm-client';
 
 export interface AgentVariant {
   id: string;
@@ -117,4 +117,26 @@ export interface KeyPointMatchRunnerOptions {
   fallbackModel?: string;
   systemPrompt?: string;
   cases: KeyPointMatchCase[];
+}
+
+export interface HistorySummaryCase {
+  id: string;
+  surface: string;
+  conversationHistory: QuestionAnswerPair[];
+}
+
+export interface HistorySummaryRunResult {
+  caseId: string;
+  summary: string;
+  durationMs: number;
+  startedAt: string;
+  completedAt: string;
+  error?: string;
+}
+
+export interface HistorySummaryRunnerOptions {
+  model: string;
+  fallbackModel?: string;
+  systemPrompt?: string;
+  cases: HistorySummaryCase[];
 }
