@@ -50,6 +50,21 @@ export const DistillFactsArgsSchema = z.object({
 export type DistillFactsArgs = z.infer<typeof DistillFactsArgsSchema>;
 
 /**
+ * Arguments for extract_truth_keywords tool
+ */
+export const ExtractTruthKeywordsArgsSchema = z.object({
+  keywords: z
+    .array(z.string().min(1))
+    .min(2)
+    .max(5)
+    .describe(
+      '2-5 critical keywords copied verbatim from the puzzle truth. Exclude anything that appears in the puzzle surface.'
+    ),
+});
+
+export type ExtractTruthKeywordsArgs = z.infer<typeof ExtractTruthKeywordsArgsSchema>;
+
+/**
  * Arguments for distill_logic_chain tool
  */
 export const DistillLogicChainArgsSchema = z.object({
@@ -111,6 +126,19 @@ export function createDistillFactsTool(): AgentTool<DistillFactsArgs, DistillFac
     name: 'distill_facts',
     description: 'Extract 3-5 key factual statements that summarize the core of the puzzle truth.',
     argsSchema: DistillFactsArgsSchema,
+    execute: async (args) => args,
+  });
+}
+
+/**
+ * Tool for extracting important truth keywords that are not in the surface
+ */
+export function createExtractTruthKeywordsTool(): AgentTool<ExtractTruthKeywordsArgs, ExtractTruthKeywordsArgs> {
+  return defineTool({
+    name: 'extract_truth_keywords',
+    description:
+      'Extract 2-5 important keywords that appear in the puzzle truth but do not appear in the puzzle surface. Each keyword must match the exact wording from the truth.',
+    argsSchema: ExtractTruthKeywordsArgsSchema,
     execute: async (args) => args,
   });
 }

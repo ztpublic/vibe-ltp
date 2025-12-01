@@ -19,7 +19,9 @@
     "demo:facts": "tsx src/factDemo.ts",
     "demo:keypoints": "tsx src/keyPointsMatcherDemo.ts",
     "demo:history": "tsx src/historySummaryDemo.ts",
-    "demo:logic-chain": "tsx src/logicChainDemo.ts"
+    "demo:logic-chain": "tsx src/logicChainDemo.ts",
+    "demo:truth-keywords": "tsx src/truthKeywordsDemo.ts",
+    "demo:embeddings": "tsx src/embeddingsDemo.ts"
   },
   "dependencies": {
     "@vibe-ltp/llm-client": "workspace:*",

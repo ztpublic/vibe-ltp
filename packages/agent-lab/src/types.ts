@@ -159,3 +159,27 @@ export interface HistorySummaryRunnerOptions {
   systemPrompt?: string;
   cases: HistorySummaryCase[];
 }
+
+export interface TruthKeywordCase {
+  id: string;
+  surface: string;
+  truth: string;
+}
+
+export interface TruthKeywordRunResult {
+  caseId: string;
+  keywords: string[];
+  surface?: string;
+  truth?: string;
+  durationMs: number;
+  startedAt: string;
+  completedAt: string;
+  error?: string;
+}
+
+export interface TruthKeywordRunnerOptions {
+  model: string;
+  fallbackModel?: string;
+  systemPrompt?: string;
+  cases: TruthKeywordCase[];
+}
