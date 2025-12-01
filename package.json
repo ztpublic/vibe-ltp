@@ -21,6 +21,7 @@
     "agent-lab:demo:history": "pnpm -C packages/agent-lab demo:history",
     "agent-lab:demo:keypoints": "pnpm -C packages/agent-lab demo:keypoints",
     "e2e": "playwright test",
+    "e2e:random": "RUN_RANDOM_E2E=1 playwright test apps/web/tests/e2e/randomGame.manual.spec.ts --headed",
     "e2e:complete": "playwright test apps/web/tests/e2e/chatbot.spec.ts -g \"should handle complete gameplay flow with questions and answers\" --headed",
     "format": "prettier --write .",
     "clean": "rimraf dist apps/*/dist packages/*/dist **/*.tsbuildinfo",
