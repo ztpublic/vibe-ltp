@@ -65,6 +65,19 @@ export const ExtractTruthKeywordsArgsSchema = z.object({
 export type ExtractTruthKeywordsArgs = z.infer<typeof ExtractTruthKeywordsArgsSchema>;
 
 /**
+ * Arguments for extract_question_keywords tool
+ */
+export const ExtractQuestionKeywordsArgsSchema = z.object({
+  keywords: z
+    .array(z.string().min(1))
+    .min(1)
+    .max(3)
+    .describe('1-3 pivotal keywords copied verbatim from the user question.'),
+});
+
+export type ExtractQuestionKeywordsArgs = z.infer<typeof ExtractQuestionKeywordsArgsSchema>;
+
+/**
  * Arguments for distill_logic_chain tool
  */
 export const DistillLogicChainArgsSchema = z.object({
@@ -139,6 +152,21 @@ export function createExtractTruthKeywordsTool(): AgentTool<ExtractTruthKeywords
     description:
       'Extract 2-5 important keywords that appear in the puzzle truth but do not appear in the puzzle surface. Each keyword must match the exact wording from the truth.',
     argsSchema: ExtractTruthKeywordsArgsSchema,
+    execute: async (args) => args,
+  });
+}
+
+/**
+ * Tool for extracting key terms from a player question
+ */
+export function createExtractQuestionKeywordsTool(): AgentTool<
+  ExtractQuestionKeywordsArgs,
+  ExtractQuestionKeywordsArgs
+> {
+  return defineTool({
+    name: 'extract_question_keywords',
+    description: 'Extract 1-3 pivotal keywords that appear verbatim in the player question.',
+    argsSchema: ExtractQuestionKeywordsArgsSchema,
     execute: async (args) => args,
   });
 }
