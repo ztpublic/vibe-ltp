@@ -11,7 +11,6 @@ async function readConnectionFile(filePath: string): Promise<ConnectionCase[]> {
 
   return parsed.map(item => ({
     id: item.id,
-    notes: item.notes,
     context: {
       surface: item.context.surface,
       truth: item.context.truth,

@@ -14,7 +14,6 @@ export interface ExperimentCase {
   question: string;
   context: PuzzleContext;
   expectedAnswer?: AnswerType;
-  notes?: string;
 }
 
 export interface ExperimentRunResult {
@@ -56,7 +55,6 @@ export interface ExperimentRunnerOptions {
 export interface ConnectionCase {
   id: string;
   context: PuzzleContext;
-  notes?: string;
 }
 
 export interface ConnectionDistillerRunResult {
@@ -66,7 +64,6 @@ export interface ConnectionDistillerRunResult {
   startedAt: string;
   completedAt: string;
   error?: string;
-  notes?: string;
 }
 
 export interface ConnectionDistillerRunnerOptions {
@@ -79,7 +76,6 @@ export interface ConnectionDistillerRunnerOptions {
 export interface FactCase {
   id: string;
   truth: string;
-  notes?: string;
 }
 
 export interface FactDistillerRunResult {
@@ -89,7 +85,6 @@ export interface FactDistillerRunResult {
   startedAt: string;
   completedAt: string;
   error?: string;
-  notes?: string;
 }
 
 export interface FactDistillerRunnerOptions {
@@ -97,4 +92,29 @@ export interface FactDistillerRunnerOptions {
   fallbackModel?: string;
   systemPrompt?: string;
   cases: FactCase[];
+}
+
+export interface KeyPointMatchCase {
+  id: string;
+  question: string;
+  answer: AnswerType;
+  keyPoints: string[];
+  expectedMatchedIndexes?: number[];
+}
+
+export interface KeyPointMatchRunResult {
+  caseId: string;
+  matchedIndexes: number[];
+  durationMs: number;
+  startedAt: string;
+  completedAt: string;
+  error?: string;
+  expectedMatchedIndexes?: number[];
+}
+
+export interface KeyPointMatchRunnerOptions {
+  model: string;
+  fallbackModel?: string;
+  systemPrompt?: string;
+  cases: KeyPointMatchCase[];
 }

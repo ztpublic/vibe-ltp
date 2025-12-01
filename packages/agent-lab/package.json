@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit",
     "demo": "tsx src/demo.ts",
     "demo:connections": "tsx src/connectionDemo.ts",
-    "demo:facts": "tsx src/factDemo.ts"
+    "demo:facts": "tsx src/factDemo.ts",
+    "demo:keypoints": "tsx src/keyPointsMatcherDemo.ts"
   },
   "dependencies": {
     "@vibe-ltp/llm-client": "workspace:*",

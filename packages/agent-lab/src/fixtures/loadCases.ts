@@ -20,7 +20,6 @@ interface RawCase {
   question: string;
   expectedAnswer?: AnswerType;
   context: RawCaseContext;
-  notes?: string;
 }
 
 async function readCaseFile(filePath: string): Promise<ExperimentCase[]> {
@@ -31,7 +30,6 @@ async function readCaseFile(filePath: string): Promise<ExperimentCase[]> {
     id: item.id,
     question: item.question,
     expectedAnswer: item.expectedAnswer,
-    notes: item.notes,
     context: {
       surface: item.context.surface,
       truth: item.context.truth,

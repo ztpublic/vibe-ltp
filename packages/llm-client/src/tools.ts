@@ -91,6 +91,37 @@ export function createDistillFactsTool(): AgentTool<DistillFactsArgs, DistillFac
 }
 
 /**
+ * Arguments for match_key_points tool
+ */
+export const MatchKeyPointsArgsSchema = z.object({
+  matchedIndexes: z
+    .array(
+      z
+        .number()
+        .int()
+        .min(0)
+    )
+    .describe(
+      'Zero-based indexes into the provided key points array that should now be considered known to players.'
+    ),
+});
+
+export type MatchKeyPointsArgs = z.infer<typeof MatchKeyPointsArgsSchema>;
+
+/**
+ * Tool for matching player Q/A to distilled key points
+ */
+export function createMatchKeyPointsTool(): AgentTool<MatchKeyPointsArgs, MatchKeyPointsArgs> {
+  return defineTool({
+    name: 'match_key_points',
+    description:
+      'Given the player question, the host answer (yes/no/irrelevant/both/unknown), and the list of distilled key points, select which key points the player would now understand.',
+    argsSchema: MatchKeyPointsArgsSchema,
+    execute: async (args) => args,
+  });
+}
+
+/**
  * Define a tool with a Zod schema for type-safe argument validation
  * 
  * @example

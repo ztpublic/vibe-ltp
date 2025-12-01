@@ -1,8 +1,14 @@
 import { Router, type Router as RouterType } from 'express';
-import type { ChatRequest, ChatResponse } from '@vibe-ltp/shared';
-import { formatValidationReply, type PuzzleContext, validatePuzzleQuestion } from '@vibe-ltp/llm-client';
+import { SOCKET_EVENTS, type ChatRequest, type ChatResponse, type PuzzleContent } from '@vibe-ltp/shared';
+import {
+  formatValidationReply,
+  type PuzzleContext,
+  validatePuzzleQuestion,
+  matchKeyPoints,
+} from '@vibe-ltp/llm-client';
 import * as gameState from '../../state/gameState.js';
 import { v4 as uuidv4 } from 'uuid';
+import { getSocketServer } from '../../sockets/ioReference.js';
 
 const router = Router();
 
@@ -53,6 +59,54 @@ router.post('/chat', async (req, res) => {
       userText,
       evaluation.answer
     );
+
+    // Attempt to match any key points revealed by this Q/A
+    const currentPuzzleContent = gameState.getPuzzleContent();
+    const keyPoints = currentPuzzleContent?.facts?.map(fact => fact.text) ?? [];
+    let matchedIndexes: number[] = [];
+
+    if (keyPoints.length > 0) {
+      try {
+        const matchResult = await matchKeyPoints(
+          {
+            question: userText,
+            answer: evaluation.answer,
+            keyPoints,
+          },
+          model
+        );
+
+        matchedIndexes = (matchResult.matchedIndexes || []).filter(
+          (idx) => Number.isInteger(idx) && idx >= 0 && idx < keyPoints.length
+        );
+      } catch (matcherError) {
+        console.error('Key points matcher failed; continuing without revealing facts', matcherError);
+      }
+    }
+
+    if (matchedIndexes.length > 0 && currentPuzzleContent?.facts) {
+      const updatedFacts = currentPuzzleContent.facts.map((fact, idx) => {
+        if (matchedIndexes.includes(idx)) {
+          return { ...fact, revealed: true };
+        }
+        return fact;
+      });
+
+      const updatedPuzzleContent: PuzzleContent = {
+        ...currentPuzzleContent,
+        facts: updatedFacts,
+      };
+
+      gameState.setPuzzleContent(updatedPuzzleContent);
+
+      const io = getSocketServer();
+      if (io) {
+        io.emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
+          state: gameState.getGameState(),
+          puzzleContent: updatedPuzzleContent,
+        });
+      }
+    }
 
     // Format reply for chat UI
     const replyText = formatValidationReply(evaluation);

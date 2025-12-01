@@ -5,8 +5,10 @@ import { randomUUID } from 'node:crypto';
 import * as gameState from '../state/gameState.js';
 import type { PersistedMessage } from '../state/gameState.js';
 import { handleSocketError, sendSocketSuccess } from '../utils/errorHandler.js';
+import { setSocketServer } from './ioReference.js';
 
 export function setupSocketIO(io: Server): void {
+  setSocketServer(io);
   io.on(SOCKET_EVENTS.CONNECT, (socket) => {
     console.log(`[Socket] Client connected: ${socket.id}`);
 

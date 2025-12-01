@@ -46,7 +46,6 @@ export async function runFactDistillerSuite(
       startedAt: new Date(startedAt).toISOString(),
       completedAt: new Date(completedAt).toISOString(),
       error,
-      notes: puzzle.notes,
     });
   }
 
@@ -56,17 +55,13 @@ export async function runFactDistillerSuite(
 export function logFactResults(results: FactDistillerRunResult[]): void {
   console.log('\n[Agent Lab] Fact distiller results');
 
-  results.forEach(result => {
-    const status = result.error ? 'error' : result.facts.length === 3 ? 'ok' : 'incomplete';
-    console.log(`• [${status}] case=${result.caseId} (${result.durationMs}ms)`);
+    results.forEach(result => {
+      const status = result.error ? 'error' : result.facts.length === 3 ? 'ok' : 'incomplete';
+      console.log(`• [${status}] case=${result.caseId} (${result.durationMs}ms)`);
 
-    if (result.notes) {
-      console.log(`   notes: ${result.notes}`);
-    }
-
-    if (result.error) {
-      console.log(`   error: ${result.error}`);
-    } else if (result.facts.length > 0) {
+      if (result.error) {
+        console.log(`   error: ${result.error}`);
+      } else if (result.facts.length > 0) {
       result.facts.forEach((fact, idx) => {
         console.log(`   ${idx + 1}. ${fact}`);
       });

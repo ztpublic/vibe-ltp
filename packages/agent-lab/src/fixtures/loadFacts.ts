@@ -11,7 +11,6 @@ async function readFactFile(filePath: string): Promise<FactCase[]> {
 
   return parsed.map(item => ({
     id: item.id,
-    notes: item.notes,
     truth: item.context?.truth ?? item.truth,
   }));
 }

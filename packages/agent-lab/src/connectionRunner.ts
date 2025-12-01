@@ -46,7 +46,6 @@ export async function runConnectionDistillerSuite(
       startedAt: new Date(startedAt).toISOString(),
       completedAt: new Date(completedAt).toISOString(),
       error,
-      notes: puzzle.notes,
     });
   }
 
@@ -59,10 +58,6 @@ export function logConnectionResults(results: ConnectionDistillerRunResult[]): v
   results.forEach(result => {
     const status = result.error ? 'error' : result.connections.length > 0 ? 'ok' : 'empty';
     console.log(`• [${status}] case=${result.caseId} (${result.durationMs}ms)`);
-
-    if (result.notes) {
-      console.log(`   notes: ${result.notes}`);
-    }
 
     if (result.error) {
       console.log(`   error: ${result.error}`);
