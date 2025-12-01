@@ -16,6 +16,7 @@
  */
 
 import type { GameState, PuzzleContent } from '@vibe-ltp/shared';
+import type { Embedding } from '@vibe-ltp/llm-client';
 
 /**
  * Persisted chat message for UI restoration
@@ -36,6 +37,7 @@ export interface PersistedMessage {
  */
 let globalGameState: GameState = 'NotStarted';
 let globalPuzzleContent: PuzzleContent | undefined;
+let truthKeywordEmbeddings: Embedding[] = [];
 
 /**
  * Message history configuration
@@ -114,6 +116,20 @@ export function setPuzzleContent(content: PuzzleContent | undefined): void {
 }
 
 /**
+ * Store embeddings for the current puzzle keywords
+ */
+export function setKeywordEmbeddings(embeddings: Embedding[]): void {
+  truthKeywordEmbeddings = embeddings;
+}
+
+/**
+ * Retrieve embeddings for current puzzle keywords
+ */
+export function getKeywordEmbeddings(): readonly Embedding[] {
+  return truthKeywordEmbeddings;
+}
+
+/**
  * Add a question to history
  * Automatically trims history if it exceeds MAX_QUESTION_HISTORY
  * 
@@ -181,6 +197,7 @@ export function resetGameState(): void {
   globalGameState = 'NotStarted';
   globalPuzzleContent = undefined;
   questionHistory = [];
+  truthKeywordEmbeddings = [];
   // Do NOT clear chatMessages - preserve conversation history including truth reveal
 }
 
@@ -192,4 +209,5 @@ export function clearAllState(): void {
   globalPuzzleContent = undefined;
   questionHistory = [];
   chatMessages = [];
+  truthKeywordEmbeddings = [];
 }

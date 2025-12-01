@@ -17,11 +17,39 @@ export class ApiChatService implements ChatService {
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      // Clone so we can safely read body in error scenarios
+      const clonedRes = res.clone();
+
+      let parsedJson: unknown = null;
+      let rawText: string | null = null;
+
+      try {
+        parsedJson = await res.json();
+      } catch {
+        try {
+          rawText = await clonedRes.text();
+        } catch {
+          rawText = null;
+        }
       }
 
-      const data = (await res.json()) as ChatResponse;
+      if (!res.ok) {
+        const serverMessage =
+          (parsedJson as Partial<ChatResponse>)?.reply?.content ||
+          (rawText && rawText.trim()) ||
+          null;
+
+        const statusText = res.statusText || 'Request failed';
+        const details = serverMessage ? ` - ${serverMessage}` : '';
+
+        throw new Error(`HTTP ${res.status}: ${statusText}${details}`);
+      }
+
+      if (!parsedJson) {
+        throw new Error('Empty response from server');
+      }
+
+      const data = parsedJson as ChatResponse;
       return data.reply;
     } catch (err) {
       console.error('API Chat Service Error:', err);

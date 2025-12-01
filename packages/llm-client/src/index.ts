@@ -18,3 +18,4 @@ export * from './historySummarizerAgent.js';
 export * from './truthKeywordsExtracterAgent.js';
 export * from './embeddings.js';
 export * from './questionKeywordsExtracterAgent.js';
+export type { Embedding } from './embeddings.js';

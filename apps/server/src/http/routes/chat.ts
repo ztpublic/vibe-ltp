@@ -1,15 +1,19 @@
 import { Router, type Router as RouterType } from 'express';
-import { type ChatRequest, type ChatResponse } from '@vibe-ltp/shared';
+import { SOCKET_EVENTS, type ChatRequest, type ChatResponse, type PuzzleKeyword } from '@vibe-ltp/shared';
 import {
   formatValidationReply,
   type PuzzleContext,
   validatePuzzleQuestion,
+  extractQuestionKeywords,
+  findMostSimilarEmbedding,
 } from '@vibe-ltp/llm-client';
 import * as gameState from '../../state/gameState.js';
 import { v4 as uuidv4 } from 'uuid';
+import { getSocketServer } from '../../sockets/ioReference.js';
 
 const router = Router();
 const model = 'x-ai/grok-4-fast';
+const KEYWORD_REVEAL_THRESHOLD = 0.85;
 
 router.post('/chat', async (req, res) => {
   const body = req.body as ChatRequest;
@@ -56,6 +60,70 @@ router.post('/chat', async (req, res) => {
       userText,
       evaluation.answer
     );
+
+    // Attempt to reveal keywords based on question similarity
+    const currentPuzzleContent = gameState.getPuzzleContent();
+    const puzzleKeywords: PuzzleKeyword[] = currentPuzzleContent?.keywords ?? [];
+    const storedEmbeddings = gameState.getKeywordEmbeddings();
+
+    if (
+      puzzleKeywords.length > 0 &&
+      storedEmbeddings.length === puzzleKeywords.length &&
+      puzzleKeywords.some((item) => !item.revealed)
+    ) {
+      try {
+        const { keywords: questionKeywords } = await extractQuestionKeywords(userText, model);
+        const unrevealed = puzzleKeywords
+          .map((keyword, idx): { keyword: PuzzleKeyword; idx: number; embedding: number[] | undefined } => ({
+            keyword,
+            idx,
+            embedding: storedEmbeddings[idx],
+          }))
+          .filter(
+            (item): item is { keyword: PuzzleKeyword; idx: number; embedding: number[] } =>
+              !item.keyword.revealed && Array.isArray(item.embedding)
+          );
+
+        const matchedIndexes = new Set<number>();
+
+        for (const questionKeyword of questionKeywords) {
+          if (unrevealed.length === 0) break;
+
+          const embeddingList = unrevealed.map((item) => item.embedding);
+          const { similarity, index } = await findMostSimilarEmbedding(questionKeyword, embeddingList);
+
+          if (similarity >= KEYWORD_REVEAL_THRESHOLD) {
+            const matched = unrevealed.splice(index, 1)[0];
+            if (matched) {
+              matchedIndexes.add(matched.idx);
+            }
+          }
+        }
+
+        if (matchedIndexes.size > 0 && currentPuzzleContent) {
+          const updatedKeywords = puzzleKeywords.map((keyword, idx) =>
+            matchedIndexes.has(idx) ? { ...keyword, revealed: true } : keyword
+          );
+
+          const updatedPuzzleContent = {
+            ...currentPuzzleContent,
+            keywords: updatedKeywords,
+          };
+
+          gameState.setPuzzleContent(updatedPuzzleContent);
+
+          const io = getSocketServer();
+          if (io) {
+            io.emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
+              state: gameState.getGameState(),
+              puzzleContent: updatedPuzzleContent,
+            });
+          }
+        }
+      } catch (keywordsError) {
+        console.error('[Chat] Keyword matching failed; continuing without reveal', keywordsError);
+      }
+    }
 
     // Format reply for chat UI
     const replyText = formatValidationReply(evaluation);

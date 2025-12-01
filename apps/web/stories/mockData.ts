@@ -14,6 +14,11 @@ export const samplePuzzle: PuzzleContent = {
     { id: 'fact_4', text: '水本身并不是解决问题的核心。', revealed: false },
     { id: 'fact_5', text: '男人和酒保事先并不相识。', revealed: false },
   ],
+  keywords: [
+    { id: 'kw_1', text: '打嗝', revealed: true },
+    { id: 'kw_2', text: '水', revealed: false },
+    { id: 'kw_3', text: '枪', revealed: false },
+  ],
 };
 
 export const longPuzzle: PuzzleContent = {
@@ -35,6 +40,11 @@ export const longPuzzle: PuzzleContent = {
     { id: 'fact_long_1', text: '摄像头记录到了夜间活动的身影。', revealed: true },
     { id: 'fact_long_2', text: '被翻开的书都围绕同一主题：海洋生物学。', revealed: true },
     { id: 'fact_long_3', text: '夜晚进入图书馆的并不是人类。', revealed: false },
+  ],
+  keywords: [
+    { id: 'kw_long_1', text: '章鱼', revealed: false },
+    { id: 'kw_long_2', text: '摄像头', revealed: true },
+    { id: 'kw_long_3', text: '水族箱', revealed: false },
   ],
 };
 

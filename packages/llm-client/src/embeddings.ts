@@ -144,3 +144,5 @@ export async function findMostSimilarEmbedding(
 
   return { similarity: bestSimilarity, index: bestIndex };
 }
+
+export type { Embedding };
