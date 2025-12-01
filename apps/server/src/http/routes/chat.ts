@@ -5,6 +5,7 @@ import {
   type PuzzleContext,
   validatePuzzleQuestion,
   matchKeyPoints,
+  summarizePuzzleHistory,
 } from '@vibe-ltp/llm-client';
 import * as gameState from '../../state/gameState.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -59,7 +60,9 @@ router.post('/chat', async (req, res) => {
       evaluation.answer
     );
 
-    // Attempt to match any key points revealed by this Q/A (only check unrevealed)
+    const updatedConversationHistory = gameState.getConversationHistory();
+
+    // Attempt to match any key points revealed by current knowledge (only check unrevealed)
     const currentPuzzleContent = gameState.getPuzzleContent();
     const unrevealedFacts =
       currentPuzzleContent?.facts?.map((fact, idx) => ({ fact, idx })).filter(item => !item.fact.revealed) ?? [];
@@ -68,10 +71,17 @@ router.post('/chat', async (req, res) => {
 
     if (keyPoints.length > 0) {
       try {
+        const historySummary = await summarizePuzzleHistory(
+          {
+            surface: puzzleContext.surface,
+            conversationHistory: updatedConversationHistory,
+          },
+          model
+        );
+
         const matchResult = await matchKeyPoints(
           {
-            question: userText,
-            answer: evaluation.answer,
+            summary: historySummary.summary,
             keyPoints,
           },
           model

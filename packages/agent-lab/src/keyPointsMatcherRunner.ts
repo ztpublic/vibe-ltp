@@ -1,9 +1,5 @@
 import { matchKeyPoints } from '@vibe-ltp/llm-client';
-import type {
-  KeyPointMatchCase,
-  KeyPointMatchRunResult,
-  KeyPointMatchRunnerOptions,
-} from './types.js';
+import type { KeyPointMatchCase, KeyPointMatchRunResult, KeyPointMatchRunnerOptions } from './types.js';
 
 function toErrorMessage(error: unknown): string {
   if (error instanceof Error) {
@@ -22,13 +18,17 @@ export async function runKeyPointMatcherSuite(
   for (const testCase of cases) {
     const startedAt = Date.now();
     let matchedIndexes: number[] = [];
+    const summary = testCase.summary?.trim();
     let error: string | undefined;
 
     try {
+      if (!summary) {
+        throw new Error('KeyPointMatchCase.summary is required for matcher demo.');
+      }
+
       const result = await matchKeyPoints(
         {
-          question: testCase.question,
-          answer: testCase.answer,
+          summary: summary,
           keyPoints: testCase.keyPoints,
         },
         {
@@ -49,6 +49,7 @@ export async function runKeyPointMatcherSuite(
     runs.push({
       caseId: testCase.id,
       matchedIndexes,
+      summary,
       durationMs,
       startedAt: new Date(startedAt).toISOString(),
       completedAt: new Date(completedAt).toISOString(),
@@ -78,6 +79,10 @@ export function logKeyPointMatchResults(results: KeyPointMatchRunResult[]): void
 
     if (result.expectedMatchedIndexes) {
       console.log(`   expected: ${JSON.stringify(result.expectedMatchedIndexes)}`);
+    }
+
+    if (result.summary) {
+      console.log(`   summary: ${result.summary}`);
     }
 
     if (result.error) {

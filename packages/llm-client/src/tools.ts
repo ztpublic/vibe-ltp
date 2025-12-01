@@ -123,7 +123,7 @@ export function createSummarizeHistoryTool(): AgentTool<SummarizeHistoryArgs, Su
 export const MatchKeyPointsArgsSchema = z.object({
   matchedIndexes: z
     .array(
-      z
+      z.coerce
         .number()
         .int()
         .min(0)
