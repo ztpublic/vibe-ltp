@@ -7,11 +7,11 @@ export const sampleAgents: AgentVariant[] = [
   // {
   //   id: 'default-grok',
   //   label: 'Baseline prompt - Grok fast',
-  //   model: 'x-ai/grok-4.1-fast:free',
+  //   model: 'deepseek/deepseek-chat-v3-0324',
   // },
   {
     id: 'gemini-2.5-flash',
     label: 'Cautious prompt - Gemini flash',
-    model: 'google/gemini-2.5-flash',
+    model: 'x-ai/grok-4-fast',
   },
 ];

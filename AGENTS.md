@@ -65,7 +65,7 @@ vibe-ltp/
    ```bash
    cp .env.example .env
    # Required: OPENROUTER_API_KEY (needed for chat replies)
-   # Optional: LLM_MODEL_ID, BACKEND_PORT (default: 4000), FRONTEND_PORT (default: 3000), CORS_ORIGIN
+   # Optional: BACKEND_PORT (default: 4000), FRONTEND_PORT (default: 3000), CORS_ORIGIN
    ```
 
 3. **Start dev servers**
@@ -372,7 +372,6 @@ All environment variables are documented in `.env.example`:
 **Optional:**
 - `BACKEND_PORT` - Backend server port (default: 4000)
 - `FRONTEND_PORT` - Frontend dev server port (default: 3000)
-- `LLM_MODEL_ID` - LLM model to use (default: x-ai/grok-4.1-fast:free)
 - `CORS_ORIGIN` - Allowed CORS origins (default: http://localhost:3000)
 - `NEXT_PUBLIC_API_BASE_URL` - Backend API URL for frontend (default: http://localhost:4000)
 - `OPENROUTER_REFERRER` - App referrer for OpenRouter

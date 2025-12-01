@@ -10,7 +10,7 @@ export const FactsList: React.FC<FactsListProps> = ({ facts, isGameStarted }) =>
   const factsToRender = facts ?? [];
   const totalFacts = factsToRender.length;
   const revealedFacts = factsToRender.filter((fact) => fact.revealed).length;
-  const hasFacts = isGameStarted && totalFacts > 0;
+  const hasFacts = totalFacts > 0;
 
   return (
     <div className="border border-[#3e3e42] rounded-lg bg-[#252526] p-3 flex flex-col min-h-[160px]">
@@ -22,7 +22,7 @@ export const FactsList: React.FC<FactsListProps> = ({ facts, isGameStarted }) =>
       </div>
 
       <div className="space-y-1 overflow-auto pr-1 max-h-[32vh]">
-        {!isGameStarted ? (
+        {!isGameStarted && !hasFacts ? (
           <p className="text-[#7f7f7f] text-sm">开始新汤后会显示事实。</p>
         ) : !hasFacts ? (
           <p className="text-[#7f7f7f] text-sm">暂无事实，继续提问以获取更多线索。</p>

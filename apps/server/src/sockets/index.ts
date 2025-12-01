@@ -49,7 +49,7 @@ export function setupSocketIO(io: Server): void {
       const { puzzleContent } = data;
 
       try {
-        const model = process.env.LLM_MODEL_ID ?? 'x-ai/grok-4.1-fast:free';
+        const model = 'x-ai/grok-4-fast';
 
         let enrichedPuzzleContent: PuzzleContent = puzzleContent;
 
@@ -97,11 +97,22 @@ export function setupSocketIO(io: Server): void {
     // Handle game reset
     socket.on(SOCKET_EVENTS.GAME_RESET, (callback?: (response: { success: boolean; error?: string }) => void) => {
       try {
+        const existing = gameState.getPuzzleContent();
+        const revealedFacts = existing?.facts?.map(fact => ({ ...fact, revealed: true }));
+
         gameState.resetGameState();
+
+        if (existing) {
+          gameState.setPuzzleContent({
+            ...existing,
+            facts: revealedFacts,
+          });
+        }
         
-        // Notify all connected clients
+        // Notify all connected clients (leave revealed content until next game starts)
         io.emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
           state: 'NotStarted',
+          puzzleContent: gameState.getPuzzleContent(),
         });
         
         sendSocketSuccess(callback);

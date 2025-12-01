@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSocketServer } from '../../sockets/ioReference.js';
 
 const router = Router();
+const model = 'x-ai/grok-4-fast';
 
 router.post('/chat', async (req, res) => {
   const body = req.body as ChatRequest;
@@ -46,8 +47,6 @@ router.post('/chat', async (req, res) => {
     };
 
     // Use question validator agent to evaluate question
-    const model = process.env.LLM_MODEL_ID ?? 'x-ai/grok-4.1-fast:free';
-    
     const evaluation = await validatePuzzleQuestion(
       userText,
       puzzleContext,
@@ -60,9 +59,11 @@ router.post('/chat', async (req, res) => {
       evaluation.answer
     );
 
-    // Attempt to match any key points revealed by this Q/A
+    // Attempt to match any key points revealed by this Q/A (only check unrevealed)
     const currentPuzzleContent = gameState.getPuzzleContent();
-    const keyPoints = currentPuzzleContent?.facts?.map(fact => fact.text) ?? [];
+    const unrevealedFacts =
+      currentPuzzleContent?.facts?.map((fact, idx) => ({ fact, idx })).filter(item => !item.fact.revealed) ?? [];
+    const keyPoints = unrevealedFacts.map(item => item.fact.text);
     let matchedIndexes: number[] = [];
 
     if (keyPoints.length > 0) {
@@ -85,8 +86,12 @@ router.post('/chat', async (req, res) => {
     }
 
     if (matchedIndexes.length > 0 && currentPuzzleContent?.facts) {
+      const globalMatchedIndexes = matchedIndexes.map(localIdx => unrevealedFacts[localIdx]?.idx).filter(
+        (idx): idx is number => typeof idx === 'number'
+      );
+
       const updatedFacts = currentPuzzleContent.facts.map((fact, idx) => {
-        if (matchedIndexes.includes(idx)) {
+        if (globalMatchedIndexes.includes(idx)) {
           return { ...fact, revealed: true };
         }
         return fact;
@@ -105,6 +110,22 @@ router.post('/chat', async (req, res) => {
           state: gameState.getGameState(),
           puzzleContent: updatedPuzzleContent,
         });
+      }
+
+      const allRevealed = updatedFacts.length > 0 && updatedFacts.every(f => f.revealed);
+      if (allRevealed) {
+        gameState.resetGameState();
+
+        // Preserve revealed puzzle content for clients until a new game starts
+        gameState.setPuzzleContent(updatedPuzzleContent);
+
+        const ioReset = getSocketServer();
+        if (ioReset) {
+          ioReset.emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
+            state: 'NotStarted',
+            puzzleContent: updatedPuzzleContent,
+          });
+        }
       }
     }
 

@@ -13,7 +13,7 @@ dotenv.config({
 async function main() {
   console.log('[Agent Lab] Running connection distiller experiments...\n');
 
-  const model = process.env.LLM_MODEL_ID ?? 'x-ai/grok-4.1-fast:free';
+  const model = 'x-ai/grok-4-fast';
   const cases = await loadConnectionFixtures();
 
   const results = await runConnectionDistillerSuite({

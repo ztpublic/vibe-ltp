@@ -52,7 +52,6 @@ FRONTEND_PORT=8080 BACKEND_PORT=8081 pnpm dev
 
 Key values from `.env.example`:
 - `OPENROUTER_API_KEY` (required) – OpenRouter key for LLM calls
-- `LLM_MODEL_ID` – defaults to `x-ai/grok-4.1-fast:free`
 - `BACKEND_PORT`, `FRONTEND_PORT` – ports for server and web
 - `CORS_ORIGIN` – comma-separated allowed origins (defaults to frontend origin)
 - `NEXT_PUBLIC_API_BASE_URL` – browser-facing API URL
