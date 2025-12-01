@@ -31,8 +31,8 @@ export type EvaluateQuestionArgs = z.infer<typeof EvaluateQuestionArgsSchema>;
  * Arguments for distill_connections tool
  */
 export const DistillConnectionsArgsSchema = z.object({
-  connections: z.array(z.string().min(3)).min(3).max(6).describe(
-    'Concise bridging statements (ordered from closest to the surface to closest to the truth) that help players infer the true story.'
+  connections: z.array(z.string().min(3)).min(1).max(3).describe(
+    '1-3 concise bridging statements (ordered from closest to the surface to closest to the truth) that help players infer the true story.'
   ),
 });
 
@@ -42,8 +42,8 @@ export type DistillConnectionsArgs = z.infer<typeof DistillConnectionsArgsSchema
  * Arguments for distill_facts tool
  */
 export const DistillFactsArgsSchema = z.object({
-  facts: z.array(z.string().min(3)).length(3).describe(
-    'Exactly three essential factual statements that capture the core of the puzzle truth without spoilers.'
+  facts: z.array(z.string().min(3)).min(1).max(3).describe(
+    '1-3 essential factual statements that capture the core of the puzzle truth without spoilers.'
   ),
 });
 
@@ -86,7 +86,7 @@ export function createDistillConnectionsTool(): AgentTool<DistillConnectionsArgs
   return defineTool({
     name: 'distill_connections',
     description:
-      'Extract 3-6 concise connection statements that bridge the puzzle surface to the underlying truth, ordered from surface-adjacent to truth-adjacent.',
+      'Extract 1-3 concise connection statements that bridge the puzzle surface to the underlying truth, ordered from surface-adjacent to truth-adjacent.',
     argsSchema: DistillConnectionsArgsSchema,
     execute: async (args) => args,
   });
@@ -98,7 +98,7 @@ export function createDistillConnectionsTool(): AgentTool<DistillConnectionsArgs
 export function createDistillFactsTool(): AgentTool<DistillFactsArgs, DistillFactsArgs> {
   return defineTool({
     name: 'distill_facts',
-    description: 'Extract exactly 3 key factual statements that summarize the core of the puzzle truth.',
+    description: 'Extract 1-3 key factual statements that summarize the core of the puzzle truth.',
     argsSchema: DistillFactsArgsSchema,
     execute: async (args) => args,
   });

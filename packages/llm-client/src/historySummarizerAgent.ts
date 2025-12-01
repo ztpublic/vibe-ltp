@@ -34,7 +34,7 @@ INPUTS YOU SEE:
 - All Q/A turns so far.
 
 TASK:
-- Summarize what is *known* and what can be *confidently inferred* from the surface + Q/A history.
+- Summarize only what is *known* from the surface + Q/A history.
 - Exclude any details that are merely restating the surface text.
 - Avoid speculation; include only items supported by answers or tight logical deduction from them.
 - If little is known, state that briefly instead of inventing facts.

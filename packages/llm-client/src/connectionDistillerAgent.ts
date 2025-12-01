@@ -37,7 +37,7 @@ CONNECTION RULES:
 - Each connection is a single clear statement in Chinese (no numbering).
 - Not a copy of the surface or truth; instead, a missing link that can be reasoned to from the surface and truth combined.
 - Ordered from closest to the surface toward closest to the truth.
-- 3-6 connections depending on puzzle complexity.
+- 1-3 connections depending on puzzle complexity (at least 1, never more than 3).
 - Avoid spoilers of the full truth; no character names or explicit endings.
 - Prefer facts that players could plausibly confirm through questioning.
 

@@ -39,8 +39,10 @@ TASK:
 - Return ONLY the indexes (0-based) of known key points via the tool "match_key_points".
 
 RULES:
-- Prefer precision over guessing; include only key points clearly implied by the summary.
-- Avoid speculative leaps. Keep the list minimal.`;
+- Include a key point ONLY if the summary explicitly states it or leaves no plausible alternative.
+- If the summary is vague, partial, or missing a clear link, do NOT mark the point as known.
+- Prefer under-inclusion over guessing; avoid speculative leaps.
+- Keep the list minimal and strictly evidence-based.`;
 }
 
 function buildContextMessages(input: KeyPointsMatchInput): ChatMessage[] {
