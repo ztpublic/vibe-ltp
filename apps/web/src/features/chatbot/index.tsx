@@ -45,6 +45,7 @@ const convertHistoryMessages = (messages: ChatMessage[]): ChatbotKitMessage[] =>
             replyToNickname: botMsg.replyMetadata?.replyToNickname,
           }) as unknown as ChatbotUiMessage),
           type: 'bot' as const,
+          withAvatar: true,
         };
 
         return {

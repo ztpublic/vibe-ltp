@@ -1,7 +1,7 @@
 'use client';
 
 import React, { ReactNode, useRef } from 'react';
-import type { BotMessage, ChatMessage } from '@vibe-ltp/shared';
+import type { BotMessage, ChatMessage, MessageId } from '@vibe-ltp/shared';
 import type { ChatService } from './services';
 import { truncateText, createChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
 import type { ChatHistoryController } from './controllers';
@@ -27,8 +27,10 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
   chatHistoryController,
   messageStore,
 }) => {
-  // Track the last user message context for reply metadata
-  const pendingUserContextRef = useRef<PendingUserContext | null>(null);
+  // Track pending user -> bot reply mapping to avoid race conditions
+  const pendingRepliesRef = useRef<
+    Map<MessageId, { context: PendingUserContext; loadingMessageId: ChatbotUiMessage['id'] }>
+  >(new Map());
 
   const emitMessageToServer = (message: ChatMessage) => {
     if (chatHistoryController) {
@@ -36,21 +38,64 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     }
   };
 
-  const appendBotMessage = (message: BotMessage) => {
+  const appendBotMessage = (message: BotMessage, options?: { replaceLoadingFor?: MessageId }) => {
+    const pendingEntry = options?.replaceLoadingFor
+      ? pendingRepliesRef.current.get(options.replaceLoadingFor)
+      : null;
+    const replyMetadata =
+      message.replyMetadata ?? buildReplyMetadata(pendingEntry?.context ?? null);
+
     const botMessageNode: ChatbotUiMessage = {
       ...(createChatBotMessage(message.content, {
-        replyToId: message.replyMetadata?.replyToId,
-        replyToPreview: message.replyMetadata?.replyToPreview,
-        replyToNickname: message.replyMetadata?.replyToNickname,
+        replyToId: replyMetadata?.replyToId,
+        replyToPreview: replyMetadata?.replyToPreview,
+        replyToNickname: replyMetadata?.replyToNickname,
       }) as unknown as ChatbotUiMessage),
       type: 'bot',
       loading: false, // Explicitly set loading to false since we already have the content
+      withAvatar: true,
     };
 
-    messageStore.appendMessage(botMessageNode);
+    // Preserve external IDs for consistency with persisted messages
+    botMessageNode.id = message.id ?? botMessageNode.id;
+
+    if (options?.replaceLoadingFor) {
+      const targetUserMessageId = options.replaceLoadingFor;
+      messageStore.mutateMessages((messages) => {
+        const next = [...messages];
+        const targetIndex = next.findIndex((msg) => {
+          if (msg.type !== 'bot' || !msg.loading) return false;
+          const matchesReply = msg.replyToId === targetUserMessageId;
+          const matchesLoadingId =
+            pendingEntry && msg.id === pendingEntry.loadingMessageId;
+          return matchesReply || matchesLoadingId;
+        });
+
+        if (targetIndex !== -1) {
+          next[targetIndex] = botMessageNode;
+          return next;
+        }
+
+        // Fallback: clean any dangling loading for this user message, then append
+        const filtered = next.filter(
+          (msg) =>
+            !(
+              msg.type === 'bot' &&
+              msg.loading &&
+              msg.replyToId === targetUserMessageId
+            )
+        );
+        filtered.push(botMessageNode);
+        return filtered;
+      });
+      pendingRepliesRef.current.delete(targetUserMessageId);
+    } else {
+      messageStore.appendMessage(botMessageNode);
+    }
 
     const messageWithTimestamp: BotMessage = {
       ...message,
+      replyMetadata,
       timestamp: message.timestamp ?? new Date().toISOString(),
     };
 
@@ -77,7 +122,7 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     const userMessagePreview = truncateText(userMessage, 40);
     
     // Store for use when bot replies
-    pendingUserContextRef.current = {
+    const pendingUserContext: PendingUserContext = {
       id: userMessageId,
       preview: userMessagePreview,
       nickname: msgNickname,
@@ -102,8 +147,13 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
         replyToNickname: msgNickname,
       }) as unknown as ChatbotUiMessage),
       type: 'bot',
+      withAvatar: true,
     };
     messageStore.appendMessage(loadingMessage);
+    pendingRepliesRef.current.set(userMessageId, {
+      context: pendingUserContext,
+      loadingMessageId: loadingMessage.id,
+    });
 
     // Create a cancellable timeout
     const TIMEOUT_MS = 30000; // 30 seconds
@@ -122,18 +172,12 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
       ]);
 
       // Remove loading message and add actual reply
-      messageStore.removeLastMessage((msg) => Boolean(msg.loading));
-      
-      // Append bot message with reply metadata including nickname
       const botReplyWithMetadata: BotMessage = {
         ...botReply,
-        replyMetadata: botReply.replyMetadata ?? buildReplyMetadata(pendingUserContextRef.current),
+        replyMetadata: botReply.replyMetadata ?? buildReplyMetadata(pendingUserContext),
       };
-      appendBotMessage(botReplyWithMetadata);
+      appendBotMessage(botReplyWithMetadata, { replaceLoadingFor: userMessageId });
     } catch (error) {
-      // Remove loading message
-      messageStore.removeLastMessage((msg) => Boolean(msg.loading));
-
       // Show error message - timeout or actual remote error
       let errorMsg: string;
       if (error instanceof Error && error.message === 'Response timeout') {
@@ -150,9 +194,9 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
         type: 'bot',
         content: errorMsg,
         timestamp: new Date().toISOString(),
-        replyMetadata: buildReplyMetadata(pendingUserContextRef.current),
+        replyMetadata: buildReplyMetadata(pendingUserContext),
       };
-      appendBotMessage(errorMessage);
+      appendBotMessage(errorMessage, { replaceLoadingFor: userMessageId });
     } finally {
       cancelTimeout();
     }

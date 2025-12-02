@@ -26,7 +26,7 @@ export type ChatbotMessageStore = {
   removeLastMessage: (predicate?: (message: ChatbotUiMessage) => boolean) => void;
   replaceMessages: (messages: ChatbotUiMessage[], options?: { preserveTrailingLoading?: boolean }) => void;
   mutateMessages: (updater: (messages: ChatbotUiMessage[]) => ChatbotUiMessage[]) => void;
-  getTrailingLoadingMessage: () => ChatbotUiMessage | null;
+  getPendingLoadingMessages: () => ChatbotUiMessage[];
   getLatestUserMessage: () => ChatbotUiMessage | null;
 };
 
@@ -76,12 +76,10 @@ export function createChatbotMessageStore({ getState, setState }: StoreDeps): Ch
     });
   };
 
-  const getTrailingLoadingMessage = () => {
+  const getPendingLoadingMessages = () => {
     const messages = getMessages();
-    return (
-      messages.find(
-        (msg) => msg.loading && (!msg.message || String(msg.message).trim().length === 0)
-      ) ?? null
+    return messages.filter(
+      (msg) => msg.loading && (!msg.message || String(msg.message).trim().length === 0)
     );
   };
 
@@ -98,10 +96,44 @@ export function createChatbotMessageStore({ getState, setState }: StoreDeps): Ch
     messages: ChatbotUiMessage[],
     options?: { preserveTrailingLoading?: boolean }
   ) => {
-    const trailingLoading =
-      options?.preserveTrailingLoading === true ? getTrailingLoadingMessage() : null;
+    const preservedLoadings =
+      options?.preserveTrailingLoading === true ? getPendingLoadingMessages() : [];
 
-    mutateMessages(() => (trailingLoading ? [...messages, trailingLoading] : messages));
+    const filteredLoadings = preservedLoadings.filter((loading) => {
+      // If the incoming messages already contain a reply to this user message, drop the placeholder
+      const replyToId = loading.replyToId;
+      if (!replyToId) return true;
+
+      return !messages.some(
+        (msg) =>
+          msg.type === 'bot' &&
+          (msg.replyToId === replyToId || String(msg.id) === String(replyToId))
+      );
+    });
+
+    mutateMessages(() => {
+      if (filteredLoadings.length === 0) return messages;
+
+      const next = [...messages];
+
+      filteredLoadings.forEach((loading) => {
+        const replyToId = loading.replyToId;
+        if (replyToId) {
+          const userIndex = next.findIndex(
+            (msg) => String(msg.id) === String(replyToId) && msg.type === 'user'
+          );
+
+          if (userIndex !== -1) {
+            next.splice(userIndex + 1, 0, loading);
+            return;
+          }
+        }
+
+        next.push(loading);
+      });
+
+      return next;
+    });
   };
 
   return {
@@ -110,7 +142,7 @@ export function createChatbotMessageStore({ getState, setState }: StoreDeps): Ch
     removeLastMessage,
     replaceMessages,
     mutateMessages,
-    getTrailingLoadingMessage,
+    getPendingLoadingMessages,
     getLatestUserMessage,
   };
 }
