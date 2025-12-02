@@ -8,10 +8,7 @@ describe('Puzzle Model', () => {
     'A man walks into a bar',
     'He was thirsty',
     ['classic', 'simple'],
-    PuzzleDifficulty.EASY,
-    new Date('2024-01-01'),
-    new Date('2024-01-02'),
-    'en'
+    PuzzleDifficulty.EASY
   );
 
   it('should create a puzzle with all properties', () => {
@@ -20,7 +17,6 @@ describe('Puzzle Model', () => {
     expect(mockPuzzle.soupBottom).toBe('He was thirsty');
     expect(mockPuzzle.tags).toEqual(['classic', 'simple']);
     expect(mockPuzzle.difficulty).toBe(PuzzleDifficulty.EASY);
-    expect(mockPuzzle.sourceLanguage).toBe('en');
   });
 
   it('should check for tag existence', () => {
@@ -47,50 +43,16 @@ describe('Puzzle Model', () => {
     expect(mockPuzzle.soupBottom).toBe('He was thirsty');
   });
 
-  it('should handle puzzles without source language', () => {
-    const puzzleWithoutLang = new Puzzle(
-      'test-2',
-      'Surface',
-      'Bottom',
-      ['tag1'],
-      PuzzleDifficulty.MEDIUM,
-      new Date(),
-      new Date()
-    );
-    
-    expect(puzzleWithoutLang.sourceLanguage).toBeUndefined();
-  });
-
   it('should handle empty tags array', () => {
     const puzzleNoTags = new Puzzle(
       'test-3',
       'Surface',
       'Bottom',
       [],
-      PuzzleDifficulty.HARD,
-      new Date(),
-      new Date()
+      PuzzleDifficulty.HARD
     );
     
     expect(puzzleNoTags.tags).toEqual([]);
     expect(puzzleNoTags.hasTag('anything')).toBe(false);
-  });
-
-  it('should preserve dates correctly', () => {
-    const createdAt = new Date('2024-01-01');
-    const updatedAt = new Date('2024-01-02');
-    
-    const puzzle = new Puzzle(
-      'test-4',
-      'Surface',
-      'Bottom',
-      ['tag'],
-      PuzzleDifficulty.EASY,
-      createdAt,
-      updatedAt
-    );
-    
-    expect(puzzle.createdAt).toBe(createdAt);
-    expect(puzzle.updatedAt).toBe(updatedAt);
   });
 });

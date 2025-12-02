@@ -5,7 +5,7 @@
 
 import { generateText, type CoreTool, type LanguageModel } from 'ai';
 import { getOpenRouterClient } from './client.js';
-import type { AgentRunOptions, AgentRunResult, ChatMessage, ToolMessage, ToolCall } from './types.js';
+import type { AgentRunOptions, AgentRunResult, ChatMessage, ToolMessage } from './types.js';
 
 /**
  * Run an agentic workflow with tool calling

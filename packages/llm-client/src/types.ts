@@ -12,15 +12,6 @@ export interface ChatMessage {
   tool_call_id?: string; // for assistant messages with tool calls
 }
 
-export interface ToolCall {
-  id: string;
-  type: 'function';
-  function: {
-    name: string;
-    arguments: string; // JSON string
-  };
-}
-
 export interface ToolMessage {
   role: 'tool';
   content: string;

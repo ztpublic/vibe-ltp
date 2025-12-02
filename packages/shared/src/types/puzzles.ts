@@ -15,23 +15,4 @@ export interface Puzzle {
   soupBottom: string;
   tags: string[];
   difficulty: PuzzleDifficulty;
-  sourceLanguage?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface PuzzleCreateInput {
-  soupSurface: string;
-  soupBottom: string;
-  tags: string[];
-  difficulty: PuzzleDifficulty;
-  sourceLanguage?: string;
-}
-
-export interface PuzzleUpdateInput {
-  soupSurface?: string;
-  soupBottom?: string;
-  tags?: string[];
-  difficulty?: PuzzleDifficulty;
-  sourceLanguage?: string;
 }

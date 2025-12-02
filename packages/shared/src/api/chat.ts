@@ -9,9 +9,6 @@ import type { ChatMessage, UserMessage, BotMessage } from '../types/messages';
  * Sent from client to server when user sends a message
  */
 export interface ChatRequest {
-  /** Optional puzzle identifier (if targeting specific puzzle) */
-  puzzleId?: string;
-  
   /** The user message being sent */
   message: UserMessage;
   

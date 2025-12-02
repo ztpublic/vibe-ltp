@@ -2,13 +2,6 @@
  * API endpoint constants and route helpers
  */
 
-export const API_ROUTES = {
-  PUZZLES: '/api/puzzles',
-  PUZZLE_BY_ID: (id: string) => `/api/puzzles/${id}`,
-  ROOMS: '/api/rooms',
-  ROOM_BY_ID: (id: string) => `/api/rooms/${id}`,
-} as const;
-
 export const SOCKET_EVENTS = {
   // Question/Answer events
   QUESTION_ASKED: 'question:asked',

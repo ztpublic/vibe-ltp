@@ -11,10 +11,7 @@ export class Puzzle implements SharedPuzzle {
     public readonly soupSurface: string,
     public readonly soupBottom: string,
     public readonly tags: string[],
-    public readonly difficulty: PuzzleDifficulty,
-    public readonly createdAt: Date,
-    public readonly updatedAt: Date,
-    public readonly sourceLanguage?: string
+    public readonly difficulty: PuzzleDifficulty
   ) {}
 
   /**
