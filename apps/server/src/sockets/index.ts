@@ -108,6 +108,7 @@ export function setupSocketIO(io: Server): void {
       try {
         const existing = gameState.getPuzzleContent();
         const revealedFacts = existing?.facts?.map(fact => ({ ...fact, revealed: true }));
+        const revealedKeywords = existing?.keywords?.map(keyword => ({ ...keyword, revealed: true }));
 
         gameState.resetGameState();
 
@@ -115,6 +116,7 @@ export function setupSocketIO(io: Server): void {
           gameState.setPuzzleContent({
             ...existing,
             facts: revealedFacts,
+            keywords: revealedKeywords,
           });
         }
         
