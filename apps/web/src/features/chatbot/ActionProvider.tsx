@@ -44,6 +44,7 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
         replyToNickname: message.replyMetadata?.replyToNickname,
       }) as unknown as ChatbotUiMessage),
       type: 'bot',
+      loading: false, // Explicitly set loading to false since we already have the content
     };
 
     messageStore.appendMessage(botMessageNode);
