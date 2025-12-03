@@ -88,15 +88,6 @@ const UserChatMessage = ({
     ...(decoratorColor ? { border: `1px solid ${decoratorColor}` } : {}),
   };
 
-  const arrowClassName = mergeClassNames(
-    'react-chatbot-kit-user-chat-message-arrow',
-    customStyles?.userMessageArrow?.className
-  );
-  const arrowStyle = buildStyle(customStyles?.userMessageArrow) || {};
-  if (!arrowStyle.borderLeftColor && messageStyle?.backgroundColor) {
-    arrowStyle.borderLeftColor = messageStyle.backgroundColor as string;
-  }
-
   const avatarWrapperClassName = mergeClassNames(
     'react-chatbot-kit-user-avatar',
     customStyles?.userAvatar?.className
@@ -147,10 +138,6 @@ const UserChatMessage = ({
                   </div>
                 }
               />
-              <div
-                className={arrowClassName}
-                style={arrowStyle}
-              ></div>
             </div>
           }
         />

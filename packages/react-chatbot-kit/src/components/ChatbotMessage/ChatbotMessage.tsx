@@ -166,15 +166,6 @@ const ChatbotMessage = ({
     customStyles?.botMessageBox?.className
   );
 
-  const arrowStyle = buildStyle(customStyles?.botMessageArrow) || {};
-  if (!arrowStyle.borderRightColor && bubbleStyle?.backgroundColor) {
-    arrowStyle.borderRightColor = bubbleStyle.backgroundColor as string;
-  }
-  const arrowClassName = mergeClassNames(
-    'react-chatbot-kit-chat-bot-message-arrow',
-    customStyles?.botMessageArrow?.className
-  );
-
   const replyLabelStyle = buildStyle(customStyles?.replyLabel);
   const replyLabelClassName = mergeClassNames(
     'chatbot-reply-label',
@@ -280,15 +271,6 @@ const ChatbotMessage = ({
                           decorator?.icon
                         )}
                       </div>
-                    }
-                  />
-                  <ConditionallyRender
-                    condition={withAvatar}
-                    show={
-                      <div
-                        className={arrowClassName}
-                        style={arrowStyle}
-                      ></div>
                     }
                   />
                 </div>
