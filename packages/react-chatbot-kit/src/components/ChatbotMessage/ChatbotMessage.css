@@ -70,6 +70,7 @@
   margin-left: 0;
   margin-right: auto;
   text-align: left;
+  border: 1px solid transparent;
 }
 
 .react-chatbot-kit-chat-bot-message-arrow {
@@ -111,4 +112,28 @@
   100% {
     opacity: 0;
   }
+}
+
+.message-decorator-icon {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.message-decorator-icon-image {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.message-decorator-text {
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  line-height: 1.1;
 }

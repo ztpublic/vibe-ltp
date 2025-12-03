@@ -46,6 +46,7 @@
   font-weight: medium;
   position: relative;
   text-align: left;
+  border: 1px solid transparent;
 }
 
 .react-chatbot-kit-user-chat-message-arrow {
@@ -57,4 +58,29 @@
   position: absolute;
   right: -7px;
   top: 13px;
+}
+
+.message-decorator-icon {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.message-decorator-icon-image {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.message-decorator-text {
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  line-height: 1.1;
+  text-align: left;
 }

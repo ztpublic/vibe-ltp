@@ -81,6 +81,12 @@ const UserChatMessage = ({
     customStyles?.userMessageBox?.className
   );
   const messageStyle = buildStyle(customStyles?.userMessageBox);
+  const decorator = fullMessage.decorators?.[0];
+  const decoratorColor = decorator?.color;
+  const decoratedMessageStyle = {
+    ...messageStyle,
+    ...(decoratorColor ? { border: `1px solid ${decoratorColor}` } : {}),
+  };
 
   const arrowClassName = mergeClassNames(
     'react-chatbot-kit-user-chat-message-arrow',
@@ -119,12 +125,43 @@ const UserChatMessage = ({
             currentUserNickname,
           })}
           elseShow={
-            <div className={messageClassName} style={messageStyle}>
+            <div className={messageClassName} style={decoratedMessageStyle}>
               {message}
+              <ConditionallyRender
+                condition={!!decorator?.icon}
+                show={
+                  <div
+                    className="message-decorator-icon"
+                    style={{ color: decoratorColor }}
+                    aria-label="message decorator"
+                  >
+                    {decorator?.icon?.startsWith('http') ? (
+                      <img
+                        src={decorator.icon}
+                        alt={decorator.label || 'Decorator icon'}
+                        className="message-decorator-icon-image"
+                      />
+                    ) : (
+                      decorator?.icon
+                    )}
+                  </div>
+                }
+              />
               <div
                 className={arrowClassName}
                 style={arrowStyle}
               ></div>
+            </div>
+          }
+        />
+        <ConditionallyRender
+          condition={!!decorator?.text || !!decorator?.label}
+          show={
+            <div
+              className="message-decorator-text"
+              style={{ color: decoratorColor || '#9ca3af' }}
+            >
+              {decorator?.text || decorator?.label}
             </div>
           }
         />

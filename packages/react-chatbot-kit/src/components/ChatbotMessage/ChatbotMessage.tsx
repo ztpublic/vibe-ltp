@@ -135,7 +135,32 @@ const ChatbotMessage = ({
     }
   }, [delay]);
 
+  const effectiveDisableAutoLoading =
+    disableAutoLoadingDismiss || messageObject?.disableAutoLoadingDismiss;
+
+  const fullMessage: IMessage = {
+    // Start with any existing message metadata so it's preserved
+    ...messageObject,
+    // Then apply explicit props so they always take precedence over messageObject
+    id,
+    type,
+    message,
+    loading,
+    disableAutoLoadingDismiss: effectiveDisableAutoLoading,
+    replyToId,
+    replyToPreview,
+    replyToNickname,
+    payload,
+    delay,
+  };
+
   const bubbleStyle = buildStyle(customStyles?.botMessageBox);
+  const decorator = fullMessage.decorators?.[0];
+  const decoratorColor = decorator?.color;
+  const decoratedBubbleStyle = {
+    ...bubbleStyle,
+    ...(decoratorColor ? { border: `1px solid ${decoratorColor}` } : {}),
+  };
   const bubbleClassName = mergeClassNames(
     'react-chatbot-kit-chat-bot-message',
     customStyles?.botMessageBox?.className
@@ -161,26 +186,6 @@ const ChatbotMessage = ({
     'chatbot-loader-container',
     customStyles?.loader?.className
   );
-
-  const fullMessage: IMessage = {
-    id,
-    type,
-    message,
-    loading,
-    disableAutoLoadingDismiss:
-      disableAutoLoadingDismiss || messageObject?.disableAutoLoadingDismiss,
-    replyToId,
-    replyToPreview,
-    replyToNickname,
-    payload,
-    delay,
-    decorators: messageObject?.decorators,
-    actions: messageObject?.actions,
-    feedbackOptions: messageObject?.feedbackOptions,
-    status: messageObject?.status,
-    timestamp: messageObject?.timestamp,
-    ...messageObject,
-  };
 
   const decorationProps = {
     message: fullMessage,
@@ -227,32 +232,29 @@ const ChatbotMessage = ({
                     <ChatbotMessageAvatar
                       className={customStyles?.botAvatar?.className}
                       style={buildStyle(customStyles?.botAvatar)}
-                      label={fullMessage?.replyToNickname?.[0] || 'B'}
+                      label="B"
                     />
                   }
                 />
               }
             />
 
-                <ConditionallyRender
-                  condition={!!customComponents?.botChatMessage}
-                  show={callIfExists(customComponents?.botChatMessage, {
-                    message: fullMessage,
-                    defaultLoader: (
-                      <div className={loaderClassName} style={loaderStyle}>
-                        <Loader />
-                      </div>
-                    ),
-                    onReplyScroll: handleReplyClick,
-                    onFeedback,
-                  })}
+            <ConditionallyRender
+              condition={!!customComponents?.botChatMessage}
+              show={callIfExists(customComponents?.botChatMessage, {
+                message: fullMessage,
+                defaultLoader: (
+                  <div className={loaderClassName} style={loaderStyle}>
+                    <Loader />
+                  </div>
+                ),
+                onReplyScroll: handleReplyClick,
+                onFeedback,
+              })}
               elseShow={
-                <div
-                  className={bubbleClassName}
-                  style={bubbleStyle}
-                >
+                <div className={bubbleClassName} style={decoratedBubbleStyle}>
                   <ConditionallyRender
-                    condition={loading}
+                    condition={!!loading}
                     show={
                       <div className={loaderClassName} style={loaderStyle}>
                         <Loader />
@@ -260,16 +262,36 @@ const ChatbotMessage = ({
                     }
                     elseShow={<span>{message}</span>}
                   />
-                <ConditionallyRender
-                  condition={withAvatar}
-                  show={
-                    <div
-                      className={arrowClassName}
-                      style={arrowStyle}
-                    ></div>
-                  }
-                />
-              </div>
+                  <ConditionallyRender
+                    condition={!!decorator?.icon}
+                    show={
+                      <div
+                        className="message-decorator-icon"
+                        style={{ color: decoratorColor }}
+                        aria-label="message decorator"
+                      >
+                        {decorator?.icon?.startsWith('http') ? (
+                          <img
+                            src={decorator.icon}
+                            alt={decorator.label || 'Decorator icon'}
+                            className="message-decorator-icon-image"
+                          />
+                        ) : (
+                          decorator?.icon
+                        )}
+                      </div>
+                    }
+                  />
+                  <ConditionallyRender
+                    condition={withAvatar}
+                    show={
+                      <div
+                        className={arrowClassName}
+                        style={arrowStyle}
+                      ></div>
+                    }
+                  />
+                </div>
               }
             />
             <ConditionallyRender
@@ -277,6 +299,17 @@ const ChatbotMessage = ({
               show={callIfExists(customComponents?.botMessageAside, decorationProps)}
             />
           </div>
+          <ConditionallyRender
+            condition={!!decorator?.text || !!decorator?.label}
+            show={
+              <div
+                className="message-decorator-text"
+                style={{ color: decoratorColor || '#9ca3af' }}
+              >
+                {decorator?.text || decorator?.label}
+              </div>
+            }
+          />
           <ConditionallyRender
             condition={!!customComponents?.botMessageFooter}
             show={callIfExists(customComponents?.botMessageFooter, decorationProps)}

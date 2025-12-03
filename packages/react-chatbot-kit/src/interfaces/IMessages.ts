@@ -26,8 +26,12 @@ export interface IMessageDecorator {
   id: string;
   label?: string;
   icon?: string;
+  /** Border + accent color for decorator */
+  color?: string;
   position?: 'footer' | 'side';
   meta?: any;
+  /** Optional text shown below the message bubble */
+  text?: string;
 }
 
 export interface IMessageAction {
