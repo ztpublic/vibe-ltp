@@ -216,6 +216,7 @@ const ChatbotMessage = ({
                     <ChatbotMessageAvatar
                       className={customStyles?.botAvatar?.className}
                       style={buildStyle(customStyles?.botAvatar)}
+                      label={fullMessage?.replyToNickname?.[0] || 'B'}
                     />
                   }
                 />

@@ -86,6 +86,11 @@ export interface IHeaderComponentProps {
 export interface IAvatarComponentProps {
   message?: IMessage;
   index?: number;
+  label?: string;
+  imageSrc?: string;
+  imageAlt?: string;
+  size?: number;
+  backgroundColor?: string;
 }
 
 export interface IBotChatMessageProps {
