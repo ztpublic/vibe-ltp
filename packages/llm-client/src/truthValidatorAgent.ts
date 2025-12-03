@@ -34,7 +34,7 @@ GOAL:
 - Give a short Chinese judgement about how close it is (no spoilers).
 
 OUTPUT RULES:
-- Reply with ONE concise paragraph in Chinese that states the closeness.
+- Reply with ONE concise paragraph in Chinese that states the closeness and what some key facts are revealed.
 - Do NOT give hints about what is missing.
 - Do NOT reveal the full truth or key twists.`;
 }
@@ -93,10 +93,6 @@ export async function validateTruthProposal(
   const messages = [
     { role: 'system' as const, content: systemPrompt },
     ...buildContextMessages(input),
-    {
-      role: 'user' as const,
-      content: '用中文简短评价与真相的接近程度并给出提示，不要输出列表或 JSON。',
-    },
   ];
 
   console.log('\n[Truth Validator Agent]');
