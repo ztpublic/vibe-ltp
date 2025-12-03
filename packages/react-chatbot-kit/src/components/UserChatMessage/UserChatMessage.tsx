@@ -59,6 +59,23 @@ const UserChatMessage = ({
   const displayName = nickname ?? 'visitor';
   const isMe = currentUserNickname && nickname === currentUserNickname;
 
+  const fullMessage: IMessage =
+    messageObject ?? {
+      id: Number(messageId.replace(/\D/g, '')),
+      type: 'user',
+      message,
+      nickname,
+    };
+
+  const decorationProps = {
+    message: fullMessage,
+    decorators: fullMessage.decorators,
+    actions: fullMessage.actions,
+    feedbackOptions: fullMessage.feedbackOptions,
+    status: fullMessage.status,
+    timestamp: fullMessage.timestamp,
+  };
+
   const messageClassName = mergeClassNames(
     'react-chatbot-kit-user-chat-message',
     customStyles?.userMessageBox?.className
@@ -98,12 +115,7 @@ const UserChatMessage = ({
         <ConditionallyRender
           condition={!!customComponents.userChatMessage}
           show={callIfExists(customComponents.userChatMessage, {
-            message: messageObject ?? {
-              id: Number(messageId.replace(/\D/g, '')),
-              type: 'user',
-              message,
-              nickname,
-            },
+            message: fullMessage,
             currentUserNickname,
           })}
           elseShow={
@@ -121,12 +133,7 @@ const UserChatMessage = ({
       <ConditionallyRender
         condition={!!customComponents.userAvatar}
         show={callIfExists(customComponents.userAvatar, {
-          message: messageObject ?? {
-            id: Number(messageId.replace(/\D/g, '')),
-            type: 'user',
-            message,
-            nickname,
-          },
+          message: fullMessage,
         })}
         elseShow={
           <div
@@ -138,6 +145,14 @@ const UserChatMessage = ({
             </div>
           </div>
         }
+      />
+      <ConditionallyRender
+        condition={!!customComponents.userMessageAside}
+        show={callIfExists(customComponents.userMessageAside, decorationProps)}
+      />
+      <ConditionallyRender
+        condition={!!customComponents.userMessageFooter}
+        show={callIfExists(customComponents.userMessageFooter, decorationProps)}
       />
     </div>
   );

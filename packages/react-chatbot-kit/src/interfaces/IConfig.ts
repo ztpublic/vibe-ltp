@@ -34,8 +34,12 @@ export interface ICustomComponents {
   header?: (props: IHeaderComponentProps) => ReactElement;
   botAvatar?: (props: IAvatarComponentProps) => ReactElement;
   botChatMessage?: (props: IBotChatMessageProps) => ReactElement;
+  botMessageFooter?: (props: IMessageDecorationProps) => ReactElement;
+  botMessageAside?: (props: IMessageDecorationProps) => ReactElement;
   userAvatar?: (props: IAvatarComponentProps) => ReactElement;
   userChatMessage?: (props: IUserChatMessageProps) => ReactElement;
+  userMessageFooter?: (props: IMessageDecorationProps) => ReactElement;
+  userMessageAside?: (props: IMessageDecorationProps) => ReactElement;
 }
 
 export interface ICustomMessage {
@@ -94,6 +98,16 @@ export interface IBotChatMessageProps {
 export interface IUserChatMessageProps {
   message: IMessage;
   currentUserNickname?: string;
+  onFeedback?: (feedback: unknown) => void;
+}
+
+export interface IMessageDecorationProps {
+  message: IMessage;
+  decorators?: IMessage['decorators'];
+  actions?: IMessage['actions'];
+  feedbackOptions?: IMessage['feedbackOptions'];
+  status?: IMessage['status'];
+  timestamp?: IMessage['timestamp'];
   onFeedback?: (feedback: unknown) => void;
 }
 

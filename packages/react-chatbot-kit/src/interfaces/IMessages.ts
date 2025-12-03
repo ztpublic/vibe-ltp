@@ -14,6 +14,35 @@ export interface IBaseMessage {
   id: number;
 }
 
+export type IMessageStatus =
+  | 'pending'
+  | 'sent'
+  | 'delivered'
+  | 'read'
+  | 'error'
+  | 'custom';
+
+export interface IMessageDecorator {
+  id: string;
+  label?: string;
+  icon?: string;
+  position?: 'footer' | 'side';
+  meta?: any;
+}
+
+export interface IMessageAction {
+  id: string;
+  label: string;
+  payload?: any;
+}
+
+export interface IMessageFeedbackOption {
+  id: string;
+  label: string;
+  type?: 'upvote' | 'downvote' | 'flag' | 'custom';
+  payload?: any;
+}
+
 export interface IMessageOptions {
   loading?: boolean;
   widget?: string;
@@ -27,6 +56,13 @@ export interface IMessageOptions {
   replyToId?: string;
   replyToPreview?: string;
   replyToNickname?: string;
+
+  /** Decoration + status metadata */
+  decorators?: IMessageDecorator[];
+  actions?: IMessageAction[];
+  feedbackOptions?: IMessageFeedbackOption[];
+  status?: IMessageStatus;
+  timestamp?: number | string;
 }
 
 export interface IMessage extends IBaseMessage {
@@ -44,4 +80,11 @@ export interface IMessage extends IBaseMessage {
   replyToId?: string;
   replyToPreview?: string;
   replyToNickname?: string;
+
+  /** Decoration + status metadata */
+  decorators?: IMessageDecorator[];
+  actions?: IMessageAction[];
+  feedbackOptions?: IMessageFeedbackOption[];
+  status?: IMessageStatus;
+  timestamp?: number | string;
 }

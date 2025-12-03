@@ -154,7 +154,22 @@ const ChatbotMessage = ({
     replyToNickname,
     payload,
     delay,
+    decorators: messageObject?.decorators,
+    actions: messageObject?.actions,
+    feedbackOptions: messageObject?.feedbackOptions,
+    status: messageObject?.status,
+    timestamp: messageObject?.timestamp,
     ...messageObject,
+  };
+
+  const decorationProps = {
+    message: fullMessage,
+    decorators: fullMessage.decorators,
+    actions: fullMessage.actions,
+    feedbackOptions: fullMessage.feedbackOptions,
+    status: fullMessage.status,
+    timestamp: fullMessage.timestamp,
+    onFeedback,
   };
 
   return (
@@ -206,11 +221,11 @@ const ChatbotMessage = ({
                     onReplyScroll: handleReplyClick,
                     onFeedback,
                   })}
-                  elseShow={
-                    <div
-                      className={bubbleClassName}
-                      style={bubbleStyle}
-                    >
+              elseShow={
+                <div
+                  className={bubbleClassName}
+                  style={bubbleStyle}
+                >
                   <ConditionallyRender
                     condition={loading}
                     show={
@@ -220,19 +235,27 @@ const ChatbotMessage = ({
                     }
                     elseShow={<span>{message}</span>}
                   />
-                  <ConditionallyRender
-                    condition={withAvatar}
-                    show={
-                      <div
-                        className={arrowClassName}
-                        style={arrowStyle}
-                      ></div>
-                    }
-                  />
-                </div>
+                <ConditionallyRender
+                  condition={withAvatar}
+                  show={
+                    <div
+                      className={arrowClassName}
+                      style={arrowStyle}
+                    ></div>
+                  }
+                />
+              </div>
               }
             />
+            <ConditionallyRender
+              condition={!!customComponents?.botMessageAside}
+              show={callIfExists(customComponents?.botMessageAside, decorationProps)}
+            />
           </div>
+          <ConditionallyRender
+            condition={!!customComponents?.botMessageFooter}
+            show={callIfExists(customComponents?.botMessageFooter, decorationProps)}
+          />
         </div>
       }
     />

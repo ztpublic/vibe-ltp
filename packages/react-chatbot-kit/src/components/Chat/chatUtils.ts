@@ -54,6 +54,11 @@ export const createChatBotMessage = (
     widget: options.widget,
     delay: options.delay,
     payload: options.payload,
+    decorators: options.decorators,
+    actions: options.actions,
+    feedbackOptions: options.feedbackOptions,
+    status: options.status,
+    timestamp: options.timestamp,
   };
 };
 
@@ -77,6 +82,11 @@ export const createClientMessage = (
     widget: options.widget,
     delay: options.delay,
     payload: options.payload,
+    decorators: options.decorators,
+    actions: options.actions,
+    feedbackOptions: options.feedbackOptions,
+    status: options.status,
+    timestamp: options.timestamp,
   };
 };
 
