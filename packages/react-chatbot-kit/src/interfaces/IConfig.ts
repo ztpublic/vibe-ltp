@@ -57,6 +57,7 @@ export interface ICustomStyles {
   input?: IStyleOverride;
   sendButton?: IStyleOverride;
   sendIcon?: IStyleOverride;
+  answerButton?: IStyleOverride;
   /** Bot bubble + arrow */
   botMessageBox?: IStyleOverride;
   botMessageArrow?: IStyleOverride;

@@ -11,8 +11,6 @@ import {
   createChatMessage,
 } from './chatUtils';
 
-import ChatIcon from '../../assets/icons/paper-plane.svg';
-
 import './Chat.css';
 import {
   ICustomComponents,
@@ -49,6 +47,7 @@ interface IChatProps {
   disableScrollToBottom?: boolean;
   messageHistory?: IMessage[] | string;
   parse?: (message: string) => void;
+  answerParse?: (message: string) => void;
   actions?: object;
   messageContainerRef: React.MutableRefObject<HTMLDivElement>;
   currentUserNickname?: string;
@@ -73,6 +72,7 @@ const Chat = ({
   actions,
   messageContainerRef,
   currentUserNickname,
+  answerParse,
 }: IChatProps) => {
   const { messages } = state;
 
@@ -251,38 +251,63 @@ const Chat = ({
 
     if (validator && typeof validator === 'function') {
       if (validator(input)) {
-        handleValidMessage();
-        if (parse) {
-          return parse(input);
-        }
-        messageParser.parse(input);
+        handleValidMessage('question');
       }
-    } else {
-      handleValidMessage();
-      if (parse) {
-        return parse(input);
-      }
-      messageParser.parse(input);
+      return;
     }
+
+    handleValidMessage('question');
   };
 
-  const handleValidMessage = () => {
+  const handleAnswerRequest = () => {
+    if (validator && typeof validator === 'function') {
+      if (validator(input)) {
+        handleValidMessage('answer');
+      }
+      return;
+    }
+
+    handleValidMessage('answer');
+  };
+
+  const handleValidMessage = (mode: 'question' | 'answer') => {
+    const nextMessage = input;
     setState((state) => ({
       ...state,
-      messages: [...state.messages, createChatMessage(input, 'user')],
+      messages: [...state.messages, createChatMessage(nextMessage, 'user')],
     }));
 
     scrollIntoView();
     setInputValue('');
+
+    if (mode === 'answer' && answerParse) {
+      return answerParse(nextMessage);
+    }
+
+    if (parse) {
+      return parse(nextMessage);
+    }
+
+    if (messageParser?.parse) {
+      return messageParser.parse(nextMessage);
+    }
   };
 
   const sendButtonOverrides =
     customStyles?.sendButton ?? customStyles?.chatButton;
+  const answerButtonOverrides = customStyles?.answerButton ?? sendButtonOverrides;
   const sendButtonClassName = mergeClassNames(
+    'react-chatbot-kit-chat-btn',
     'react-chatbot-kit-chat-btn-send',
     sendButtonOverrides?.className
   );
+  const answerButtonClassName = mergeClassNames(
+    'react-chatbot-kit-chat-btn',
+    'react-chatbot-kit-chat-btn-answer',
+    answerButtonOverrides?.className
+  );
   const sendButtonStyle = buildStyle(sendButtonOverrides);
+  const answerButtonStyle = buildStyle(answerButtonOverrides);
 
   let header = `Conversation with ${botName}`;
   if (headerText) {
@@ -374,18 +399,23 @@ const Chat = ({
               value={input}
               onChange={(e) => setInputValue(e.target.value)}
             />
-            <button
-              className={sendButtonClassName}
-              style={sendButtonStyle}
-            >
-              <ChatIcon
-                className={mergeClassNames(
-                  'react-chatbot-kit-chat-btn-send-icon',
-                  customStyles?.sendIcon?.className
-                )}
-                style={buildStyle(customStyles?.sendIcon)}
-              />
-            </button>
+            <div className="react-chatbot-kit-chat-actions">
+              <button
+                type="submit"
+                className={sendButtonClassName}
+                style={sendButtonStyle}
+              >
+                <span className="react-chatbot-kit-chat-btn-label">提问</span>
+              </button>
+              <button
+                type="button"
+                className={answerButtonClassName}
+                style={answerButtonStyle}
+                onClick={handleAnswerRequest}
+              >
+                <span className="react-chatbot-kit-chat-btn-label">解答</span>
+              </button>
+            </div>
           </form>
         </div>
       </div>

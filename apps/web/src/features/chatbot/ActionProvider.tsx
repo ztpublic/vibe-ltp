@@ -1,7 +1,7 @@
 'use client';
 
 import React, { ReactNode } from 'react';
-import type { BotMessage, ChatMessage, ChatReplyDecoration, UserMessage } from '@vibe-ltp/shared';
+import type { BotMessage, ChatMessage, ChatReplyDecoration, ChatResponse, UserMessage } from '@vibe-ltp/shared';
 import type { ChatService } from './services';
 import { truncateText, createChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
 import type { ChatHistoryController } from './controllers';
@@ -108,7 +108,14 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     emitMessageToServer(decoratedUserMessage);
   };
 
-  const handleUserMessage = async (userMessage: string, msgNickname: string) => {
+  const sendUserMessage = async (
+    userMessage: string,
+    msgNickname: string,
+    sendRequest: (
+      userMessage: UserMessage,
+      history?: ChatMessage[]
+    ) => Promise<ChatResponse>
+  ) => {
     const userMessageId = uuidv4();
     const userMessagePreview = truncateText(userMessage, 40);
     
@@ -158,7 +165,7 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
       const historyForContext = chatHistoryController?.messages ?? [];
 
       const chatResponse = await Promise.race([
-        chatService.sendMessage(userChatMessage, historyForContext),
+        sendRequest(userChatMessage, historyForContext),
         timeoutPromise,
       ]);
 
@@ -197,6 +204,12 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     }
   };
 
+  const handleUserMessage = (userMessage: string, msgNickname: string) =>
+    sendUserMessage(userMessage, msgNickname, chatService.sendMessage.bind(chatService));
+
+  const handleSolutionRequest = (userMessage: string, msgNickname: string) =>
+    sendUserMessage(userMessage, msgNickname, chatService.requestSolution.bind(chatService));
+
   const actions = {
     greet: () =>
       appendBotMessage({
@@ -206,6 +219,7 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
         timestamp: new Date().toISOString(),
       }),
     handleUserMessage,
+    handleSolutionRequest,
   };
 
   return (

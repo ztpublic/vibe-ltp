@@ -6,6 +6,7 @@ import { useChatIdentity } from './identity/useChatIdentity';
 type Actions = {
   greet: () => void;
   handleUserMessage: (text: string, nickname: string) => Promise<void> | void;
+  handleSolutionRequest: (text: string, nickname: string) => Promise<void> | void;
 };
 
 type MessageParserProps = {
@@ -24,11 +25,19 @@ const MessageParser: React.FC<MessageParserProps> = ({ children, actions }) => {
     actions.handleUserMessage(trimmed, nickname);
   };
 
+  const parseForSolution = (message: string) => {
+    const trimmed = message.trim();
+    if (!trimmed) return;
+
+    actions.handleSolutionRequest(trimmed, nickname);
+  };
+
   return (
     <>
       {React.Children.map(children, (child) =>
         React.cloneElement(child as React.ReactElement, {
           parse,
+          answerParse: parseForSolution,
         })
       )}
     </>

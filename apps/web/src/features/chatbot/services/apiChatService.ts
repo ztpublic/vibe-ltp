@@ -1,5 +1,6 @@
 import type { ChatRequest, ChatResponse, UserMessage, ChatMessage } from '@vibe-ltp/shared';
 import type { ChatService } from './chatService';
+import { v4 as uuidv4 } from 'uuid';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${process.env.NEXT_PUBLIC_BACKEND_PORT || 4000}`;
 
@@ -61,5 +62,17 @@ export class ApiChatService implements ChatService {
       const errorMessage = err instanceof Error ? err.message : String(err);
       throw new Error(errorMessage);
     }
+  }
+
+  async requestSolution(userMessage: UserMessage, _history: ChatMessage[] = []): Promise<ChatResponse> {
+    // Placeholder until the dedicated solution agent/endpoint is available
+    return {
+      reply: {
+        id: uuidv4(),
+        type: 'bot',
+        content: '🧩 解答模式即将上线，敬请期待。',
+        timestamp: new Date().toISOString(),
+      },
+    };
   }
 }

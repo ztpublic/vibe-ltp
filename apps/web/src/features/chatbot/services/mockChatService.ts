@@ -21,4 +21,17 @@ export class MockChatService implements ChatService {
       decoration,
     };
   }
+
+  async requestSolution(_userMessage: UserMessage, _history?: ChatMessage[]): Promise<ChatResponse> {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    return {
+      reply: {
+        id: uuidv4(),
+        type: 'bot',
+        content: 'Mock 解答：功能开发中，稍后将由专属 agent 回复。',
+        timestamp: new Date().toISOString(),
+      },
+    };
+  }
 }
