@@ -20,7 +20,7 @@ const ChatbotError = ({ message }: IChatbotErrorProps) => {
           withAvatar
           loading={false}
           id={1}
-          customStyles={{ backgroundColor: '' }}
+          customStyles={{}}
           messages={[]}
         />
       </div>

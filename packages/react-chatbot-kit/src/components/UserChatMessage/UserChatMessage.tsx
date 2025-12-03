@@ -6,8 +6,20 @@ import { callIfExists } from '../Chat/chatUtils';
 import UserIcon from '../../assets/icons/user-alt.svg';
 
 import './UserChatMessage.css';
-import { ICustomComponents } from '../../interfaces/IConfig';
+import { ICustomComponents, ICustomStyles, IStyleOverride } from '../../interfaces/IConfig';
 import { registerMessageElement } from '../../utils/messageRegistry';
+
+const mergeClassNames = (...names: Array<string | undefined | false>) =>
+  names.filter(Boolean).join(' ');
+
+const buildStyle = (override?: IStyleOverride) => {
+  if (!override) return undefined;
+  const style = { ...(override.style || {}) };
+  if (override.backgroundColor && !style.backgroundColor) {
+    style.backgroundColor = override.backgroundColor;
+  }
+  return Object.keys(style).length ? style : undefined;
+};
 
 interface IUserChatMessageProps {
   /** Plain text message content (no encoding) */
@@ -21,6 +33,7 @@ interface IUserChatMessageProps {
   
   customComponents: ICustomComponents;
   currentUserNickname?: string;
+  customStyles?: ICustomStyles;
 }
 
 const UserChatMessage = ({
@@ -29,6 +42,7 @@ const UserChatMessage = ({
   nickname,
   customComponents,
   currentUserNickname,
+  customStyles,
 }: IUserChatMessageProps) => {
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -41,6 +55,27 @@ const UserChatMessage = ({
 
   const displayName = nickname ?? 'visitor';
   const isMe = currentUserNickname && nickname === currentUserNickname;
+
+  const messageClassName = mergeClassNames(
+    'react-chatbot-kit-user-chat-message',
+    customStyles?.userMessageBox?.className
+  );
+  const messageStyle = buildStyle(customStyles?.userMessageBox);
+
+  const arrowClassName = mergeClassNames(
+    'react-chatbot-kit-user-chat-message-arrow',
+    customStyles?.userMessageArrow?.className
+  );
+  const arrowStyle = buildStyle(customStyles?.userMessageArrow) || {};
+  if (!arrowStyle.borderLeftColor && messageStyle?.backgroundColor) {
+    arrowStyle.borderLeftColor = messageStyle.backgroundColor as string;
+  }
+
+  const avatarWrapperClassName = mergeClassNames(
+    'react-chatbot-kit-user-avatar',
+    customStyles?.userAvatar?.className
+  );
+  const avatarWrapperStyle = buildStyle(customStyles?.userAvatar);
 
   return (
     <div 
@@ -63,9 +98,12 @@ const UserChatMessage = ({
             message,
           })}
           elseShow={
-            <div className="react-chatbot-kit-user-chat-message">
+            <div className={messageClassName} style={messageStyle}>
               {message}
-              <div className="react-chatbot-kit-user-chat-message-arrow"></div>
+              <div
+                className={arrowClassName}
+                style={arrowStyle}
+              ></div>
             </div>
           }
         />
@@ -75,7 +113,10 @@ const UserChatMessage = ({
         condition={!!customComponents.userAvatar}
         show={callIfExists(customComponents.userAvatar)}
         elseShow={
-          <div className="react-chatbot-kit-user-avatar">
+          <div
+            className={avatarWrapperClassName}
+            style={avatarWrapperStyle}
+          >
             <div className="react-chatbot-kit-user-avatar-container">
               <UserIcon className="react-chatbot-kit-user-avatar-icon" />
             </div>

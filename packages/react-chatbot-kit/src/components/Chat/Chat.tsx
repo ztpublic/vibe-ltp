@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, SetStateAction } from 'react';
+import React, { useState, useEffect, SetStateAction } from 'react';
 import ConditionallyRender from 'react-conditionally-render';
 
 import UserChatMessage from '../UserChatMessage/UserChatMessage';
@@ -20,7 +20,18 @@ import {
   ICustomStyles,
 } from '../../interfaces/IConfig';
 import { IMessage } from '../../interfaces/IMessages';
-import { string } from 'prop-types';
+
+const mergeClassNames = (...names: Array<string | undefined | false>) =>
+  names.filter(Boolean).join(' ');
+
+const buildStyle = (override?: ICustomStyles[keyof ICustomStyles]) => {
+  if (!override) return undefined;
+  const style = { ...(override.style || {}) };
+  if (override.backgroundColor && !style.backgroundColor) {
+    style.backgroundColor = override.backgroundColor;
+  }
+  return Object.keys(style).length ? style : undefined;
+};
 
 interface IChatProps {
   setState: React.Dispatch<SetStateAction<any>>;
@@ -169,6 +180,7 @@ const Chat = ({
           nickname={messageObject.nickname}
           key={messageObject.id}
           customComponents={customComponents}
+          customStyles={customStyles}
           currentUserNickname={currentUserNickname}
         />
         {widget ? widget : null}
@@ -207,7 +219,7 @@ const Chat = ({
       return (
         <>
           <ChatbotMessage
-            customStyles={customStyles.botMessageBox}
+            customStyles={customStyles}
             withAvatar={withAvatar}
             {...chatbotMessageProps}
             key={messageObject.id}
@@ -222,7 +234,7 @@ const Chat = ({
 
     return (
       <ChatbotMessage
-        customStyles={customStyles.botMessageBox}
+        customStyles={customStyles}
         key={messageObject.id}
         withAvatar={withAvatar}
         {...chatbotMessageProps}
@@ -260,10 +272,12 @@ const Chat = ({
     setInputValue('');
   };
 
-  const customButtonStyle = { backgroundColor: '' };
-  if (customStyles && customStyles.chatButton) {
-    customButtonStyle.backgroundColor = customStyles.chatButton.backgroundColor;
-  }
+  const sendButtonOverrides = customStyles.sendButton ?? customStyles.chatButton;
+  const sendButtonClassName = mergeClassNames(
+    'react-chatbot-kit-chat-btn-send',
+    sendButtonOverrides?.className
+  );
+  const sendButtonStyle = buildStyle(sendButtonOverrides);
 
   let header = `Conversation with ${botName}`;
   if (headerText) {
@@ -276,20 +290,44 @@ const Chat = ({
   }
 
   return (
-    <div className="react-chatbot-kit-chat-container">
-      <div className="react-chatbot-kit-chat-inner-container">
+    <div
+      className={mergeClassNames(
+        'react-chatbot-kit-chat-container',
+        customStyles?.container?.className
+      )}
+      style={buildStyle(customStyles?.container)}
+    >
+      <div
+        className={mergeClassNames(
+          'react-chatbot-kit-chat-inner-container',
+          customStyles?.innerContainer?.className
+        )}
+        style={buildStyle(customStyles?.innerContainer)}
+      >
         <ConditionallyRender
           condition={!!customComponents.header}
           show={
             customComponents.header && customComponents.header(actionProvider)
           }
           elseShow={
-            <div className="react-chatbot-kit-chat-header">{header}</div>
+            <div
+              className={mergeClassNames(
+                'react-chatbot-kit-chat-header',
+                customStyles?.header?.className
+              )}
+              style={buildStyle(customStyles?.header)}
+            >
+              {header}
+            </div>
           }
         />
 
         <div
-          className="react-chatbot-kit-chat-message-container"
+          className={mergeClassNames(
+            'react-chatbot-kit-chat-message-container',
+            customStyles?.messageContainer?.className
+          )}
+          style={buildStyle(customStyles?.messageContainer)}
           ref={messageContainerRef}
         >
           <ConditionallyRender
@@ -310,19 +348,30 @@ const Chat = ({
         <div className="react-chatbot-kit-chat-input-container">
           <form
             className="react-chatbot-kit-chat-input-form"
+            style={buildStyle(customStyles?.inputForm)}
             onSubmit={handleSubmit}
           >
             <input
-              className="react-chatbot-kit-chat-input"
+              className={mergeClassNames(
+                'react-chatbot-kit-chat-input',
+                customStyles?.input?.className
+              )}
+              style={buildStyle(customStyles?.input)}
               placeholder={placeholder}
               value={input}
               onChange={(e) => setInputValue(e.target.value)}
             />
             <button
-              className="react-chatbot-kit-chat-btn-send"
-              style={customButtonStyle}
+              className={sendButtonClassName}
+              style={sendButtonStyle}
             >
-              <ChatIcon className="react-chatbot-kit-chat-btn-send-icon" />
+              <ChatIcon
+                className={mergeClassNames(
+                  'react-chatbot-kit-chat-btn-send-icon',
+                  customStyles?.sendIcon?.className
+                )}
+                style={buildStyle(customStyles?.sendIcon)}
+              />
             </button>
           </form>
         </div>

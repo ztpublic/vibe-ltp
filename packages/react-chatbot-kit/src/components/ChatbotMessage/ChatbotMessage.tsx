@@ -6,8 +6,25 @@ import Loader from '../Loader/Loader';
 
 import './ChatbotMessage.css';
 import { callIfExists } from '../Chat/chatUtils';
-import { ICustomComponents, ICustomStyles } from '../../interfaces/IConfig';
+import {
+  ICustomComponents,
+  ICustomStyles,
+  IStyleOverride,
+} from '../../interfaces/IConfig';
 import { scrollToMessage } from '../../utils/messageRegistry';
+import { IMessage } from '../../interfaces/IMessages';
+
+const mergeClassNames = (...names: Array<string | undefined | false>) =>
+  names.filter(Boolean).join(' ');
+
+const buildStyle = (override?: IStyleOverride) => {
+  if (!override) return undefined;
+  const style = { ...(override.style || {}) };
+  if (override.backgroundColor && !style.backgroundColor) {
+    style.backgroundColor = override.backgroundColor;
+  }
+  return Object.keys(style).length ? style : undefined;
+};
 
 interface IChatbotMessageProps {
   /** Plain text message content (no encoding) */
@@ -20,12 +37,12 @@ interface IChatbotMessageProps {
   
   withAvatar?: boolean;
   loading?: boolean;
-  messages: any[];
+  messages: IMessage[];
   delay?: number;
   id: number;
   setState?: React.Dispatch<React.SetStateAction<any>>;
   customComponents?: ICustomComponents;
-  customStyles: { backgroundColor: string };
+  customStyles?: ICustomStyles;
 }
 
 const ChatbotMessage = ({
@@ -84,13 +101,32 @@ const ChatbotMessage = ({
     }
   }, [delay]);
 
-  const chatBoxCustomStyles = { backgroundColor: '' };
-  const arrowCustomStyles = { borderRightColor: '' };
+  const bubbleStyle = buildStyle(customStyles?.botMessageBox);
+  const bubbleClassName = mergeClassNames(
+    'react-chatbot-kit-chat-bot-message',
+    customStyles?.botMessageBox?.className
+  );
 
-  if (customStyles) {
-    chatBoxCustomStyles.backgroundColor = customStyles.backgroundColor;
-    arrowCustomStyles.borderRightColor = customStyles.backgroundColor;
+  const arrowStyle = buildStyle(customStyles?.botMessageArrow) || {};
+  if (!arrowStyle.borderRightColor && bubbleStyle?.backgroundColor) {
+    arrowStyle.borderRightColor = bubbleStyle.backgroundColor as string;
   }
+  const arrowClassName = mergeClassNames(
+    'react-chatbot-kit-chat-bot-message-arrow',
+    customStyles?.botMessageArrow?.className
+  );
+
+  const replyLabelStyle = buildStyle(customStyles?.replyLabel);
+  const replyLabelClassName = mergeClassNames(
+    'chatbot-reply-label',
+    customStyles?.replyLabel?.className
+  );
+
+  const loaderStyle = buildStyle(customStyles?.loader);
+  const loaderClassName = mergeClassNames(
+    'chatbot-loader-container',
+    customStyles?.loader?.className
+  );
 
   return (
     <ConditionallyRender
@@ -101,7 +137,8 @@ const ChatbotMessage = ({
           {replyToId && replyToPreview && (
             <button
               type="button"
-              className="chatbot-reply-label"
+              className={replyLabelClassName}
+              style={replyLabelStyle}
               onClick={handleReplyClick}
               title="点击跳转到问题"
             >
@@ -116,7 +153,12 @@ const ChatbotMessage = ({
                 <ConditionallyRender
                   condition={!!customComponents?.botAvatar}
                   show={callIfExists(customComponents?.botAvatar)}
-                  elseShow={<ChatbotMessageAvatar />}
+                  elseShow={
+                    <ChatbotMessageAvatar
+                      className={customStyles?.botAvatar?.className}
+                      style={buildStyle(customStyles?.botAvatar)}
+                    />
+                  }
                 />
               }
             />
@@ -125,24 +167,32 @@ const ChatbotMessage = ({
               condition={!!customComponents?.botChatMessage}
               show={callIfExists(customComponents?.botChatMessage, {
                 message,
-                loader: <Loader />,
+                loader: (
+                  <div className={loaderClassName} style={loaderStyle}>
+                    <Loader />
+                  </div>
+                ),
               })}
               elseShow={
                 <div
-                  className="react-chatbot-kit-chat-bot-message"
-                  style={chatBoxCustomStyles}
+                  className={bubbleClassName}
+                  style={bubbleStyle}
                 >
                   <ConditionallyRender
                     condition={loading}
-                    show={<Loader />}
+                    show={
+                      <div className={loaderClassName} style={loaderStyle}>
+                        <Loader />
+                      </div>
+                    }
                     elseShow={<span>{message}</span>}
                   />
                   <ConditionallyRender
                     condition={withAvatar}
                     show={
                       <div
-                        className="react-chatbot-kit-chat-bot-message-arrow"
-                        style={arrowCustomStyles}
+                        className={arrowClassName}
+                        style={arrowStyle}
                       ></div>
                     }
                   />
