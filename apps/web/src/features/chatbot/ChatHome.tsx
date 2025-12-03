@@ -5,7 +5,7 @@ import { SoupBotChat, type SoupBotChatRef } from './index';
 import type { ChatService } from './services';
 import type { GameStateController, ChatHistoryController } from './controllers';
 import { IdentityProvider } from './identity/useChatIdentity';
-import { PuzzleInputDialog, Keywords } from './components';
+import { PuzzleInputDialog } from './components';
 import type { BotMessage } from '@vibe-ltp/shared';
 import type { Toast } from './utils/notifications';
 
@@ -30,8 +30,8 @@ export const ChatHome = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const chatbotRef = useRef<SoupBotChatRef>(null);
   
-  const isGameStarted = gameState === 'Started';
   const isGameNotStarted = gameState === 'NotStarted';
+  const isGameStarted = gameState === 'Started';
 
   const handleStartGameClick = () => {
     setIsDialogOpen(true);
@@ -96,7 +96,6 @@ export const ChatHome = ({
                   {puzzleContent?.soupSurface || '等待开始新汤...'}
                 </div>
               </div>
-              <Keywords keywords={puzzleContent?.keywords} isGameStarted={isGameStarted} />
             </div>
             
             {/* Center - Chatbot */}

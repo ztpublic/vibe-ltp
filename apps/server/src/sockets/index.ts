@@ -1,7 +1,5 @@
 import type { Server } from 'socket.io';
 import { SOCKET_EVENTS, type PuzzleContent } from '@vibe-ltp/shared';
-import { extractTruthKeywords, embedTexts } from '@vibe-ltp/llm-client';
-import { randomUUID } from 'node:crypto';
 import * as gameState from '../state/gameState.js';
 import type { PersistedMessage } from '../state/gameState.js';
 import { handleSocketError, sendSocketSuccess } from '../utils/errorHandler.js';
@@ -49,52 +47,15 @@ export function setupSocketIO(io: Server): void {
       const { puzzleContent } = data;
 
       try {
-        let enrichedPuzzleContent: PuzzleContent = puzzleContent;
-        gameState.setKeywordEmbeddings([]);
-        let extractedKeywords: string[] = [];
-
-        try {
-          const keywordResult = await extractTruthKeywords(
-            {
-              surface: puzzleContent.soupSurface,
-              truth: puzzleContent.soupTruth,
-            },
-            'x-ai/grok-4-fast'
-          );
-
-          extractedKeywords = keywordResult.keywords;
-        } catch (agentError) {
-          console.error('[Socket] Truth keywords extraction failed; starting without keywords', agentError);
-        }
-
-        if (extractedKeywords.length > 0) {
-          enrichedPuzzleContent = {
-            ...puzzleContent,
-            keywords: extractedKeywords.map((text) => ({
-              id: randomUUID(),
-              text,
-              revealed: false,
-            })),
-          };
-
-          try {
-            const embeddings = await embedTexts(extractedKeywords);
-            gameState.setKeywordEmbeddings(embeddings);
-          } catch (embedError) {
-            console.error('[Socket] Embedding generation failed; keyword matching disabled', embedError);
-            gameState.setKeywordEmbeddings([]);
-          }
-        }
-
         // IMPORTANT: Set puzzle content BEFORE setting state to 'Started'
         // The validateStateTransition function requires puzzle content to exist
-        gameState.setPuzzleContent(enrichedPuzzleContent);
+        gameState.setPuzzleContent(puzzleContent);
         gameState.setGameState('Started');
         
         // Notify all connected clients
         io.emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
           state: 'Started',
-          puzzleContent: enrichedPuzzleContent,
+          puzzleContent,
         });
         
         sendSocketSuccess(callback);
