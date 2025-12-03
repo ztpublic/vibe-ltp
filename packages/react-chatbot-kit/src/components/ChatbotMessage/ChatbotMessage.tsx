@@ -13,6 +13,7 @@ import {
 } from '../../interfaces/IConfig';
 import { scrollToMessage } from '../../utils/messageRegistry';
 import { IChatState, IMessage } from '../../interfaces/IMessages';
+import { registerMessageElement } from '../../utils/messageRegistry';
 
 const mergeClassNames = (...names: Array<string | undefined | false>) =>
   names.filter(Boolean).join(' ');
@@ -73,6 +74,7 @@ const ChatbotMessage = ({
   onReplyScroll,
 }: IChatbotMessageProps) => {
   const [show, toggleShow] = useState(false);
+  const ref = React.useRef<HTMLDivElement | null>(null);
 
   const handleReplyClick = () => {
     if (!replyToId) return;
@@ -108,6 +110,13 @@ const ChatbotMessage = ({
       clearTimeout(timeoutId);
     };
   }, [message, delay, id]);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const messageId = `bot_msg_${id}`;
+    registerMessageElement(messageId, ref.current);
+    return () => registerMessageElement(messageId, null);
+  }, [id]);
 
   useEffect(() => {
     if (delay) {
@@ -176,7 +185,11 @@ const ChatbotMessage = ({
     <ConditionallyRender
       condition={show}
       show={
-        <div className="react-chatbot-kit-chat-bot-message-container">
+        <div
+          className="react-chatbot-kit-chat-bot-message-container"
+          ref={ref}
+          data-message-id={`bot_msg_${id}`}
+        >
           {/* Reply label if metadata exists */}
           {replyToId && replyToPreview && (
             <button
