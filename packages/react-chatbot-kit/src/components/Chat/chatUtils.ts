@@ -46,6 +46,7 @@ export const createChatBotMessage = (
   return {
     ...createChatMessage(message, 'bot'),
     loading: true,
+    disableAutoLoadingDismiss: options.disableAutoLoadingDismiss,
     // Extract reply metadata from options if provided
     replyToId: options.replyToId,
     replyToPreview: options.replyToPreview,

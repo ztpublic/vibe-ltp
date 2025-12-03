@@ -48,6 +48,8 @@ export interface IMessageOptions {
   widget?: string;
   delay?: number;
   payload?: any;
+  /** Disable automatic loading dismissal for this message */
+  disableAutoLoadingDismiss?: boolean;
   
   /** User message metadata */
   nickname?: string;
@@ -68,6 +70,7 @@ export interface IMessageOptions {
 export interface IMessage extends IBaseMessage {
   options?: IMessageOptions;
   loading?: boolean;
+  disableAutoLoadingDismiss?: boolean;
   widget?: string;
   delay?: number;
   withAvatar?: boolean;

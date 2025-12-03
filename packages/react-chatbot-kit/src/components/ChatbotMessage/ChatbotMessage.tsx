@@ -52,6 +52,8 @@ interface IChatbotMessageProps {
   onFeedback?: (feedback: unknown) => void;
   /** Optional callback from host when reply scroll is requested */
   onReplyScroll?: (replyToId?: string) => void;
+  /** Disable auto-dismissal of loading for this message */
+  disableAutoLoadingDismiss?: boolean;
 }
 
 const ChatbotMessage = ({
@@ -72,6 +74,7 @@ const ChatbotMessage = ({
   messageObject,
   onFeedback,
   onReplyScroll,
+  disableAutoLoadingDismiss,
 }: IChatbotMessageProps) => {
   const [show, toggleShow] = useState(false);
   const ref = React.useRef<HTMLDivElement | null>(null);
@@ -88,7 +91,13 @@ const ChatbotMessage = ({
   useEffect(() => {
     // Only auto-disable loading if the message has actual content
     // Empty content messages (loading placeholders) should keep loading state until replaced
-    if (!message || message.trim().length === 0 || !setState) {
+    if (
+      !message ||
+      message.trim().length === 0 ||
+      !setState ||
+      disableAutoLoadingDismiss ||
+      messageObject?.disableAutoLoadingDismiss
+    ) {
       return; // Don't set any timeout for empty messages
     }
 
@@ -158,6 +167,8 @@ const ChatbotMessage = ({
     type,
     message,
     loading,
+    disableAutoLoadingDismiss:
+      disableAutoLoadingDismiss || messageObject?.disableAutoLoadingDismiss,
     replyToId,
     replyToPreview,
     replyToNickname,
