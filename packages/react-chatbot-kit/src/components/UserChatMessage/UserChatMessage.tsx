@@ -7,6 +7,7 @@ import UserIcon from '../../assets/icons/user-alt.svg';
 
 import './UserChatMessage.css';
 import { ICustomComponents, ICustomStyles, IStyleOverride } from '../../interfaces/IConfig';
+import { IMessage } from '../../interfaces/IMessages';
 import { registerMessageElement } from '../../utils/messageRegistry';
 
 const mergeClassNames = (...names: Array<string | undefined | false>) =>
@@ -34,6 +35,7 @@ interface IUserChatMessageProps {
   customComponents: ICustomComponents;
   currentUserNickname?: string;
   customStyles?: ICustomStyles;
+  messageObject?: IMessage;
 }
 
 const UserChatMessage = ({
@@ -43,6 +45,7 @@ const UserChatMessage = ({
   customComponents,
   currentUserNickname,
   customStyles,
+  messageObject,
 }: IUserChatMessageProps) => {
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -95,7 +98,13 @@ const UserChatMessage = ({
         <ConditionallyRender
           condition={!!customComponents.userChatMessage}
           show={callIfExists(customComponents.userChatMessage, {
-            message,
+            message: messageObject ?? {
+              id: Number(messageId.replace(/\D/g, '')),
+              type: 'user',
+              message,
+              nickname,
+            },
+            currentUserNickname,
           })}
           elseShow={
             <div className={messageClassName} style={messageStyle}>
@@ -111,7 +120,14 @@ const UserChatMessage = ({
       
       <ConditionallyRender
         condition={!!customComponents.userAvatar}
-        show={callIfExists(customComponents.userAvatar)}
+        show={callIfExists(customComponents.userAvatar, {
+          message: messageObject ?? {
+            id: Number(messageId.replace(/\D/g, '')),
+            type: 'user',
+            message,
+            nickname,
+          },
+        })}
         elseShow={
           <div
             className={avatarWrapperClassName}

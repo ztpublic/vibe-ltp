@@ -1,4 +1,9 @@
-import { ReactElement, CSSProperties } from 'react';
+import {
+  ReactElement,
+  CSSProperties,
+  Dispatch,
+  SetStateAction,
+} from 'react';
 
 import { IMessage } from './IMessages';
 import IWidget from './IWidget';
@@ -26,11 +31,11 @@ export interface IStyleOverride {
 }
 
 export interface ICustomComponents {
-  header?: (props?: any) => ReactElement;
-  botAvatar?: (props?: any) => ReactElement;
-  botChatMessage?: (props?: any) => ReactElement;
-  userAvatar?: (props?: any) => ReactElement;
-  userChatMessage?: (props?: any) => ReactElement;
+  header?: (props: IHeaderComponentProps) => ReactElement;
+  botAvatar?: (props: IAvatarComponentProps) => ReactElement;
+  botChatMessage?: (props: IBotChatMessageProps) => ReactElement;
+  userAvatar?: (props: IAvatarComponentProps) => ReactElement;
+  userChatMessage?: (props: IUserChatMessageProps) => ReactElement;
 }
 
 export interface ICustomMessage {
@@ -63,6 +68,33 @@ export interface ICustomStyles {
    * Legacy support (deprecated): use sendButton instead.
    */
   chatButton?: IStyleOverride;
+}
+
+export interface IHeaderComponentProps {
+  actionProvider: any;
+  botName?: string;
+  state: any;
+  setState: Dispatch<SetStateAction<any>>;
+  messageParser: any;
+  currentUserNickname?: string;
+}
+
+export interface IAvatarComponentProps {
+  message?: IMessage;
+  index?: number;
+}
+
+export interface IBotChatMessageProps {
+  message: IMessage;
+  defaultLoader: ReactElement;
+  onReplyScroll?: (replyToId?: string) => void;
+  onFeedback?: (feedback: unknown) => void;
+}
+
+export interface IUserChatMessageProps {
+  message: IMessage;
+  currentUserNickname?: string;
+  onFeedback?: (feedback: unknown) => void;
 }
 
 export default IConfig;

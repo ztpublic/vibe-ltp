@@ -180,6 +180,7 @@ const Chat = ({
           nickname={messageObject.nickname}
           key={messageObject.id}
           customComponents={customComponents}
+          messageObject={messageObject}
           customStyles={customStyles}
           currentUserNickname={currentUserNickname}
         />
@@ -198,6 +199,8 @@ const Chat = ({
 
     const chatbotMessageProps = {
       message: messageObject.message,
+      type: messageObject.type,
+      payload: messageObject.payload,
       replyToId: messageObject.replyToId,
       replyToPreview: messageObject.replyToPreview,
       replyToNickname: messageObject.replyToNickname,
@@ -207,6 +210,7 @@ const Chat = ({
       setState,
       customComponents,
       messages,
+      messageObject,
     };
 
     if (messageObject.widget) {
@@ -307,7 +311,15 @@ const Chat = ({
         <ConditionallyRender
           condition={!!customComponents.header}
           show={
-            customComponents.header && customComponents.header(actionProvider)
+            customComponents.header &&
+            customComponents.header({
+              actionProvider,
+              botName,
+              state,
+              setState,
+              messageParser,
+              currentUserNickname,
+            })
           }
           elseShow={
             <div

@@ -1,7 +1,7 @@
 # React Chatbot Kit Refactor TODOs
 
 - 
-- Custom component API: pass full message context (id, type, loading, reply metadata, nickname, payload) plus callbacks (`onReplyScroll`, `onFeedback`, etc.) into `botChatMessage`, `userChatMessage`, avatar renderers, and headers.
+- 
 - Decorators/feedback: extend `IMessage`/`IMessageOptions` and message creators with optional decorators, actions/feedback options, timestamps/status; render via configurable footer/side slots.
 - Typing/state hygiene: make `customStyles` optional/typed, replace `any` in messages/state with a `ChatMessage` type, and type `setState` shape so new metadata is safe to add.
 - Build artifacts: regenerate `.d.ts` to match source and drop stale `decorator` exports (or implement them) to avoid consumer mismatch.

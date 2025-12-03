@@ -29,6 +29,8 @@ const buildStyle = (override?: IStyleOverride) => {
 interface IChatbotMessageProps {
   /** Plain text message content (no encoding) */
   message: string;
+  /** Message type (bot/custom) */
+  type?: string;
   
   /** Bot reply metadata */
   replyToId?: string;
@@ -42,11 +44,18 @@ interface IChatbotMessageProps {
   id: number;
   setState?: React.Dispatch<React.SetStateAction<any>>;
   customComponents?: ICustomComponents;
+  payload?: any;
+  messageObject?: IMessage;
   customStyles?: ICustomStyles;
+  /** Optional callback from host to capture feedback actions */
+  onFeedback?: (feedback: unknown) => void;
+  /** Optional callback from host when reply scroll is requested */
+  onReplyScroll?: (replyToId?: string) => void;
 }
 
 const ChatbotMessage = ({
   message,
+  type = 'bot',
   replyToId,
   replyToPreview,
   replyToNickname,
@@ -58,12 +67,19 @@ const ChatbotMessage = ({
   customStyles,
   delay,
   id,
+  payload,
+  messageObject,
+  onFeedback,
+  onReplyScroll,
 }: IChatbotMessageProps) => {
   const [show, toggleShow] = useState(false);
 
   const handleReplyClick = () => {
     if (!replyToId) return;
     console.log('Clicking reply label, scrolling to:', replyToId);
+    if (onReplyScroll) {
+      onReplyScroll(replyToId);
+    }
     scrollToMessage(replyToId);
   };
 
@@ -128,6 +144,19 @@ const ChatbotMessage = ({
     customStyles?.loader?.className
   );
 
+  const fullMessage: IMessage = {
+    id,
+    type,
+    message,
+    loading,
+    replyToId,
+    replyToPreview,
+    replyToNickname,
+    payload,
+    delay,
+    ...messageObject,
+  };
+
   return (
     <ConditionallyRender
       condition={show}
@@ -152,7 +181,9 @@ const ChatbotMessage = ({
               show={
                 <ConditionallyRender
                   condition={!!customComponents?.botAvatar}
-                  show={callIfExists(customComponents?.botAvatar)}
+                  show={callIfExists(customComponents?.botAvatar, {
+                    message: fullMessage,
+                  })}
                   elseShow={
                     <ChatbotMessageAvatar
                       className={customStyles?.botAvatar?.className}
@@ -163,21 +194,23 @@ const ChatbotMessage = ({
               }
             />
 
-            <ConditionallyRender
-              condition={!!customComponents?.botChatMessage}
-              show={callIfExists(customComponents?.botChatMessage, {
-                message,
-                loader: (
-                  <div className={loaderClassName} style={loaderStyle}>
-                    <Loader />
-                  </div>
-                ),
-              })}
-              elseShow={
-                <div
-                  className={bubbleClassName}
-                  style={bubbleStyle}
-                >
+                <ConditionallyRender
+                  condition={!!customComponents?.botChatMessage}
+                  show={callIfExists(customComponents?.botChatMessage, {
+                    message: fullMessage,
+                    defaultLoader: (
+                      <div className={loaderClassName} style={loaderStyle}>
+                        <Loader />
+                      </div>
+                    ),
+                    onReplyScroll: handleReplyClick,
+                    onFeedback,
+                  })}
+                  elseShow={
+                    <div
+                      className={bubbleClassName}
+                      style={bubbleStyle}
+                    >
                   <ConditionallyRender
                     condition={loading}
                     show={
