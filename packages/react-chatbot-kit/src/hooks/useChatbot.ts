@@ -12,15 +12,15 @@ import {
 } from '../components/Chatbot/utils';
 import WidgetRegistry from '../components/WidgetRegistry/WidgetRegistry';
 import IConfig from '../interfaces/IConfig';
-import { IMessage } from '../interfaces/IMessages';
+import { IChatState, IMessage } from '../interfaces/IMessages';
 import IWidget from '../interfaces/IWidget';
 
 interface IUseChatbotParams {
   config: IConfig | null;
   actionProvider: any;
   messageParser: any;
-  messageHistory: IMessage[] | string;
-  saveMessages: (messages: IMessage[], html: string) => any | null;
+  messageHistory?: IMessage[] | string;
+  saveMessages?: (messages: IMessage[], html: string) => any | null;
   runInitialMessagesWithHistory?: Boolean;
 }
 
@@ -64,12 +64,12 @@ const useChatbot = ({
     }
   }
 
-  const [state, setState] = React.useState({
+  const [state, setState] = React.useState<IChatState>({
     messages: [...config.initialMessages],
     ...initialState,
   });
-  const messagesRef = React.useRef(state.messages);
-  const stateRef = React.useRef();
+  const messagesRef = React.useRef<IMessage[]>(state.messages);
+  const stateRef = React.useRef<IChatState>();
   const messageContainerRef: React.MutableRefObject<HTMLDivElement> = React.useRef();
 
   useEffect(() => {
@@ -78,7 +78,7 @@ const useChatbot = ({
 
   useEffect(() => {
     if (messageHistory && Array.isArray(messageHistory)) {
-      setState((prevState: any) => ({
+      setState((prevState) => ({
         ...prevState,
         messages: messageHistory,
       }));

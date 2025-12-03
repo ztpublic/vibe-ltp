@@ -12,7 +12,7 @@ import {
   IStyleOverride,
 } from '../../interfaces/IConfig';
 import { scrollToMessage } from '../../utils/messageRegistry';
-import { IMessage } from '../../interfaces/IMessages';
+import { IChatState, IMessage } from '../../interfaces/IMessages';
 
 const mergeClassNames = (...names: Array<string | undefined | false>) =>
   names.filter(Boolean).join(' ');
@@ -42,7 +42,7 @@ interface IChatbotMessageProps {
   messages: IMessage[];
   delay?: number;
   id: number;
-  setState?: React.Dispatch<React.SetStateAction<any>>;
+  setState?: React.Dispatch<React.SetStateAction<IChatState>>;
   customComponents?: ICustomComponents;
   payload?: any;
   messageObject?: IMessage;
@@ -94,14 +94,14 @@ const ChatbotMessage = ({
     if (delay) defaultDisableTime += delay;
 
     const timeoutId = setTimeout(() => {
-      const newMessages = [...messages].map(msg => {
+      const newMessages = [...messages].map((msg) => {
         if (msg.id === id) {
-          return {...msg, loading: false, delay: undefined};
+          return { ...msg, loading: false, delay: undefined };
         }
         return msg;
       });
 
-      setState((state: any) => ({...state, messages: newMessages}));
+      setState((state) => ({ ...state, messages: newMessages }));
     }, defaultDisableTime);
 
     return () => {

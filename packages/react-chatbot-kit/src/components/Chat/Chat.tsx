@@ -19,7 +19,7 @@ import {
   ICustomMessage,
   ICustomStyles,
 } from '../../interfaces/IConfig';
-import { IMessage } from '../../interfaces/IMessages';
+import { IChatState, IMessage } from '../../interfaces/IMessages';
 
 const mergeClassNames = (...names: Array<string | undefined | false>) =>
   names.filter(Boolean).join(' ');
@@ -34,20 +34,20 @@ const buildStyle = (override?: ICustomStyles[keyof ICustomStyles]) => {
 };
 
 interface IChatProps {
-  setState: React.Dispatch<SetStateAction<any>>;
+  setState: React.Dispatch<SetStateAction<IChatState>>;
   widgetRegistry: any;
   messageParser: any;
   actionProvider: any;
   customComponents: ICustomComponents;
   botName: string;
-  customStyles: ICustomStyles;
-  headerText: string;
+  customStyles?: ICustomStyles;
+  headerText?: string;
   customMessages: ICustomMessage;
-  placeholderText: string;
-  validator: (input: string) => Boolean;
-  state: any;
-  disableScrollToBottom: boolean;
-  messageHistory: IMessage[] | string;
+  placeholderText?: string;
+  validator?: (input: string) => Boolean;
+  state: IChatState;
+  disableScrollToBottom?: boolean;
+  messageHistory?: IMessage[] | string;
   parse?: (message: string) => void;
   actions?: object;
   messageContainerRef: React.MutableRefObject<HTMLDivElement>;
@@ -92,7 +92,7 @@ const Chat = ({
     scrollIntoView();
   });
 
-  const showAvatar = (messages: any[], index: number) => {
+  const showAvatar = (messages: IMessage[], index: number) => {
     if (index === 0) return true;
 
     const lastMessage = messages[index - 1];
@@ -267,7 +267,7 @@ const Chat = ({
   };
 
   const handleValidMessage = () => {
-    setState((state: any) => ({
+    setState((state) => ({
       ...state,
       messages: [...state.messages, createChatMessage(input, 'user')],
     }));
@@ -276,7 +276,8 @@ const Chat = ({
     setInputValue('');
   };
 
-  const sendButtonOverrides = customStyles.sendButton ?? customStyles.chatButton;
+  const sendButtonOverrides =
+    customStyles?.sendButton ?? customStyles?.chatButton;
   const sendButtonClassName = mergeClassNames(
     'react-chatbot-kit-chat-btn-send',
     sendButtonOverrides?.className

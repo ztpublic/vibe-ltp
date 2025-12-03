@@ -88,3 +88,9 @@ export interface IMessage extends IBaseMessage {
   status?: IMessageStatus;
   timestamp?: number | string;
 }
+
+export interface IChatState {
+  messages: IMessage[];
+  // Allow extensibility for user-defined state slices without losing type info for messages
+  [key: string]: unknown;
+}

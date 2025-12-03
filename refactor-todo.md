@@ -3,7 +3,7 @@
 - 
 - 
 - 
-- Typing/state hygiene: make `customStyles` optional/typed, replace `any` in messages/state with a `ChatMessage` type, and type `setState` shape so new metadata is safe to add.
+- 
 - Build artifacts: regenerate `.d.ts` to match source and drop stale `decorator` exports (or implement them) to avoid consumer mismatch.
 - Reply scroll coverage: register bot messages in `messageRegistry` with stable ids so reply-to can scroll/highlight any message type.
 - Avatars: replace fixed bot avatar markup with a prop-driven default that supports images/initials and sizing/color overrides without CSS hacks.

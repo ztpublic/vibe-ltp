@@ -5,7 +5,7 @@ import {
   SetStateAction,
 } from 'react';
 
-import { IMessage } from './IMessages';
+import { IChatState, IMessage } from './IMessages';
 import IWidget from './IWidget';
 
 interface IConfig {
@@ -77,8 +77,8 @@ export interface ICustomStyles {
 export interface IHeaderComponentProps {
   actionProvider: any;
   botName?: string;
-  state: any;
-  setState: Dispatch<SetStateAction<any>>;
+  state: IChatState;
+  setState: Dispatch<SetStateAction<IChatState>>;
   messageParser: any;
   currentUserNickname?: string;
 }
