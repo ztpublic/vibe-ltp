@@ -29,26 +29,26 @@ const config: StorybookConfig = {
     "../public"
   ],
   async viteFinal(config) {
-    // Alias to use built package with proper path resolution
+    // Alias to the workspace source to avoid stale bundled output in Storybook
     config.resolve = config.resolve || {};
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@vibe-ltp/react-chatbot-kit/build/main.css': path.resolve(
+      '@vibe-ltp/react-chatbot-kit/main.css': path.resolve(
         chatbotKitPath,
-        'build',
+        'src',
         'main.css',
       ),
       '@vibe-ltp/react-chatbot-kit': path.resolve(
         chatbotKitPath,
-        'build',
-        'index.js',
+        'src',
+        'index.ts',
       ),
     };
     
-    // Ensure CommonJS interop
+    // Ensure dependencies are optimized with the alias applied
     if (config.optimizeDeps) {
-      config.optimizeDeps.include = [
-        ...(config.optimizeDeps.include || []),
+      config.optimizeDeps.exclude = [
+        ...(config.optimizeDeps.exclude || []),
         '@vibe-ltp/react-chatbot-kit',
       ];
     }

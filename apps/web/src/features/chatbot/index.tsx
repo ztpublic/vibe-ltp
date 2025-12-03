@@ -2,7 +2,7 @@
 
 import React, { useImperativeHandle, useRef, useEffect, useMemo } from 'react';
 import { Chatbot, createChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
-import '@vibe-ltp/react-chatbot-kit/build/main.css';
+import '@vibe-ltp/react-chatbot-kit/main.css';
 import './chatbot.css';
 import config from './config';
 import ActionProvider from './ActionProvider';
