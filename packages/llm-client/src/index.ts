@@ -16,6 +16,7 @@ export * from './keyPointsDistillerAgent.js';
 export * from './keyPointsMatcherAgent.js';
 export * from './historySummarizerAgent.js';
 export * from './truthKeywordsExtracterAgent.js';
+export * from './truthValidatorAgent.js';
 export * from './embeddings.js';
 export * from './questionKeywordsExtracterAgent.js';
 export type { Embedding } from './embeddings.js';

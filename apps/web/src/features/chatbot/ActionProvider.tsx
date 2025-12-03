@@ -38,6 +38,31 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     const replyMetadata =
       message.replyMetadata ?? buildReplyMetadata(null);
 
+    // Prevent duplicate bot messages with same id (can happen when server broadcast races with local append)
+    const existingId = message.id;
+    if (existingId) {
+      messageStore.mutateMessages((messages) => {
+        const idx = messages.findIndex((msg) => String(msg.id) === String(existingId));
+        if (idx === -1) return messages;
+
+        const next = [...messages];
+        next[idx] = {
+          ...next[idx],
+          ...(message.content ? { message: message.content } : {}),
+          loading: false,
+          withAvatar: true,
+        };
+        return next;
+      });
+
+      emitMessageToServer({
+        ...message,
+        replyMetadata,
+        timestamp: message.timestamp ?? new Date().toISOString(),
+      });
+      return;
+    }
+
     const botMessageNode: ChatbotUiMessage = {
       ...(createChatBotMessage(message.content, {
         replyToId: replyMetadata?.replyToId,

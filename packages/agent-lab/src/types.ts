@@ -183,3 +183,27 @@ export interface TruthKeywordRunnerOptions {
   systemPrompt?: string;
   cases: TruthKeywordCase[];
 }
+
+export interface TruthValidationCase {
+  id: string;
+  surface: string;
+  truth: string;
+  proposal: string;
+}
+
+export interface TruthValidationRunResult {
+  caseId: string;
+  proposal: string;
+  feedback?: string;
+  durationMs: number;
+  startedAt: string;
+  completedAt: string;
+  error?: string;
+}
+
+export interface TruthValidationRunnerOptions {
+  model: string;
+  fallbackModel?: string;
+  systemPrompt?: string;
+  cases: TruthValidationCase[];
+}

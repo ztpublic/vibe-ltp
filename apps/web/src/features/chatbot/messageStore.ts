@@ -51,10 +51,26 @@ export function createChatbotMessageStore({ getState, setState }: StoreDeps): Ch
   const getMessages = () => getState()?.messages ?? [];
 
   const appendMessage = (message: ChatbotUiMessage) => {
-    setState((prev) => ({
-      ...(prev ?? { messages: [] }),
-      messages: [...(prev?.messages ?? []), message],
-    }));
+    setState((prev) => {
+      const prevMessages = prev?.messages ?? [];
+      const targetId = message.id;
+
+      if (targetId !== undefined && targetId !== null) {
+        const idx = prevMessages.findIndex(
+          (msg) => String(msg.id) === String(targetId)
+        );
+        if (idx !== -1) {
+          const next = [...prevMessages];
+          next[idx] = { ...next[idx], ...message };
+          return { ...(prev ?? { messages: [] }), messages: next };
+        }
+      }
+
+      return {
+        ...(prev ?? { messages: [] }),
+        messages: [...prevMessages, message],
+      };
+    });
   };
 
   const mutateMessages = (updater: (messages: ChatbotUiMessage[]) => ChatbotUiMessage[]) => {
@@ -101,6 +117,16 @@ export function createChatbotMessageStore({ getState, setState }: StoreDeps): Ch
     messages: ChatbotUiMessage[],
     options?: { preserveTrailingLoading?: boolean }
   ) => {
+    // Deduplicate incoming messages by id to avoid React key collisions
+    const uniqueMessages: ChatbotUiMessage[] = [];
+    const seenIds = new Set<string>();
+    for (const msg of messages) {
+      const key = msg.id !== undefined && msg.id !== null ? String(msg.id) : undefined;
+      if (key && seenIds.has(key)) continue;
+      if (key) seenIds.add(key);
+      uniqueMessages.push(msg);
+    }
+
     const preservedLoadings =
       options?.preserveTrailingLoading === true ? getPendingLoadingMessages() : [];
 
@@ -117,9 +143,9 @@ export function createChatbotMessageStore({ getState, setState }: StoreDeps): Ch
     });
 
     mutateMessages(() => {
-      if (filteredLoadings.length === 0) return messages;
+      if (filteredLoadings.length === 0) return uniqueMessages;
 
-      const next = [...messages];
+      const next = [...uniqueMessages];
 
       filteredLoadings.forEach((loading) => {
         const replyToId = loading.replyToId;

@@ -3,6 +3,8 @@ import { SOCKET_EVENTS, type ChatRequest, type ChatResponse, type ChatReplyDecor
 import {
   type PuzzleContext,
   validatePuzzleQuestion,
+  validateTruthProposal,
+  formatTruthValidationReply,
 } from '@vibe-ltp/llm-client';
 import * as gameState from '../../state/gameState.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,6 +12,11 @@ import { getSocketServer } from '../../sockets/ioReference.js';
 
 const router = Router();
 const model = 'x-ai/grok-4-fast';
+
+const buildReplyPreview = (text: string, maxLength = 80) => {
+  if (!text) return '';
+  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+};
 
 router.post('/chat', async (req, res) => {
   const body = req.body as ChatRequest;
@@ -92,6 +99,95 @@ router.post('/chat', async (req, res) => {
       id: uuidv4(),
       type: 'bot',
       content: '抱歉，我现在无法回答。请稍后再试。',
+      timestamp: new Date().toISOString(),
+    };
+    
+    res.status(500).json({ reply });
+  }
+});
+
+router.post('/solution', async (req, res) => {
+  const body = req.body as ChatRequest;
+
+  try {
+    const userMessage = body.message;
+    const userText = userMessage.content;
+    const userNickname = userMessage.nickname;
+
+    console.log(`[Solution] User "${userNickname}" proposed: ${userText}`);
+
+    const currentGameState = gameState.getGameState();
+    const puzzleContent = gameState.getPuzzleContent();
+
+    if (currentGameState !== 'Started' || !puzzleContent) {
+      const reply: ChatResponse['reply'] = {
+        id: uuidv4(),
+        type: 'bot',
+        content: '游戏还未开始，请先开始一个谜题。\n\nThe game hasn\'t started yet. Please start a puzzle first.',
+        timestamp: new Date().toISOString(),
+      };
+      
+      return res.json({ reply });
+    }
+
+    const evaluation = await validateTruthProposal(
+      {
+        proposedTruth: userText,
+        actualTruth: puzzleContent.soupTruth,
+        surface: puzzleContent.soupSurface,
+      },
+      model
+    );
+
+    const reply: ChatResponse['reply'] = {
+      id: uuidv4(),
+      type: 'bot',
+      content: formatTruthValidationReply(evaluation),
+      timestamp: new Date().toISOString(),
+      replyMetadata: {
+        replyToId: userMessage.id,
+        replyToPreview: buildReplyPreview(userText),
+        replyToNickname: userNickname,
+      },
+    };
+
+    // Persist messages for history sync
+    const persistedUserMessage = {
+      id: userMessage.id,
+      type: 'user' as const,
+      content: userText,
+      nickname: userNickname,
+      timestamp: userMessage.timestamp ?? new Date().toISOString(),
+    };
+
+    const botMessage = {
+      id: reply.id!,
+      type: 'bot' as const,
+      content: reply.content,
+      replyToId: reply.replyMetadata?.replyToId,
+      replyToPreview: reply.replyMetadata?.replyToPreview,
+      replyToNickname: reply.replyMetadata?.replyToNickname,
+      timestamp: reply.timestamp ?? new Date().toISOString(),
+    };
+
+    gameState.addChatMessage(persistedUserMessage);
+    gameState.addChatMessage(botMessage);
+
+    const io = getSocketServer();
+    if (io) {
+      io.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { message: persistedUserMessage });
+      io.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { message: botMessage });
+    }
+
+    const response: ChatResponse = { reply };
+    res.json(response);
+  } catch (error) {
+    console.error('Error in solution route:', error);
+    
+    const reply: ChatResponse['reply'] = {
+      id: uuidv4(),
+      type: 'bot',
+      content: '抱歉，暂时无法评估你的解答，请稍后再试。',
       timestamp: new Date().toISOString(),
     };
     

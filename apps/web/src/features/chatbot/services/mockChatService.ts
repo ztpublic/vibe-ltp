@@ -25,11 +25,20 @@ export class MockChatService implements ChatService {
   async requestSolution(_userMessage: UserMessage, _history?: ChatMessage[]): Promise<ChatResponse> {
     await new Promise((resolve) => setTimeout(resolve, 300));
 
+    const verdicts = [
+      { label: '✅ 完全命中', feedback: '解答很到位，可以直接公布啦。' },
+      { label: '🟢 很接近', feedback: '核心思路正确，还差一两个细节。' },
+      { label: '🟡 部分正确', feedback: '方向对了一半，尝试补充动机或时间线。' },
+      { label: '🔴 偏离', feedback: '与真相差距较大，重新聚焦关键人物和原因。' },
+    ];
+
+    const selected = verdicts[Math.floor(Math.random() * verdicts.length)]!;
+
     return {
       reply: {
         id: uuidv4(),
         type: 'bot',
-        content: 'Mock 解答：功能开发中，稍后将由专属 agent 回复。',
+        content: `${selected.label}\n${selected.feedback}`,
         timestamp: new Date().toISOString(),
       },
     };

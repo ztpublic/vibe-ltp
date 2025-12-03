@@ -21,6 +21,7 @@
     "demo:history": "tsx src/historySummaryDemo.ts",
     "demo:logic-chain": "tsx src/logicChainDemo.ts",
     "demo:truth-keywords": "tsx src/truthKeywordsDemo.ts",
+    "demo:truth-validator": "tsx src/truthValidatorDemo.ts",
     "demo:embeddings": "tsx src/embeddingsDemo.ts",
     "demo:question-keywords": "tsx src/questionKeywordsDemo.ts"
   },

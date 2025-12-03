@@ -35,6 +35,44 @@ export const EvaluateQuestionArgsSchema = z.object({
 export type EvaluateQuestionArgs = z.infer<typeof EvaluateQuestionArgsSchema>;
 
 /**
+ * Verdict types for evaluating a proposed solution against the true story
+ */
+export const TruthVerdictEnum = z.enum(['exact', 'strong', 'partial', 'off']);
+export type TruthVerdict = z.infer<typeof TruthVerdictEnum>;
+
+/**
+ * Arguments for evaluate_truth_proposal tool
+ */
+export const EvaluateTruthArgsSchema = z.object({
+  verdict: TruthVerdictEnum.describe(
+    'Overall judgement of how well the proposed solution matches the true story: exact (fully correct), strong (very close, minor gaps), partial (some correct elements but key pieces missing or wrong), off (mostly incorrect or unrelated)'
+  ),
+  score: z
+    .number()
+    .int()
+    .min(0)
+    .max(100)
+    .describe('0-100 similarity score; higher means closer to the real truth. Use conservative scoring to avoid spoilers.'),
+  feedback: z
+    .string()
+    .min(5)
+    .max(300)
+    .describe(
+      'Short Chinese judgement for the player explaining closeness without revealing hidden twists. Do not restate the full truth.'
+    ),
+  missingPieces: z
+    .array(z.string().min(3))
+    .min(0)
+    .max(3)
+    .optional()
+    .describe(
+      '0-3 high-level hints about gaps or misalignments (e.g., 动机、时间线、关键人物). Keep them non-spoiler and concise.'
+    ),
+});
+
+export type EvaluateTruthArgs = z.infer<typeof EvaluateTruthArgsSchema>;
+
+/**
  * Arguments for distill_connections tool
  */
 export const DistillConnectionsArgsSchema = z.object({
@@ -122,6 +160,19 @@ export function createEvaluateQuestionTool(): AgentTool<EvaluateQuestionArgs, Ev
       // This tool just returns its arguments - the agent uses it for structured output
       return args;
     },
+  });
+}
+
+/**
+ * Tool for evaluating how close a proposed solution is to the true story
+ */
+export function createEvaluateTruthProposalTool(): AgentTool<EvaluateTruthArgs, EvaluateTruthArgs> {
+  return defineTool({
+    name: 'evaluate_truth_proposal',
+    description:
+      'Judge how well the proposed solution matches the hidden truth without revealing spoilers. Provide a verdict, conservative similarity score, and non-spoiler guidance.',
+    argsSchema: EvaluateTruthArgsSchema,
+    execute: async (args) => args,
   });
 }
 
