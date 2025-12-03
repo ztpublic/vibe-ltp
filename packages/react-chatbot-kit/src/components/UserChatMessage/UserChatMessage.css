@@ -3,14 +3,13 @@
   margin: 15px 0;
   justify-content: flex-end;
   flex-direction: row;
-  align-items: flex-end;
+  align-items: center;
 }
 
 .user-message-content {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  margin-bottom: 2px;
 }
 
 .user-nickname-label {
@@ -18,6 +17,10 @@
   color: #cbd5e1;
   margin-bottom: 2px;
   text-align: right;
+}
+
+.react-chatbot-kit-user-avatar {
+  align-self: center;
 }
 
 .react-chatbot-kit-user-avatar-container {
@@ -82,5 +85,5 @@
   font-size: 0.7rem;
   color: #9ca3af;
   line-height: 1.1;
-  text-align: left;
+  text-align: right;
 }

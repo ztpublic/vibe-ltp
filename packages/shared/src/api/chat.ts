@@ -2,7 +2,7 @@
  * Chat API types for lateral thinking puzzle interactions
  */
 
-import type { ChatMessage, UserMessage, BotMessage } from '../types/messages';
+import type { AnswerType, ChatMessage, UserMessage, BotMessage, MessageId } from '../types/messages';
 
 /**
  * Chat Request
@@ -18,12 +18,27 @@ export interface ChatRequest {
 
 /**
  * Chat Response
- * Sent from server to client with bot reply
+ * Sent from server to client with bot reply or user message decoration
  */
 export interface ChatResponse {
-  /** Bot's reply message with full metadata */
-  reply: BotMessage;
+  /** Bot's reply message with full metadata (fallback/error flows) */
+  reply?: BotMessage;
+
+  /** Decoration to attach to the originating user message */
+  decoration?: ChatReplyDecoration;
   
   /** Optional game/session state updates */
   newState?: Record<string, unknown>;
+}
+
+/**
+ * Decoration payload for user message replies
+ */
+export interface ChatReplyDecoration {
+  /** ID of the user message that should be decorated */
+  targetMessageId: MessageId;
+  /** Canonical answer type */
+  answer: AnswerType;
+  /** Optional tip to show alongside the decoration */
+  tip?: string;
 }

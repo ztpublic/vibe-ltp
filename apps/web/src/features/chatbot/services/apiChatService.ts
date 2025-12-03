@@ -1,10 +1,10 @@
-import type { ChatRequest, ChatResponse, UserMessage, BotMessage, ChatMessage } from '@vibe-ltp/shared';
+import type { ChatRequest, ChatResponse, UserMessage, ChatMessage } from '@vibe-ltp/shared';
 import type { ChatService } from './chatService';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${process.env.NEXT_PUBLIC_BACKEND_PORT || 4000}`;
 
 export class ApiChatService implements ChatService {
-  async sendMessage(userMessage: UserMessage, history: ChatMessage[] = []): Promise<BotMessage> {
+  async sendMessage(userMessage: UserMessage, history: ChatMessage[] = []): Promise<ChatResponse> {
     const body: ChatRequest = {
       message: userMessage,
       history,
@@ -36,6 +36,7 @@ export class ApiChatService implements ChatService {
       if (!res.ok) {
         const serverMessage =
           (parsedJson as Partial<ChatResponse>)?.reply?.content ||
+          (parsedJson as Partial<ChatResponse>)?.decoration?.answer ||
           (rawText && rawText.trim()) ||
           null;
 
@@ -50,7 +51,11 @@ export class ApiChatService implements ChatService {
       }
 
       const data = parsedJson as ChatResponse;
-      return data.reply;
+      if (!data.reply && !data.decoration) {
+        throw new Error('Empty response from server');
+      }
+
+      return data;
     } catch (err) {
       console.error('API Chat Service Error:', err);
       const errorMessage = err instanceof Error ? err.message : String(err);

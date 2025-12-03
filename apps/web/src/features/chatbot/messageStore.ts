@@ -1,6 +1,7 @@
 'use client';
 
 import type React from 'react';
+import type { AnswerType } from '@vibe-ltp/shared';
 
 export type ChatbotUiMessage = {
   id: string | number;
@@ -13,6 +14,10 @@ export type ChatbotUiMessage = {
   replyToId?: string;
   replyToPreview?: string;
   replyToNickname?: string;
+  /** Optional stable ID used for server-side tracking */
+  serverMessageId?: string;
+  answer?: AnswerType;
+  answerTip?: string;
   [key: string]: unknown;
 };
 

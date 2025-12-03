@@ -1,7 +1,6 @@
 import { Router, type Router as RouterType } from 'express';
-import { SOCKET_EVENTS, type ChatRequest, type ChatResponse, type PuzzleKeyword } from '@vibe-ltp/shared';
+import { SOCKET_EVENTS, type ChatRequest, type ChatResponse, type ChatReplyDecoration, type PuzzleKeyword } from '@vibe-ltp/shared';
 import {
-  formatValidationReply,
   type PuzzleContext,
   validatePuzzleQuestion,
   extractQuestionKeywords,
@@ -125,24 +124,32 @@ router.post('/chat', async (req, res) => {
       }
     }
 
-    // Format reply for chat UI
-    const replyText = formatValidationReply(evaluation);
-
-    // Format response with full structured message
-    const reply: ChatResponse['reply'] = {
-      id: uuidv4(),
-      type: 'bot',
-      content: replyText,
-      timestamp: new Date().toISOString(),
-      // Include reply metadata linking to user's question
-      replyMetadata: {
-        replyToId: userMessage.id,
-        replyToPreview: userText.slice(0, 40) + (userText.length > 40 ? '…' : ''),
-        replyToNickname: userNickname,
-      },
+    // Build decoration payload for the originating user message
+    const decoration: ChatReplyDecoration = {
+      targetMessageId: userMessage.id,
+      answer: evaluation.answer,
+      tip: evaluation.tip,
     };
 
-    const response: ChatResponse = { reply };
+    // Persist decorated user message in chat history
+    const decoratedUserMessage = {
+      id: userMessage.id,
+      type: 'user' as const,
+      content: userText,
+      nickname: userNickname,
+      timestamp: userMessage.timestamp ?? new Date().toISOString(),
+      answer: evaluation.answer,
+      answerTip: evaluation.tip,
+    };
+
+    gameState.addChatMessage(decoratedUserMessage);
+
+    const io = getSocketServer();
+    if (io) {
+      io.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { message: decoratedUserMessage });
+    }
+
+    const response: ChatResponse = { decoration };
     res.json(response);
   } catch (error) {
     console.error('Error in chat route:', error);

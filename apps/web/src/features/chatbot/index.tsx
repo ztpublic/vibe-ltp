@@ -11,6 +11,7 @@ import type { ChatService } from './services';
 import type { ChatHistoryController } from './controllers';
 import { useChatIdentity } from './identity/useChatIdentity';
 import { isUserMessage, isBotMessage, type BotMessage, type ChatMessage } from '@vibe-ltp/shared';
+import { buildAnswerDecorator } from './utils/answerDecorators';
 import {
   createChatbotMessageStore,
   type ChatbotMessageStore,
@@ -25,6 +26,8 @@ const convertHistoryMessages = (messages: ChatMessage[]): ChatbotKitMessage[] =>
   return messages
     .map((msg) => {
       if (isUserMessage(msg)) {
+        const decorator = msg.answer ? buildAnswerDecorator(msg.answer, msg.answerTip) : null;
+
         return {
           loading: false,
           widget: undefined,
@@ -33,6 +36,8 @@ const convertHistoryMessages = (messages: ChatMessage[]): ChatbotKitMessage[] =>
           message: msg.content,
           nickname: msg.nickname,
           id: msg.id ?? Date.now(),
+          serverMessageId: msg.id,
+          ...(decorator ? { decorators: [decorator] } : {}),
         };
       }
 

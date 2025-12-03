@@ -6,7 +6,7 @@
 
 import { generateText } from 'ai';
 import { getOpenRouterClient } from './client.js';
-import { createEvaluateQuestionTool, EvaluateQuestionArgsSchema, type EvaluateQuestionArgs } from './tools.js';
+import { createEvaluateQuestionTool, EvaluateQuestionArgsSchema, type EvaluateQuestionArgs, type AnswerType } from './tools.js';
 import type { ChatMessage } from './types.js';
 
 /**
@@ -14,7 +14,7 @@ import type { ChatMessage } from './types.js';
  */
 export interface QuestionAnswerPair {
   question: string;
-  answer: string;
+  answer: AnswerType;
 }
 
 /**
@@ -34,7 +34,7 @@ export interface PuzzleContext {
  */
 export interface QuestionValidationResult {
   /** The canonical answer type */
-  answer: 'yes' | 'no' | 'irrelevant' | 'both' | 'unknown';
+  answer: AnswerType;
   /** Optional hint surfaced by the agent */
   tip?: string;
 }
@@ -231,7 +231,7 @@ export async function validatePuzzleQuestion(
  * Following agent-flow.md section D2, step 5
  */
 export function formatValidationReply(result: QuestionValidationResult): string {
-  const answerLabels = {
+  const answerLabels: Record<AnswerType, string> = {
     yes: '是',
     no: '否',
     irrelevant: '无关',

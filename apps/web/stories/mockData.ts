@@ -81,38 +81,30 @@ export function generateMockConversation(count: number): ChatMessage[] {
     '是的，他在打嘏。',
     '完全正确！',
   ];
+  const answerTypes: Array<'yes' | 'no' | 'both' | 'unknown' | 'irrelevant'> = [
+    'no',
+    'yes',
+    'both',
+    'unknown',
+    'irrelevant',
+  ];
 
   const messages: ChatMessage[] = [];
-  const messagesToGenerate = Math.min(count, questions.length * 2);
+  const messagesToGenerate = Math.min(count, questions.length);
 
   for (let i = 0; i < messagesToGenerate; i++) {
-    const questionIndex = Math.floor(i / 2);
-    
-    if (i % 2 === 0) {
-      // User message
-      const userMsg: UserMessage = {
-        id: `user_${i}`,
-        type: 'user',
-        content: questions[questionIndex] || `问题 ${i + 1}`,
-        nickname: `玩家${(i % 3) + 1}`,
-        timestamp: new Date(Date.now() - (messagesToGenerate - i) * 60000).toISOString(),
-      };
-      messages.push(userMsg);
-    } else {
-      // Bot message with reply metadata
-      const botMsg: BotMessage = {
-        id: `bot_${i}`,
-        type: 'bot',
-        content: answers[questionIndex] || `回答 ${i + 1}`,
-        timestamp: new Date(Date.now() - (messagesToGenerate - i) * 60000 + 5000).toISOString(),
-        replyMetadata: {
-          replyToId: `user_${i - 1}`,
-          replyToPreview: (questions[questionIndex] || `问题 ${i}`).substring(0, 40),
-          replyToNickname: `玩家${((i - 1) % 3) + 1}`,
-        },
-      };
-      messages.push(botMsg);
-    }
+    const answerType = answerTypes[i % answerTypes.length] ?? 'unknown';
+
+    const userMsg: UserMessage = {
+      id: `user_${i}`,
+      type: 'user',
+      content: questions[i] || `问题 ${i + 1}`,
+      nickname: `玩家${(i % 3) + 1}`,
+      timestamp: new Date(Date.now() - (messagesToGenerate - i) * 60000).toISOString(),
+      answer: answerType,
+      answerTip: answers[i],
+    };
+    messages.push(userMsg);
   }
 
   return messages;
@@ -128,6 +120,7 @@ export function generateMessagesWithErrors(): ChatMessage[] {
     content: '这个男人认识酒保吗？',
     nickname: '玩家1',
     timestamp: new Date(Date.now() - 300000).toISOString(),
+    answer: 'both',
   };
 
   const botMsg1: BotMessage = {
@@ -168,6 +161,8 @@ export function generateMessagesWithErrors(): ChatMessage[] {
     content: '男人来酒吧的目的是喝水吗？',
     nickname: '玩家2',
     timestamp: new Date(Date.now() - 100000).toISOString(),
+    answer: 'yes',
+    answerTip: '这次他确实想喝水。',
   };
 
   const botMsg3: BotMessage = {

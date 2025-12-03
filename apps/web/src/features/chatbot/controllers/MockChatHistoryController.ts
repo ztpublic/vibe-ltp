@@ -18,7 +18,18 @@ export function useMockChatHistoryController(
   const [messages, setMessages] = useState<ChatHistoryMessage[]>(initialMessages);
 
   const onMessageAdded = useCallback((message: ChatHistoryMessage) => {
-    setMessages((prev) => [...prev, message]);
+    setMessages((prev) => {
+      const next = [...prev];
+      const existingIndex = next.findIndex((msg) => msg.id === message.id);
+
+      if (existingIndex !== -1) {
+        next[existingIndex] = { ...next[existingIndex], ...message };
+        return next;
+      }
+
+      next.push(message);
+      return next;
+    });
   }, []);
 
   const syncHistory = useCallback(async () => {

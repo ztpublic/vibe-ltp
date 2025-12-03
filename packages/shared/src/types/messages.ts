@@ -15,6 +15,11 @@ export type MessageId = string;
 export type MessageType = 'user' | 'bot' | 'system';
 
 /**
+ * Canonical answer types returned by the puzzle validator
+ */
+export type AnswerType = 'yes' | 'no' | 'unknown' | 'both' | 'irrelevant';
+
+/**
  * Base Message Interface
  * Common fields for all message types
  */
@@ -41,6 +46,11 @@ export interface UserMessage extends BaseMessage {
   
   /** User's display nickname */
   nickname: string;
+
+  /** Validator answer (for decorating the question bubble) */
+  answer?: AnswerType;
+  /** Optional hint or tip accompanying the answer */
+  answerTip?: string;
 }
 
 /**

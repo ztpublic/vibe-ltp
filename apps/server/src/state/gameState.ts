@@ -15,7 +15,7 @@
  * All state is ephemeral - persisted only in memory during server runtime.
  */
 
-import type { GameState, PuzzleContent } from '@vibe-ltp/shared';
+import type { GameState, PuzzleContent, AnswerType } from '@vibe-ltp/shared';
 import type { Embedding } from '@vibe-ltp/llm-client';
 
 /**
@@ -30,6 +30,8 @@ export interface PersistedMessage {
   replyToPreview?: string;
   replyToNickname?: string;
   timestamp: string;
+  answer?: AnswerType;
+  answerTip?: string;
 }
 
 /**
@@ -51,7 +53,7 @@ const MAX_QUESTION_HISTORY = 100;
  */
 interface QuestionHistory {
   question: string;
-  answer: string;
+  answer: AnswerType;
   timestamp: Date;
 }
 
@@ -136,7 +138,7 @@ export function getKeywordEmbeddings(): readonly Embedding[] {
  * @param question - The question text
  * @param answer - The answer type (yes/no/irrelevant/both/unknown)
  */
-export function addQuestionToHistory(question: string, answer: string): void {
+export function addQuestionToHistory(question: string, answer: AnswerType): void {
   questionHistory.push({
     question,
     answer,
@@ -153,7 +155,7 @@ export function addQuestionToHistory(question: string, answer: string): void {
  * Get conversation history in the format expected by PuzzleContext
  * Returns array of {question, answer} pairs
  */
-export function getConversationHistory(): Array<{ question: string; answer: string }> {
+export function getConversationHistory(): Array<{ question: string; answer: AnswerType }> {
   return questionHistory.map(item => ({
     question: item.question,
     answer: item.answer,
@@ -174,7 +176,13 @@ export function getQuestionHistory(): readonly QuestionHistory[] {
  * @param message - The persisted chat message to add
  */
 export function addChatMessage(message: PersistedMessage): void {
-  chatMessages.push(message);
+  const existingIndex = chatMessages.findIndex((item) => item.id === message.id);
+
+  if (existingIndex !== -1) {
+    chatMessages[existingIndex] = { ...chatMessages[existingIndex], ...message };
+  } else {
+    chatMessages.push(message);
+  }
   
   // Trim history if exceeds limit (keep most recent)
   if (chatMessages.length > MAX_CHAT_HISTORY) {

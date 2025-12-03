@@ -6,12 +6,19 @@
 import { z, type ZodTypeAny } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { AgentTool } from './types.js';
+import type { AnswerType as SharedAnswerType } from '@vibe-ltp/shared';
 
 /**
  * Answer types for puzzle questions (lateral thinking puzzle host)
  */
 export const AnswerEnum = z.enum(['yes', 'no', 'irrelevant', 'both', 'unknown']);
-export type AnswerType = z.infer<typeof AnswerEnum>;
+export type AnswerType = SharedAnswerType;
+type AnswerEnumValues = z.infer<typeof AnswerEnum>;
+type _EnsureAnswerTypeSync = AnswerEnumValues extends SharedAnswerType
+  ? SharedAnswerType extends AnswerEnumValues
+    ? true
+    : never
+  : never;
 
 /**
  * Arguments for evaluate_question_against_truth tool
@@ -249,9 +256,11 @@ export function defineTool<ArgsSchema extends ZodTypeAny, Result>(
     execute: (args: z.infer<ArgsSchema>) => Promise<Result> | Result;
   }
 ): AgentTool<z.infer<ArgsSchema>, Result> {
-  const jsonSchema = zodToJsonSchema(opts.argsSchema, {
-    target: 'openApi3',
-  });
+  // Reduce type-level work to avoid excessive instantiation from zod's complex generics
+  const jsonSchema: Record<string, unknown> = (zodToJsonSchema as unknown as (
+    schema: ZodTypeAny,
+    options: Record<string, unknown>
+  ) => unknown)(opts.argsSchema as ZodTypeAny, { target: 'openApi3' }) as Record<string, unknown>;
 
   return {
     name: opts.name,
