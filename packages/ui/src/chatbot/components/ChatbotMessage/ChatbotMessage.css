@@ -1,0 +1,135 @@
+.react-chatbot-kit-chat-bot-message-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 15px 0;
+}
+
+/* Reply label button styling */
+.chatbot-reply-label {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  background: transparent;
+  border: none;
+  padding: 0.25rem 0;
+  margin-bottom: 0.25rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  font-weight: 400;
+}
+
+.chatbot-reply-label:hover {
+  text-decoration: underline;
+  color: #6366f1;
+}
+
+.chatbot-reply-label:active {
+  color: #4f46e5;
+}
+
+/* Message content wrapper */
+.chatbot-message-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.react-chatbot-kit-chat-bot-avatar-container {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  margin-right: 12.5px;
+  background-color: #d8d8d8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.react-chatbot-kit-chat-bot-avatar-icon {
+  fill: #494646;
+  width: 22.5px;
+  height: 22.5px;
+}
+
+.react-chatbot-kit-chat-bot-avatar-letter {
+  color: #1d1d1d;
+  margin: 0;
+  padding: 0;
+}
+
+.react-chatbot-kit-chat-bot-message {
+  background-color: #2d2d30;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  color: #cccccc;
+  font-weight: medium;
+  position: relative;
+  margin-left: 0;
+  margin-right: auto;
+  text-align: left;
+  border: 1px solid transparent;
+}
+
+.react-chatbot-kit-chat-bot-loading-icon-container {
+  height: 17px;
+  width: 25px;
+}
+
+.chatbot-loader-container {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+#chatbot-loader #chatbot-loader-dot1 {
+  animation: load 1s infinite;
+}
+
+#chatbot-loader #chatbot-loader-dot2 {
+  animation: load 1s infinite;
+  animation-delay: 0.2s;
+}
+
+#chatbot-loader #chatbot-loader-dot3 {
+  animation: load 1s infinite;
+  animation-delay: 0.4s;
+}
+
+@keyframes load {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.message-decorator-icon {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.message-decorator-icon-image {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.message-decorator-text {
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  line-height: 1.1;
+}

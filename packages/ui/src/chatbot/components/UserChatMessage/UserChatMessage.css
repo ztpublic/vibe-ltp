@@ -1,0 +1,78 @@
+.react-chatbot-kit-user-chat-message-container {
+  display: flex;
+  margin: 15px 0;
+  justify-content: flex-end;
+  flex-direction: row;
+  align-items: center;
+}
+
+.user-message-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.user-nickname-label {
+  font-size: 10px;
+  color: #cbd5e1;
+  margin-bottom: 2px;
+  text-align: right;
+}
+
+.react-chatbot-kit-user-avatar {
+  align-self: center;
+}
+
+.react-chatbot-kit-user-avatar-container {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-left: 12.5px;
+  background-color: #3d4e8d;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.react-chatbot-kit-user-avatar-icon {
+  fill: #fff;
+  width: 15px;
+  height: 15px;
+}
+
+.react-chatbot-kit-user-chat-message {
+  background-color: #094771;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  color: #ffffff;
+  font-weight: medium;
+  position: relative;
+  text-align: left;
+  border: 1px solid transparent;
+}
+
+.message-decorator-icon {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.message-decorator-icon-image {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.message-decorator-text {
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  line-height: 1.1;
+  text-align: right;
+}

@@ -3,7 +3,7 @@
 import React, { ReactNode } from 'react';
 import type { BotMessage, ChatMessage, ChatReplyDecoration, ChatResponse, UserMessage } from '@vibe-ltp/shared';
 import type { ChatService } from './services';
-import { truncateText, createChatBotMessage } from '@vibe-ltp/react-chatbot-kit';
+import { truncateText, createChatBotMessage } from '@vibe-ltp/ui/chatbot';
 import type { ChatHistoryController } from './controllers';
 import { v4 as uuidv4 } from 'uuid';
 import type { ChatbotMessageStore, ChatbotUiMessage } from './messageStore';
@@ -46,8 +46,11 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
         if (idx === -1) return messages;
 
         const next = [...messages];
+        const existing = next[idx];
+        if (!existing) return messages;
+
         next[idx] = {
-          ...next[idx],
+          ...existing,
           ...(message.content ? { message: message.content } : {}),
           loading: false,
           withAvatar: true,
@@ -63,19 +66,19 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
       return;
     }
 
+    const baseBotMessage = createChatBotMessage(message.content, {
+      replyToId: replyMetadata?.replyToId,
+      replyToPreview: replyMetadata?.replyToPreview,
+      replyToNickname: replyMetadata?.replyToNickname,
+    }) as unknown as ChatbotUiMessage;
+
     const botMessageNode: ChatbotUiMessage = {
-      ...(createChatBotMessage(message.content, {
-        replyToId: replyMetadata?.replyToId,
-        replyToPreview: replyMetadata?.replyToPreview,
-        replyToNickname: replyMetadata?.replyToNickname,
-      }) as unknown as ChatbotUiMessage),
+      ...baseBotMessage,
+      id: message.id ?? baseBotMessage.id ?? Date.now(),
       type: 'bot',
       loading: false, // Explicitly set loading to false since we already have the content
       withAvatar: true,
     };
-
-    // Preserve external IDs for consistency with persisted messages
-    botMessageNode.id = message.id ?? botMessageNode.id;
 
     messageStore.appendMessage(botMessageNode);
 

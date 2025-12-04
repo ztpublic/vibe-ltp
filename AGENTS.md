@@ -44,7 +44,7 @@ vibe-ltp/
 | `agent-lab` | CLI experiments for LLM agents | `@vibe-ltp/llm-client`, `dotenv` |
 | `react-chatbot-kit` | Vendored chatbot kit | `react-conditionally-render` |
 | `server` | REST API + Socket.IO + LLM question validator | `express`, `socket.io`, `@vibe-ltp/llm-client` |
-| `web` | Next.js UI | `next`, `@vibe-ltp/ui`, `@vibe-ltp/shared`, `@vibe-ltp/react-chatbot-kit` |
+| `web` | Next.js UI | `next`, `@vibe-ltp/ui`, `@vibe-ltp/shared` |
 
 ---
 

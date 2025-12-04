@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.7",
-    "@vibe-ltp/react-chatbot-kit": "workspace:*",
     "@vibe-ltp/shared": "workspace:*",
     "@vibe-ltp/ui": "workspace:*",
     "next": "16.0.5",

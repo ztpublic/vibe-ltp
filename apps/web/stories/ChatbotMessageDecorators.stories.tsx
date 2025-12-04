@@ -125,6 +125,10 @@ const ThumbFeedbackPreview = () => {
   const botMessage = state.messages[0];
   const userMessage = state.messages[1];
 
+  if (!botMessage || !userMessage) {
+    return null;
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <ChatbotMessage
