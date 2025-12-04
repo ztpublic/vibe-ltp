@@ -14,6 +14,7 @@ env:
   IMAGE_TAG: ${{ github.sha }}
   WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/vibe-ltp-web
   SERVER_IMAGE: ghcr.io/${{ github.repository_owner }}/vibe-ltp-server
+  NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
 
 jobs:
   build-and-push:
@@ -42,6 +43,8 @@ jobs:
           context: .
           file: ./Dockerfile.web
           push: true
+          build-args: |
+            NEXT_PUBLIC_API_BASE_URL=${{ env.NEXT_PUBLIC_API_BASE_URL }}
           tags: |
             ${{ env.WEB_IMAGE }}:${{ env.IMAGE_TAG }}
             ${{ env.WEB_IMAGE }}:latest
