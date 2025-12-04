@@ -13,7 +13,6 @@
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"],
   "references": [
-    { "path": "../../packages/shared" },
-    { "path": "../../packages/puzzle-core" }
+    { "path": "../../packages/shared" }
   ]
 }
