@@ -14,7 +14,7 @@ Multiplayer lateral thinking puzzles with an LLM host, real-time rooms, and a Ne
 
 - **Frontend**: Next.js 16 (App Router), React 18, Tailwind CSS v4, TanStack Query
 - **Backend**: Node.js, Express, Socket.IO (websocket transport)
-- **Shared packages**: `puzzle-core`, `shared`, `llm-client`, `agent-lab`, vendored `react-chatbot-kit` (UI kit now lives in `apps/web/src/ui`)
+- **Shared packages**: `puzzle-core`, `shared`, `llm-client`, vendored `react-chatbot-kit` (UI kit now lives in `apps/web/src/ui`; experimental `agent-lab` lives under `tools/`)
 - **Testing**: Vitest (unit), Playwright (e2e)
 
 ## Getting Started
@@ -68,9 +68,10 @@ vibe-ltp/
 │   ├── puzzle-core/      # Domain logic (pure TS)
 │   ├── shared/           # Shared types, DTOs, Zod schemas
 │   ├── llm-client/       # OpenRouter client + question validator agents
-│   ├── agent-lab/        # CLI harness for LLM experiments
 │   ├── react-chatbot-kit/ # Vendored chatbot kit used by web UI
 │   └── config/           # Shared config (ESLint, TS, Tailwind)
+├── tools/
+│   └── agent-lab/        # CLI harness for LLM experiments (excluded from workspace)
 └── .github/workflows/    # CI/CD
 ```
 
@@ -90,11 +91,13 @@ pnpm agent-lab:demo      # Run sample LLM agent suite
 pnpm format              # Prettier format
 ```
 
+`tools/agent-lab` is excluded from the workspace; the agent-lab scripts will auto-run `pnpm install` in that folder (or run `pnpm agent-lab:setup` yourself) before demos.
+
 ## Testing
 
 - **Unit**: `pnpm test` (puzzle-core models, server game state, error handling)
 - **E2E**: `pnpm e2e` (Playwright; see `apps/web/tests/e2e`)
-- **Agent experiments**: `pnpm agent-lab:demo` or `pnpm agent-lab:demo:connections` for OpenRouter-backed validator runs
+- **Agent experiments**: `pnpm agent-lab:demo` or `pnpm agent-lab:demo:connections` for OpenRouter-backed validator runs (from `tools/agent-lab`)
 
 ## Documentation
 

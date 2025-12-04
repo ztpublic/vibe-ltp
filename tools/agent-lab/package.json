@@ -26,11 +26,13 @@
     "demo:question-keywords": "tsx src/questionKeywordsDemo.ts"
   },
   "dependencies": {
-    "@vibe-ltp/llm-client": "workspace:*",
-    "dotenv": "^16.6.1"
+    "@openrouter/ai-sdk-provider": "^0.0.5",
+    "ai": "^3.4.33",
+    "dotenv": "^16.6.1",
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.23.5"
   },
   "devDependencies": {
-    "@vibe-ltp/config": "workspace:*",
     "@types/node": "^20.16.11",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3"

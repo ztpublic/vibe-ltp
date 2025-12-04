@@ -26,9 +26,10 @@ vibe-ltp/
 │   ├── puzzle-core/      # Domain logic (framework-free)
 │   ├── shared/           # Shared types, DTOs, Zod schemas
 │   ├── llm-client/       # OpenRouter client + puzzle agents
-│   ├── agent-lab/        # CLI harness + fixtures for LLM experiments
 │   ├── react-chatbot-kit/ # Vendored chatbot kit used by the web UI
 │   └── config/           # Shared configs (ESLint, TS, Tailwind)
+├── tools/
+│   └── agent-lab/        # CLI harness + fixtures for LLM experiments (excluded from workspace)
 └── .github/workflows/    # CI/CD
 ```
 
@@ -39,10 +40,11 @@ vibe-ltp/
 | `puzzle-core` | Pure domain logic (Puzzle, Session models) | `@vibe-ltp/shared` |
 | `shared` | Types, API constants, Zod schemas | `zod` |
 | `llm-client` | OpenRouter client + question validator agent helpers | `ai`, `@openrouter/ai-sdk-provider`, `zod` |
-| `agent-lab` | CLI experiments for LLM agents | `@vibe-ltp/llm-client`, `dotenv` |
 | `react-chatbot-kit` | Vendored chatbot kit | `react-conditionally-render` |
 | `server` | REST API + Socket.IO + LLM question validator | `express`, `socket.io`, `@vibe-ltp/llm-client` |
 | `web` | Next.js UI (includes local UI kit in `src/ui`) | `next`, `@vibe-ltp/shared` |
+
+**Tools (excluded from workspace)**: `tools/agent-lab` – CLI experiments for LLM agents (`@vibe-ltp/llm-client`, `dotenv`)
 
 ---
 
@@ -93,6 +95,8 @@ pnpm agent-lab:demo # Run sample LLM agent experiments (OpenRouter)
 pnpm agent-lab:demo:connections # Connection-puzzle agent demo
 ```
 
+`tools/agent-lab` is outside the workspace; the agent-lab scripts auto-run `pnpm install` there (or run `pnpm agent-lab:setup` yourself) if dependencies are missing.
+
 ---
 
 ## Architecture Principles
@@ -128,10 +132,10 @@ pnpm agent-lab:demo:connections # Connection-puzzle agent demo
 - Reusable React components co-located with the web app
 - No app-specific logic beyond the chatbot kit; share styles via Tailwind/CSS imports
 
-### 5. Agent Experiments in `agent-lab`
+### 5. Agent Experiments in `tools/agent-lab`
 
-- Use `packages/agent-lab` to run offline/CLI experiments against OpenRouter.
-- Fixtures live in `packages/agent-lab/src/fixtures`.
+- Use `tools/agent-lab` to run offline/CLI experiments against OpenRouter (excluded from the pnpm workspace).
+- Fixtures live in `tools/agent-lab/src/fixtures`.
 - Keep experiments out of runtime packages; they are for evaluation only.
 
 ### 6. Server State
@@ -194,8 +198,8 @@ pnpm agent-lab:demo:connections # Connection-puzzle agent demo
 
 ### Agent Lab Experiments
 
-- `pnpm agent-lab:demo` runs the sample question validator suite.
-- `pnpm agent-lab:demo:connections` targets connection puzzles.
+- `pnpm agent-lab:demo` runs the sample question validator suite (auto-installs deps in `tools/agent-lab`).
+- `pnpm agent-lab:demo:connections` targets connection puzzles (auto-installs deps in `tools/agent-lab`).
 - These hit OpenRouter; expect network/model costs.
 
 ---

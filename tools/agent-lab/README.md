@@ -1,6 +1,6 @@
 # Agent Lab (experiments only)
 
-Purpose-built workspace package for experimenting with the question validator agent and the connection distiller agent. Use it to try different models, prompt tweaks, and datasets without touching the production server or frontend.
+Purpose-built experimental tool for the question validator agent and the connection distiller agent. Use it to try different models, prompt tweaks, and datasets without touching the production server or frontend. This folder lives under `tools/` and is excluded from the main pnpm workspace—`pnpm agent-lab:setup` (or any `agent-lab:*` script) will run `pnpm install` here automatically.
 
 ## Running the sample suite
 
@@ -9,14 +9,14 @@ Purpose-built workspace package for experimenting with the question validator ag
 pnpm agent-lab:demo
 ```
 
-This runs `packages/agent-lab/src/demo.ts`, exercising the question validator agent against a small set of sample cases with two agent variants (default prompt vs. cautious prompt).
+This runs `tools/agent-lab/src/demo.ts`, exercising the question validator agent against a small set of sample cases with two agent variants (default prompt vs. cautious prompt).
 
 ```bash
 # From repo root (requires OPENROUTER_API_KEY)
 pnpm agent-lab:demo:connections
 ```
 
-This runs `packages/agent-lab/src/connectionDemo.ts`, exercising the connection distiller agent against sample puzzles pulled from the sea turtle soups dataset.
+This runs `tools/agent-lab/src/connectionDemo.ts`, exercising the connection distiller agent against sample puzzles pulled from the sea turtle soups dataset.
 
 ## Key files
 
