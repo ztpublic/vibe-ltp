@@ -2,23 +2,20 @@ version: "3.9"
 
 services:
   server:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ztpublic}/vibe-ltp-server:${DOCKER_TAG:-latest}
-    restart: unless-stopped
-    env_file:
-      - .env.server
+    image: ghcr.io/ztpublic/vibe-ltp-server:latest
+    restart: "no"
     environment:
       - NODE_ENV=production
     ports:
       - "4000:4000"
 
   web:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ztpublic}/vibe-ltp-web:${DOCKER_TAG:-latest}
-    restart: unless-stopped
-    env_file:
-      - .env.web
+    image: ghcr.io/ztpublic/vibe-ltp-web:latest
+    restart: "no"
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_BASE_URL=http://server:4000
+      - CORS_ORIGIN=http://localhost:3000
     depends_on:
       - server
     ports:

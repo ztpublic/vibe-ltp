@@ -1,0 +1,57 @@
+name: Build & Deploy vibe-ltp
+
+on:
+  push:
+    branches:
+      - deploy
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_TAG: ${{ github.sha }}
+  WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/vibe-ltp-web
+  SERVER_IMAGE: ghcr.io/${{ github.repository_owner }}/vibe-ltp-server
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push web image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.web
+          push: true
+          tags: |
+            ${{ env.WEB_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.WEB_IMAGE }}:latest
+
+      - name: Build & push server image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.server
+          push: true
+          tags: |
+            ${{ env.SERVER_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.SERVER_IMAGE }}:latest
