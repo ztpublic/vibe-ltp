@@ -2,15 +2,27 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { GameSession } from '@vibe-ltp/shared';
+import type {
+  CreateSessionRequest,
+  CreateSessionResponse,
+  GameSession,
+  ListSessionsResponse,
+} from '@vibe-ltp/shared';
 import { createSession, listSessions } from './api';
 
 type SessionLobbyProps = {
   onCreate?: (sessionId: string) => void;
   onJoin?: (sessionId: string) => void;
+  sessionLoader?: () => Promise<ListSessionsResponse>;
+  sessionCreator?: (payload: CreateSessionRequest) => Promise<CreateSessionResponse>;
 };
 
-export function SessionLobby({ onCreate, onJoin }: SessionLobbyProps) {
+export function SessionLobby({
+  onCreate,
+  onJoin,
+  sessionLoader = listSessions,
+  sessionCreator = createSession,
+}: SessionLobbyProps) {
   const router = useRouter();
   const [sessions, setSessions] = useState<GameSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +35,7 @@ export function SessionLobby({ onCreate, onJoin }: SessionLobbyProps) {
   const refresh = async () => {
     try {
       setLoading(true);
-      const res = await listSessions();
+      const res = await sessionLoader();
       setSessions(res.sessions);
       setError(null);
     } catch (err) {
@@ -41,7 +53,7 @@ export function SessionLobby({ onCreate, onJoin }: SessionLobbyProps) {
   const handleCreate = async () => {
     try {
       setCreating(true);
-      const res = await createSession({
+      const res = await sessionCreator({
         title: title || undefined,
         hostNickname: hostNickname || undefined,
       });
