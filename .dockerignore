@@ -1,0 +1,32 @@
+# VCS
+.git
+.gitignore
+
+# Node / pnpm
+node_modules
+pnpm-lock.yaml.ignore
+.pnp.*
+npm-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist
+.next
+apps/*/.next
+apps/*/dist
+packages/*/dist
+
+# Env / secrets (keep example files)
+.env
+.env.*
+!.env.example
+
+# Tests / reports
+coverage
+playwright-report
+test-results
+
+# OS / editor
+.DS_Store
+*.swp
+*.swo
