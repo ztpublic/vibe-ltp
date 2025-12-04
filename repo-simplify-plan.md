@@ -1,1 +1,0 @@
-packages/config just centralizes lint/TS/tailwind configs. If you prefer fewer packages, inline those configs into the root/app configs and remove the dependency, but the current setup already keeps duplication low.

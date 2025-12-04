@@ -2,7 +2,7 @@
 
 ## 环境
 - 项目依赖 NodeJS 20
-- 执行 `npm install -g pnpm` 按照 `pnpm`
+- 执行 `npm install -g pnpm` 安装 `pnpm`
 - 在 `.env` 中配置一下 openrouter key，参考 `env.example`
 - 目前代码中所有 agent 都写死使用 `x-ai/grok-4-fast`
 - packages 中代码更新后，需要执行一下 `pnpm build`
