@@ -123,6 +123,7 @@ export default function RoomPage() {
       chatHistoryController={chatHistoryController}
       toasts={toasts}
       onStartGame={() => push({ type: 'info', message: '已开始新汤' })}
+      onLeaveGame={() => router.push('/')}
     />
   );
 }

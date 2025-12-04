@@ -16,16 +16,18 @@ export interface ChatHomeProps {
   chatHistoryController?: ChatHistoryController;
   onStartGame?: (content: { soupSurface: string; soupTruth: string }) => void;
   onResetGame?: () => void;
+  onLeaveGame?: () => void;
   toasts?: Toast[];
 }
 
 export const ChatHome = ({ 
-  sessionId,
+  sessionId: _sessionId,
   gameStateController,
   chatService, 
   chatHistoryController,
   onStartGame,
   onResetGame,
+  onLeaveGame,
   toasts = [],
 }: ChatHomeProps) => {
   const { gameState, puzzleContent, startGame, resetGame } = gameStateController;
@@ -73,28 +75,15 @@ export const ChatHome = ({
   return (
     <IdentityProvider>
       <div className="h-screen bg-[#1e1e1e] flex flex-col">
-        <header className="flex items-center justify-between px-6 py-3 border-b border-[#3e3e42] bg-[#252526]">
-          <div>
-            <p className="text-sm text-[#9cdcfe]">房间</p>
-            <p className="font-mono text-xs text-white break-all">{sessionId}</p>
-          </div>
-          <div className="flex items-center gap-3 text-xs text-[#cccccc]">
-            <span className={`px-2 py-1 rounded ${
-              isGameStarted ? 'bg-emerald-500/20 text-emerald-200' :
-              isGameNotStarted ? 'bg-amber-500/20 text-amber-200' :
-              'bg-slate-500/20 text-slate-200'
-            }`}>
-              状态：{gameState}
-            </span>
-            {isGameEnded && (
-              <span className="px-2 py-1 rounded bg-red-500/20 text-red-200 border border-red-500/40">
-                房间已结束，重新开始以开启新局
-              </span>
-            )}
-          </div>
-        </header>
         <main className="flex-1 flex items-center justify-center p-4 overflow-hidden relative">
-          <div className="absolute top-4 right-4 space-y-2">
+          <div className="absolute top-4 right-4 flex flex-col items-end space-y-2">
+            <button
+              className="px-3 py-1.5 rounded bg-[#2d2d30] hover:bg-[#3e3e42] text-[#e5e5e5] border border-[#3e3e42] text-xs transition-colors"
+              type="button"
+              onClick={() => onLeaveGame?.()}
+            >
+              离开房间
+            </button>
             {toasts.map((toast) => (
               <div
                 key={toast.id}
