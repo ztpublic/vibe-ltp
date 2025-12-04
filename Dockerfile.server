@@ -24,11 +24,11 @@ COPY . .
 RUN rm -f packages/shared/tsconfig.tsbuildinfo && pnpm --filter @vibe-ltp/shared exec tsc --build --force
 RUN rm -f packages/llm-client/tsconfig.tsbuildinfo && pnpm --filter @vibe-ltp/llm-client exec tsc --build --force
 
-# Build the server
-RUN pnpm build:server
+# Build the server (force fresh TS emit)
+RUN rm -f apps/server/tsconfig.tsbuildinfo && pnpm -C apps/server exec tsc --pretty false
 
-# Trim devDependencies for runtime (CI=true to skip prompt)
-RUN CI=true pnpm prune --prod
+# Ensure entrypoint was emitted
+RUN test -f apps/server/dist/index.js
 
 # --- RUNTIME IMAGE ---
 FROM node:20-alpine AS runner

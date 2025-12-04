@@ -1,3 +1,3 @@
-export * from './puzzles';
-export * from './game';
-export * from './messages';
+export * from './puzzles.js';
+export * from './game.js';
+export * from './messages.js';

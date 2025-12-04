@@ -27,9 +27,6 @@ RUN rm -f packages/shared/tsconfig.tsbuildinfo && pnpm --filter @vibe-ltp/shared
 # Build only the web app
 RUN pnpm build:web
 
-# Trim devDependencies for the runtime image (CI=true to skip prompt)
-RUN CI=true pnpm prune --prod
-
 # --- RUNTIME IMAGE ---
 FROM node:20-alpine AS runner
 

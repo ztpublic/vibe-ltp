@@ -1,2 +1,2 @@
-export * from './endpoints';
-export * from './chat';
+export * from './endpoints.js';
+export * from './chat.js';
