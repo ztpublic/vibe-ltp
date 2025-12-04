@@ -1,221 +1,344 @@
-/**
- * Global Game State Manager
- * 
- * Manages state for the single-session puzzle game architecture.
- * Unlike multi-session systems, this maintains one global game state
- * shared across all connected clients.
- * 
- * Key Features:
- * - State transition validation (prevents invalid state changes)
- * - Message history with automatic trimming (prevents memory growth)
- * - Question history for context building
- * 
- * @remarks
- * This replaces the Session domain model approach for architectural simplicity.
- * All state is ephemeral - persisted only in memory during server runtime.
- */
-
-import type { GameState, PuzzleContent, AnswerType } from '@vibe-ltp/shared';
+import { v4 as uuidv4 } from 'uuid';
+import {
+  DEFAULT_CHAT_HISTORY_LIMIT,
+  DEFAULT_QUESTION_HISTORY_LIMIT,
+  addChatMessageToSession,
+  addQuestionToSession,
+  createSessionStateContainer,
+  revealPuzzleContent,
+} from '@vibe-ltp/puzzle-core';
+import type {
+  GameSession,
+  GameSessionId,
+  GameSessionSnapshot,
+  GameState,
+  PuzzleContent,
+  PuzzleSummary,
+  SessionChatMessage,
+  SessionQuestionHistoryEntry,
+} from '@vibe-ltp/shared';
 import type { Embedding } from '@vibe-ltp/llm-client';
 
-/**
- * Persisted chat message for UI restoration
- */
-export interface PersistedMessage {
-  id: string;
-  type: 'user' | 'bot';
-  content: string;
-  nickname?: string;
-  replyToId?: string;
-  replyToPreview?: string;
-  replyToNickname?: string;
-  timestamp: string;
-  answer?: AnswerType;
-  answerTip?: string;
+export const DEFAULT_SESSION_ID: GameSessionId = 'default';
+export const SESSION_TTL_MS = 1000 * 60 * 60 * 4; // 4 hours
+const CLEANUP_INTERVAL_MS = 1000 * 60 * 5; // 5 minutes
+
+interface SessionRecord {
+  meta: GameSession;
+  stateContainer: ReturnType<typeof createSessionStateContainer>;
+  keywordEmbeddings: Embedding[];
+  lastActiveAt: number;
 }
 
-/**
- * Global game state
- */
-let globalGameState: GameState = 'NotStarted';
-let globalPuzzleContent: PuzzleContent | undefined;
-let truthKeywordEmbeddings: Embedding[] = [];
+const sessionStore = new Map<GameSessionId, SessionRecord>();
 
-/**
- * Message history configuration
- * Limits prevent unbounded memory growth in long-running sessions
- */
-const MAX_CHAT_HISTORY = 200;
-const MAX_QUESTION_HISTORY = 100;
+const nowIso = (value = Date.now()): string => new Date(value).toISOString();
 
-/**
- * Question history for building context summaries
- */
-interface QuestionHistory {
-  question: string;
-  answer: AnswerType;
-  timestamp: Date;
+function buildPuzzleSummary(puzzle?: PuzzleContent): PuzzleSummary | undefined {
+  if (!puzzle) return undefined;
+  const { soupSurface, facts, keywords } = puzzle;
+  return {
+    soupSurface,
+    facts,
+    keywords,
+  };
 }
 
-let questionHistory: QuestionHistory[] = [];
-
-/**
- * Chat message history for UI restoration
- */
-let chatMessages: PersistedMessage[] = [];
-
-/**
- * Get current game state
- */
-export function getGameState(): GameState {
-  return globalGameState;
-}
-
-/**
- * Get current puzzle content
- */
-export function getPuzzleContent(): PuzzleContent | undefined {
-  return globalPuzzleContent;
-}
-
-/**
- * Validate state transition before applying
- * Prevents invalid state changes that could break game flow
- * 
- * Valid transitions:
- * - NotStarted -> Started (requires puzzle content)
- * - Started -> NotStarted (reset operation)
- * 
- * @throws Error if transition is invalid
- */
-function validateStateTransition(from: GameState, to: GameState): void {
-  // Cannot restart an already started game without resetting first
-  if (from === 'Started' && to === 'Started') {
+function validateStateTransition(current: GameState, next: GameState, hasPuzzle: boolean): void {
+  if (current === 'Started' && next === 'Started') {
     throw new Error('Game already started. Reset before starting new game.');
   }
-  
-  // Cannot start game without puzzle content
-  if (to === 'Started' && !globalPuzzleContent) {
+
+  if (next === 'Started' && !hasPuzzle) {
     throw new Error('Cannot start game without puzzle content.');
   }
 }
 
-/**
- * Set game state with validation
- * 
- * @throws Error if state transition is invalid
- */
-export function setGameState(state: GameState): void {
-  validateStateTransition(globalGameState, state);
-  globalGameState = state;
+function ensureSession(sessionId: GameSessionId): SessionRecord {
+  const session = sessionStore.get(sessionId);
+  if (!session) {
+    throw new Error(`Session not found: ${sessionId}`);
+  }
+  return session;
 }
 
-/**
- * Set puzzle content
- */
-export function setPuzzleContent(content: PuzzleContent | undefined): void {
-  globalPuzzleContent = content;
+function touchSession(sessionId: GameSessionId, at: number = Date.now()): void {
+  const session = ensureSession(sessionId);
+  session.lastActiveAt = at;
+  session.meta.updatedAt = nowIso(at);
 }
 
-/**
- * Store embeddings for the current puzzle keywords
- */
-export function setKeywordEmbeddings(embeddings: Embedding[]): void {
-  truthKeywordEmbeddings = embeddings;
+function setSessionState(sessionId: GameSessionId, state: GameState): void {
+  const session = ensureSession(sessionId);
+  validateStateTransition(session.stateContainer.state, state, Boolean(session.stateContainer.puzzleContent));
+  session.stateContainer = {
+    ...session.stateContainer,
+    state,
+  };
+  session.meta.state = state;
+  touchSession(sessionId);
 }
 
-/**
- * Retrieve embeddings for current puzzle keywords
- */
-export function getKeywordEmbeddings(): readonly Embedding[] {
-  return truthKeywordEmbeddings;
+function setSessionPuzzleContent(sessionId: GameSessionId, content: PuzzleContent | undefined): void {
+  const session = ensureSession(sessionId);
+  session.stateContainer = {
+    ...session.stateContainer,
+    puzzleContent: content,
+  };
+  session.meta.puzzleSummary = buildPuzzleSummary(content);
+  touchSession(sessionId);
 }
 
-/**
- * Add a question to history
- * Automatically trims history if it exceeds MAX_QUESTION_HISTORY
- * 
- * @param question - The question text
- * @param answer - The answer type (yes/no/irrelevant/both/unknown)
- */
-export function addQuestionToHistory(question: string, answer: AnswerType): void {
-  questionHistory.push({
-    question,
-    answer,
-    timestamp: new Date(),
+function buildSnapshot(session: SessionRecord): GameSessionSnapshot {
+  return {
+    ...session.meta,
+    puzzleContent: session.stateContainer.puzzleContent,
+  };
+}
+
+function bumpPlayerCount(sessionId: GameSessionId, delta: number): void {
+  const session = ensureSession(sessionId);
+  const nextCount = Math.max(0, session.meta.playerCount + delta);
+  session.meta.playerCount = nextCount;
+  touchSession(sessionId);
+}
+
+export interface CreateSessionOptions {
+  sessionId?: GameSessionId;
+  title?: string;
+  hostNickname?: string;
+  state?: GameState;
+  puzzleContent?: PuzzleContent;
+}
+
+export function createSession(options: CreateSessionOptions = {}): GameSessionSnapshot {
+  const {
+    sessionId = uuidv4(),
+    title,
+    hostNickname,
+    state = 'NotStarted',
+    puzzleContent,
+  } = options;
+
+  if (sessionStore.has(sessionId)) {
+    throw new Error(`Session already exists: ${sessionId}`);
+  }
+
+  if (state === 'Started' && !puzzleContent) {
+    throw new Error('Cannot start game without puzzle content.');
+  }
+
+  const createdAt = nowIso();
+  const stateContainer = createSessionStateContainer({
+    sessionId,
+    state,
+    puzzleContent,
+    chatHistory: [],
+    questionHistory: [],
   });
-  
-  // Trim history if exceeds limit (keep most recent)
-  if (questionHistory.length > MAX_QUESTION_HISTORY) {
-    questionHistory = questionHistory.slice(-MAX_QUESTION_HISTORY);
+
+  const meta: GameSession = {
+    id: sessionId,
+    title,
+    state,
+    hostNickname,
+    createdAt,
+    updatedAt: createdAt,
+    playerCount: 0,
+    puzzleSummary: buildPuzzleSummary(puzzleContent),
+    isActive: true,
+  };
+
+  const record: SessionRecord = {
+    meta,
+    stateContainer,
+    keywordEmbeddings: [],
+    lastActiveAt: Date.now(),
+  };
+
+  sessionStore.set(sessionId, record);
+  return buildSnapshot(record);
+}
+
+function ensureDefaultSession(): void {
+  if (!sessionStore.has(DEFAULT_SESSION_ID)) {
+    createSession({ sessionId: DEFAULT_SESSION_ID, title: 'Default Session' });
   }
 }
 
-/**
- * Get conversation history in the format expected by PuzzleContext
- * Returns array of {question, answer} pairs
- */
-export function getConversationHistory(): Array<{ question: string; answer: AnswerType }> {
-  return questionHistory.map(item => ({
+ensureDefaultSession();
+
+export function listSessions(): GameSession[] {
+  return Array.from(sessionStore.values()).map((session) => session.meta);
+}
+
+export function getSession(sessionId: GameSessionId = DEFAULT_SESSION_ID): GameSessionSnapshot | undefined {
+  const session = sessionStore.get(sessionId);
+  return session ? buildSnapshot(session) : undefined;
+}
+
+export function getGameState(sessionId: GameSessionId = DEFAULT_SESSION_ID): GameState {
+  return ensureSession(sessionId).stateContainer.state;
+}
+
+export function joinSession(sessionId: GameSessionId = DEFAULT_SESSION_ID): GameSessionSnapshot {
+  bumpPlayerCount(sessionId, 1);
+  return getSession(sessionId)!;
+}
+
+export function leaveSession(sessionId: GameSessionId = DEFAULT_SESSION_ID): GameSessionSnapshot | undefined {
+  if (!sessionStore.has(sessionId)) return undefined;
+  bumpPlayerCount(sessionId, -1);
+  return getSession(sessionId);
+}
+
+export function setGameState(state: GameState, sessionId: GameSessionId = DEFAULT_SESSION_ID): void {
+  setSessionState(sessionId, state);
+}
+
+export function getPuzzleContent(sessionId: GameSessionId = DEFAULT_SESSION_ID): PuzzleContent | undefined {
+  return ensureSession(sessionId).stateContainer.puzzleContent;
+}
+
+export function setPuzzleContent(content: PuzzleContent | undefined, sessionId: GameSessionId = DEFAULT_SESSION_ID): void {
+  setSessionPuzzleContent(sessionId, content);
+}
+
+export function startSession(sessionId: GameSessionId, content: PuzzleContent): GameSessionSnapshot {
+  setSessionPuzzleContent(sessionId, content);
+  setSessionState(sessionId, 'Started');
+  return getSession(sessionId)!;
+}
+
+export function endSession(
+  sessionId: GameSessionId,
+  options: { revealContent?: boolean; preserveChat?: boolean } = {},
+): GameSessionSnapshot {
+  const { revealContent = true, preserveChat = true } = options;
+  const session = ensureSession(sessionId);
+  const revealedPuzzle = revealContent ? revealPuzzleContent(session.stateContainer.puzzleContent) : undefined;
+
+  session.stateContainer = {
+    ...session.stateContainer,
+    state: 'Ended',
+    puzzleContent: revealedPuzzle,
+    chatHistory: preserveChat ? session.stateContainer.chatHistory : [],
+  };
+
+  session.meta.state = 'Ended';
+  session.meta.puzzleSummary = buildPuzzleSummary(revealedPuzzle);
+  touchSession(sessionId);
+  return buildSnapshot(session);
+}
+
+export function resetGameState(
+  sessionId: GameSessionId = DEFAULT_SESSION_ID,
+  options: { preserveChat?: boolean; revealExistingContent?: boolean } = {},
+): void {
+  const { preserveChat = true, revealExistingContent = true } = options;
+  const session = ensureSession(sessionId);
+  const revealed = revealExistingContent ? revealPuzzleContent(session.stateContainer.puzzleContent) : undefined;
+
+  session.stateContainer = {
+    ...session.stateContainer,
+    state: 'NotStarted',
+    puzzleContent: revealed,
+    questionHistory: [],
+    chatHistory: preserveChat ? session.stateContainer.chatHistory : [],
+  };
+
+  session.keywordEmbeddings = [];
+  session.meta.state = 'NotStarted';
+  session.meta.puzzleSummary = buildPuzzleSummary(revealed);
+  touchSession(sessionId);
+}
+
+export function addChatMessage(
+  message: SessionChatMessage,
+  sessionId: GameSessionId = DEFAULT_SESSION_ID,
+  limit = DEFAULT_CHAT_HISTORY_LIMIT,
+): void {
+  const session = ensureSession(sessionId);
+  session.stateContainer = addChatMessageToSession(session.stateContainer, message, limit);
+  touchSession(sessionId);
+}
+
+export function getChatMessages(sessionId: GameSessionId = DEFAULT_SESSION_ID): readonly SessionChatMessage[] {
+  return ensureSession(sessionId).stateContainer.chatHistory;
+}
+
+export function addQuestionToHistory(
+  question: string,
+  answer: SessionQuestionHistoryEntry['answer'],
+  sessionId: GameSessionId = DEFAULT_SESSION_ID,
+  limit = DEFAULT_QUESTION_HISTORY_LIMIT,
+  timestamp: Date = new Date(),
+): void {
+  const session = ensureSession(sessionId);
+  session.stateContainer = addQuestionToSession(session.stateContainer, question, answer, limit, timestamp);
+  touchSession(sessionId);
+}
+
+export function getQuestionHistory(sessionId: GameSessionId = DEFAULT_SESSION_ID): readonly SessionQuestionHistoryEntry[] {
+  return ensureSession(sessionId).stateContainer.questionHistory;
+}
+
+export function getConversationHistory(
+  sessionId: GameSessionId = DEFAULT_SESSION_ID,
+): Array<{ question: string; answer: SessionQuestionHistoryEntry['answer'] }> {
+  return ensureSession(sessionId).stateContainer.questionHistory.map((item) => ({
     question: item.question,
     answer: item.answer,
   }));
 }
 
-/**
- * Get question history
- */
-export function getQuestionHistory(): readonly QuestionHistory[] {
-  return questionHistory;
+export function setKeywordEmbeddings(embeddings: Embedding[], sessionId: GameSessionId = DEFAULT_SESSION_ID): void {
+  const session = ensureSession(sessionId);
+  session.keywordEmbeddings = embeddings;
+  touchSession(sessionId);
 }
 
-/**
- * Add a chat message to history
- * Automatically trims history if it exceeds MAX_CHAT_HISTORY
- * 
- * @param message - The persisted chat message to add
- */
-export function addChatMessage(message: PersistedMessage): void {
-  const existingIndex = chatMessages.findIndex((item) => item.id === message.id);
+export function getKeywordEmbeddings(sessionId: GameSessionId = DEFAULT_SESSION_ID): readonly Embedding[] {
+  return ensureSession(sessionId).keywordEmbeddings;
+}
 
-  if (existingIndex !== -1) {
-    chatMessages[existingIndex] = { ...chatMessages[existingIndex], ...message };
-  } else {
-    chatMessages.push(message);
+export function getDefaultSessionId(): GameSessionId {
+  return DEFAULT_SESSION_ID;
+}
+
+export function updateSessionActivity(sessionId: GameSessionId, at: number = Date.now()): void {
+  touchSession(sessionId, at);
+}
+
+export function cleanupIdleSessions(now: number = Date.now()): GameSessionId[] {
+  const removed: GameSessionId[] = [];
+
+  for (const [sessionId, session] of sessionStore.entries()) {
+    if (sessionId === DEFAULT_SESSION_ID) {
+      continue;
+    }
+
+    if (now - session.lastActiveAt > SESSION_TTL_MS) {
+      session.meta.isActive = false;
+      sessionStore.delete(sessionId);
+      removed.push(sessionId);
+    }
   }
-  
-  // Trim history if exceeds limit (keep most recent)
-  if (chatMessages.length > MAX_CHAT_HISTORY) {
-    chatMessages = chatMessages.slice(-MAX_CHAT_HISTORY);
+
+  return removed;
+}
+
+const cleanupInterval = setInterval(() => {
+  const removed = cleanupIdleSessions();
+  if (removed.length > 0) {
+    console.log(`[SessionStore] Cleaned up idle sessions: ${removed.join(', ')}`);
   }
-}
+}, CLEANUP_INTERVAL_MS);
 
-/**
- * Get all chat messages
- */
-export function getChatMessages(): readonly PersistedMessage[] {
-  return chatMessages;
-}
+// Prevent keeping the process alive solely for the cleanup timer
+cleanupInterval.unref?.();
 
-/**
- * Reset game state and history
- * Note: Chat messages are preserved to maintain conversation history
- */
-export function resetGameState(): void {
-  globalGameState = 'NotStarted';
-  globalPuzzleContent = undefined;
-  questionHistory = [];
-  truthKeywordEmbeddings = [];
-  // Do NOT clear chatMessages - preserve conversation history including truth reveal
-}
-
-/**
- * Clear all state including chat messages (for testing only)
- */
 export function clearAllState(): void {
-  globalGameState = 'NotStarted';
-  globalPuzzleContent = undefined;
-  questionHistory = [];
-  chatMessages = [];
-  truthKeywordEmbeddings = [];
+  sessionStore.clear();
+  ensureDefaultSession();
 }

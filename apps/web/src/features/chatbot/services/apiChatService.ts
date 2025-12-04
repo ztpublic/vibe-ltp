@@ -4,6 +4,8 @@ import type { ChatService } from './chatService';
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${process.env.NEXT_PUBLIC_BACKEND_PORT || 4000}`;
 
 export class ApiChatService implements ChatService {
+  constructor(public sessionId?: string) {}
+
   private async postChat(path: string, body: ChatRequest): Promise<ChatResponse> {
     try {
       const res = await fetch(`${API_BASE}${path}`, {
@@ -62,6 +64,7 @@ export class ApiChatService implements ChatService {
     const body: ChatRequest = {
       message: userMessage,
       history,
+      sessionId: this.sessionId,
     };
 
     return this.postChat('/api/chat', body);
@@ -71,6 +74,7 @@ export class ApiChatService implements ChatService {
     const body: ChatRequest = {
       message: userMessage,
       history,
+      sessionId: this.sessionId,
     };
 
     return this.postChat('/api/solution', body);

@@ -1,157 +1,187 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import type { SessionChatMessage } from '@vibe-ltp/shared';
 import {
-  getGameState,
-  setGameState,
-  getPuzzleContent,
-  setPuzzleContent,
-  resetGameState,
-  clearAllState,
+  SESSION_TTL_MS,
   addChatMessage,
-  getChatMessages,
   addQuestionToHistory,
-  getQuestionHistory,
+  cleanupIdleSessions,
+  clearAllState,
+  createSession,
+  endSession,
+  getChatMessages,
   getConversationHistory,
-  type PersistedMessage
+  getDefaultSessionId,
+  getGameState,
+  getPuzzleContent,
+  getQuestionHistory,
+  getSession,
+  listSessions,
+  joinSession,
+  resetGameState,
+  setGameState,
+  setPuzzleContent,
+  startSession,
+  updateSessionActivity,
 } from './gameState.js';
 
-describe('Game State Management', () => {
+describe('Session Store', () => {
   beforeEach(() => {
     clearAllState();
   });
 
-  describe('State Transitions', () => {
-    it('should start with NotStarted state', () => {
-      expect(getGameState()).toBe('NotStarted');
-    });
+  it('initializes with a default session', () => {
+    const defaultId = getDefaultSessionId();
+    const session = getSession(defaultId);
 
-    it('should transition to Started with puzzle content', () => {
-      setPuzzleContent({ soupSurface: 'Test', soupTruth: 'Answer' });
-      setGameState('Started');
-      expect(getGameState()).toBe('Started');
-    });
-
-    it('should throw when starting without puzzle', () => {
-      expect(() => setGameState('Started')).toThrow('Cannot start game without puzzle content');
-    });
-
-    it('should throw when starting already started game', () => {
-      setPuzzleContent({ soupSurface: 'Test', soupTruth: 'Answer' });
-      setGameState('Started');
-      expect(() => setGameState('Started')).toThrow('Game already started. Reset before starting new game.');
-    });
-
-    it('should reset state and clear question history but preserve chat messages', () => {
-      setPuzzleContent({ soupSurface: 'Test', soupTruth: 'Answer' });
-      setGameState('Started');
-      addChatMessage({
-        id: '1',
-        type: 'user',
-        content: 'Hello',
-        timestamp: new Date().toISOString()
-      });
-      addQuestionToHistory('Is it day?', 'yes');
-      
-      resetGameState();
-      
-      expect(getGameState()).toBe('NotStarted');
-      expect(getPuzzleContent()).toBeUndefined();
-      expect(getQuestionHistory()).toHaveLength(0);
-      // Chat messages should be preserved to maintain conversation history
-      expect(getChatMessages()).toHaveLength(1);
-    });
+    expect(session?.state).toBe('NotStarted');
+    expect(session?.isActive).toBe(true);
   });
 
-  describe('Message History Management', () => {
-    it('should add and retrieve messages', () => {
-      const message: PersistedMessage = {
-        id: '1',
-        type: 'user',
-        content: 'Test message',
-        timestamp: new Date().toISOString()
-      };
-      
-      addChatMessage(message);
-      expect(getChatMessages()).toContainEqual(message);
-    });
+  it('creates and lists independent sessions', () => {
+    const created = createSession({ title: 'Lobby A', hostNickname: 'Host' });
+    const listed = listSessions().find((item) => item.id === created.id);
 
-    it('should trim messages when exceeding limit', () => {
-      // Add 201 messages (assuming MAX = 200)
-      for (let i = 0; i < 201; i++) {
-        addChatMessage({
-          id: String(i),
+    expect(created.title).toBe('Lobby A');
+    expect(listed?.title).toBe('Lobby A');
+    expect(listed?.hostNickname).toBe('Host');
+  });
+
+  it('requires puzzle content before starting a session', () => {
+    const sessionId = createSession().id;
+
+    expect(() => setGameState('Started', sessionId)).toThrow('Cannot start game without puzzle content.');
+
+    const puzzle = { soupSurface: 'Surface', soupTruth: 'Truth' };
+    setPuzzleContent(puzzle, sessionId);
+    setGameState('Started', sessionId);
+
+    expect(getGameState(sessionId)).toBe('Started');
+    expect(getPuzzleContent(sessionId)).toEqual(puzzle);
+  });
+
+  it('starts a session via startSession', () => {
+    const sessionId = createSession().id;
+    const puzzle = { soupSurface: 'Start via helper', soupTruth: 'Truth' };
+
+    const snapshot = startSession(sessionId, puzzle);
+    expect(snapshot.state).toBe('Started');
+    expect(snapshot.puzzleContent).toEqual(puzzle);
+  });
+
+  it('resets a session while preserving chat and clearing questions', () => {
+    const sessionId = createSession().id;
+    setPuzzleContent({ soupSurface: 'Surface', soupTruth: 'Truth' }, sessionId);
+    setGameState('Started', sessionId);
+
+    const message: SessionChatMessage = {
+      id: '1',
+      type: 'user',
+      content: 'Hello',
+      nickname: 'Tester',
+      timestamp: new Date().toISOString(),
+    };
+    addChatMessage(message, sessionId);
+    addQuestionToHistory('Is it day?', 'yes', sessionId);
+
+    resetGameState(sessionId);
+
+    expect(getGameState(sessionId)).toBe('NotStarted');
+    expect(getPuzzleContent(sessionId)?.soupTruth).toBe('Truth');
+    expect(getQuestionHistory(sessionId)).toHaveLength(0);
+    expect(getChatMessages(sessionId)).toHaveLength(1);
+  });
+
+  it('ends a session and reveals puzzle content while keeping chat by default', () => {
+    const sessionId = createSession().id;
+    const puzzle = {
+      soupSurface: 'Surface',
+      soupTruth: 'Truth',
+      facts: [{ id: 'f1', text: 'Fact', revealed: false }],
+    };
+    startSession(sessionId, puzzle);
+
+    const message: SessionChatMessage = {
+      id: 'end-1',
+      type: 'bot',
+      content: 'Final',
+      timestamp: new Date().toISOString(),
+    };
+    addChatMessage(message, sessionId);
+
+    const snapshot = endSession(sessionId);
+    expect(snapshot.state).toBe('Ended');
+    expect(snapshot.puzzleContent?.facts?.[0]?.revealed).toBe(true);
+    expect(getChatMessages(sessionId)).toHaveLength(1);
+  });
+
+  it('trims chat and question histories per session', () => {
+    const sessionId = createSession().id;
+    for (let i = 0; i < 201; i += 1) {
+      addChatMessage(
+        {
+          id: `m-${i}`,
           type: 'user',
           content: `Message ${i}`,
-          timestamp: new Date().toISOString()
-        });
-      }
-      
-      const messages = getChatMessages();
-      expect(messages.length).toBe(200);
-      expect(messages[0]?.id).toBe('1'); // First message (id=0) trimmed
-    });
+          timestamp: new Date().toISOString(),
+        },
+        sessionId,
+      );
+      addQuestionToHistory(`Q${i}?`, 'yes', sessionId);
+    }
 
-    it('should handle messages with nicknames and reply metadata', () => {
-      const message: PersistedMessage = {
-        id: '1',
-        type: 'user',
-        content: 'Test message',
-        nickname: 'TestUser',
-        replyToId: 'msg0',
-        replyToPreview: 'Previous message',
-        replyToNickname: 'OtherUser',
-        timestamp: new Date().toISOString()
-      };
-      
-      addChatMessage(message);
-      const retrieved = getChatMessages();
-      expect(retrieved[0]).toEqual(message);
-    });
+    const chats = getChatMessages(sessionId);
+    expect(chats.length).toBe(200);
+    expect(chats[0]?.id).toBe('m-1');
+
+    const questions = getQuestionHistory(sessionId);
+    expect(questions.length).toBe(100);
+    expect(questions[0]?.question).toBe('Q101?');
+    expect(typeof questions[0]?.timestamp).toBe('string');
   });
 
-  describe('Question History', () => {
-    it('should add questions to history', () => {
-      addQuestionToHistory('Is it day?', 'yes');
-      const history = getQuestionHistory();
-      
-      expect(history).toHaveLength(1);
-      expect(history[0]?.question).toBe('Is it day?');
-      expect(history[0]?.answer).toBe('yes');
-      expect(history[0]?.timestamp).toBeInstanceOf(Date);
-    });
+  it('isolates state between sessions', () => {
+    const sessionA = createSession().id;
+    const sessionB = createSession().id;
 
-    it('should provide conversation history in correct format', () => {
-      addQuestionToHistory('Is it day?', 'yes');
-      addQuestionToHistory('Is it night?', 'no');
-      
-      const convHistory = getConversationHistory();
-      expect(convHistory).toHaveLength(2);
-      expect(convHistory[0]).toEqual({ question: 'Is it day?', answer: 'yes' });
-      expect(convHistory[1]).toEqual({ question: 'Is it night?', answer: 'no' });
-    });
+    setPuzzleContent({ soupSurface: 'A', soupTruth: 'Truth A' }, sessionA);
+    setGameState('Started', sessionA);
 
-    it('should trim question history when exceeding limit', () => {
-      // Add 101 questions (assuming MAX = 100)
-      for (let i = 0; i < 101; i++) {
-        addQuestionToHistory(`Question ${i}?`, 'yes');
-      }
-      
-      const history = getQuestionHistory();
-      expect(history.length).toBe(100);
-      expect(history[0]?.question).toBe('Question 1?'); // First question (0) trimmed
-    });
+    expect(getGameState(sessionB)).toBe('NotStarted');
+    expect(getPuzzleContent(sessionB)).toBeUndefined();
   });
 
-  describe('Puzzle Content', () => {
-    it('should set and retrieve puzzle content', () => {
-      const puzzle = { soupSurface: 'Surface', soupTruth: 'Truth' };
-      setPuzzleContent(puzzle);
-      expect(getPuzzleContent()).toEqual(puzzle);
-    });
+  it('increments player count on joinSession', () => {
+    const sessionId = createSession().id;
+    const before = getSession(sessionId);
+    expect(before?.playerCount).toBe(0);
 
-    it('should clear puzzle content on reset', () => {
-      setPuzzleContent({ soupSurface: 'Test', soupTruth: 'Answer' });
-      resetGameState();
-      expect(getPuzzleContent()).toBeUndefined();
-    });
+    const afterJoin = joinSession(sessionId);
+    expect(afterJoin.playerCount).toBe(1);
+  });
+
+  it('cleans up idle sessions past TTL but keeps default session', () => {
+    const sessionId = createSession().id;
+    const staleTime = Date.now() - SESSION_TTL_MS - 1000;
+
+    updateSessionActivity(sessionId, staleTime);
+    const removed = cleanupIdleSessions(Date.now());
+
+    expect(removed).toContain(sessionId);
+    expect(getSession(sessionId)).toBeUndefined();
+
+    // Default session remains intact
+    expect(getSession(getDefaultSessionId())).toBeDefined();
+  });
+
+  it('provides conversation history in question/answer pairs', () => {
+    const sessionId = createSession().id;
+    addQuestionToHistory('Is it day?', 'yes', sessionId);
+    addQuestionToHistory('Is it night?', 'no', sessionId);
+
+    const convo = getConversationHistory(sessionId);
+    expect(convo).toEqual([
+      { question: 'Is it day?', answer: 'yes' },
+      { question: 'Is it night?', answer: 'no' },
+    ]);
   });
 });

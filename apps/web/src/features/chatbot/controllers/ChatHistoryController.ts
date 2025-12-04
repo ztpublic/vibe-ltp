@@ -9,6 +9,8 @@ import type { ChatMessage } from '@vibe-ltp/shared';
 export type { ChatMessage as ChatHistoryMessage };
 
 export interface ChatHistoryController {
+  /** Session identifier the chat history belongs to */
+  sessionId: string;
   /** Initial chat history messages */
   messages: ChatMessage[];
   

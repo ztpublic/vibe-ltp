@@ -15,9 +15,14 @@ const SOCKET_OPTIONS = {
 type SocketInstance = {
   socket: Socket;
   refCount: number;
+  key: string;
 };
 
-let sharedInstance: SocketInstance | null = null;
+const socketInstances = new Map<string, SocketInstance>();
+
+function buildKey(baseUrl: string, sessionId?: string): string {
+  return `${baseUrl}::${sessionId ?? 'default'}`;
+}
 
 export type SocketLifecycleCallbacks = {
   onConnect?: () => void;
@@ -30,18 +35,24 @@ export type SocketLifecycleCallbacks = {
  * Acquire a socket connection with ref counting to prevent duplicate connections
  * in React Strict Mode and support multiple component usage
  */
-export function acquireSocket(baseUrl: string): Socket {
-  if (sharedInstance) {
-    sharedInstance.refCount += 1;
-    return sharedInstance.socket;
+export function acquireSocket(baseUrl: string, sessionId?: string): Socket {
+  const key = buildKey(baseUrl, sessionId);
+  const existing = socketInstances.get(key);
+  if (existing) {
+    existing.refCount += 1;
+    return existing.socket;
   }
 
-  // Create new socket instance
-  const socket = io(baseUrl, SOCKET_OPTIONS);
-  sharedInstance = {
+  const socket = io(baseUrl, {
+    ...SOCKET_OPTIONS,
+    query: sessionId ? { sessionId } : undefined,
+  });
+
+  socketInstances.set(key, {
     socket,
     refCount: 1,
-  };
+    key,
+  });
 
   return socket;
 }
@@ -50,29 +61,39 @@ export function acquireSocket(baseUrl: string): Socket {
  * Release a socket connection, decrements ref count and disconnects when count reaches 0
  */
 export function releaseSocket(socket: Socket): void {
-  if (!sharedInstance || sharedInstance.socket !== socket) {
+  let entryKey: string | null = null;
+  for (const [key, instance] of socketInstances.entries()) {
+    if (instance.socket === socket) {
+      entryKey = key;
+      if (instance.refCount <= 0) {
+        console.warn('[socketManager] release called with non-positive refCount');
+        break;
+      }
+      instance.refCount -= 1;
+      if (instance.refCount === 0) {
+        socket.disconnect();
+        socketInstances.delete(key);
+      }
+      break;
+    }
+  }
+
+  if (!entryKey) {
     console.warn('[socketManager] attempted to release unknown socket');
-    return;
-  }
-
-  if (sharedInstance.refCount <= 0) {
-    console.warn('[socketManager] release called with non-positive refCount');
-    return;
-  }
-
-  sharedInstance.refCount -= 1;
-
-  if (sharedInstance.refCount === 0) {
-    socket.disconnect();
-    sharedInstance = null;
   }
 }
 
 /**
  * Get the current shared socket instance (if any)
  */
-export function getSharedSocket(): Socket | null {
-  return sharedInstance?.socket || null;
+export function getSharedSocket(sessionId?: string): Socket | null {
+  const key = sessionId ? buildKey('', sessionId) : null;
+  if (key && socketInstances.has(key)) {
+    return socketInstances.get(key)?.socket ?? null;
+  }
+  // Fallback: return first socket if any
+  const first = socketInstances.values().next();
+  return first.done ? null : first.value.socket;
 }
 
 /**

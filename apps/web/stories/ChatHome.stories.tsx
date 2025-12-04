@@ -37,6 +37,7 @@ export const NotStarted: Story = {
 
     return (
       <ChatHome
+        sessionId="storybook-session"
         gameStateController={gameStateController}
         chatService={chatService}
         chatHistoryController={chatHistoryController}
@@ -58,6 +59,7 @@ export const Started_WithConversation: Story = {
 
     return (
       <ChatHome
+        sessionId="storybook-session"
         gameStateController={gameStateController}
         chatService={chatService}
         chatHistoryController={chatHistoryController}

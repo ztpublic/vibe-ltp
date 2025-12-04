@@ -13,6 +13,7 @@ export interface MockGameStateControllerOptions {
   gameState?: GameState;
   puzzleContent?: PuzzleContent | null;
   isConnected?: boolean;
+  sessionId?: string;
 }
 
 /**
@@ -27,6 +28,7 @@ export function useMockGameStateController(
     options?.puzzleContent || null
   );
   const [isConnected] = useState<boolean>(options?.isConnected ?? true);
+  const sessionId = options?.sessionId ?? 'mock-session';
 
   const startGame = useCallback((content: PuzzleContent) => {
     setGameState('Started');
@@ -42,6 +44,7 @@ export function useMockGameStateController(
     gameState,
     puzzleContent,
     isConnected,
+    sessionId,
     startGame,
     resetGame,
   };

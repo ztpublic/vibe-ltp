@@ -213,8 +213,16 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
       if (error instanceof Error && error.message === 'Response timeout') {
         errorMsg = '⏱️ 请求超时（30秒），请重试。';
       } else if (error instanceof Error) {
-        // Show the actual error from remote server
-        errorMsg = `❌ 错误: ${error.message}`;
+        const msg = error.message || '';
+        if (msg.includes('410') || msg.toLowerCase().includes('ended')) {
+          errorMsg = '🛑 房间已结束，请返回大厅或重新开始。';
+        } else if (msg.includes('404')) {
+          errorMsg = '❌ 房间不存在或已被清理，请返回大厅。';
+        } else if (msg.includes('409')) {
+          errorMsg = '⚠️ 本局尚未开始，请先点击“开始新汤”。';
+        } else {
+          errorMsg = `❌ 错误: ${msg}`;
+        }
       } else {
         errorMsg = '❌ 发生未知错误，请稍后重试。';
       }

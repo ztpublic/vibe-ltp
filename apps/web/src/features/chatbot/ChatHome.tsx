@@ -10,6 +10,7 @@ import type { BotMessage } from '@vibe-ltp/shared';
 import type { Toast } from './utils/notifications';
 
 export interface ChatHomeProps {
+  sessionId: string;
   gameStateController: GameStateController;
   chatService: ChatService;
   chatHistoryController?: ChatHistoryController;
@@ -19,6 +20,7 @@ export interface ChatHomeProps {
 }
 
 export const ChatHome = ({ 
+  sessionId,
   gameStateController,
   chatService, 
   chatHistoryController,
@@ -32,6 +34,7 @@ export const ChatHome = ({
   
   const isGameNotStarted = gameState === 'NotStarted';
   const isGameStarted = gameState === 'Started';
+  const isGameEnded = gameState === 'Ended';
 
   const handleStartGameClick = () => {
     setIsDialogOpen(true);
@@ -70,6 +73,26 @@ export const ChatHome = ({
   return (
     <IdentityProvider>
       <div className="h-screen bg-[#1e1e1e] flex flex-col">
+        <header className="flex items-center justify-between px-6 py-3 border-b border-[#3e3e42] bg-[#252526]">
+          <div>
+            <p className="text-sm text-[#9cdcfe]">房间</p>
+            <p className="font-mono text-xs text-white break-all">{sessionId}</p>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-[#cccccc]">
+            <span className={`px-2 py-1 rounded ${
+              isGameStarted ? 'bg-emerald-500/20 text-emerald-200' :
+              isGameNotStarted ? 'bg-amber-500/20 text-amber-200' :
+              'bg-slate-500/20 text-slate-200'
+            }`}>
+              状态：{gameState}
+            </span>
+            {isGameEnded && (
+              <span className="px-2 py-1 rounded bg-red-500/20 text-red-200 border border-red-500/40">
+                房间已结束，重新开始以开启新局
+              </span>
+            )}
+          </div>
+        </header>
         <main className="flex-1 flex items-center justify-center p-4 overflow-hidden relative">
           <div className="absolute top-4 right-4 space-y-2">
             {toasts.map((toast) => (
@@ -94,6 +117,11 @@ export const ChatHome = ({
                 <h2 className="text-xl font-semibold text-white mb-4">汤面</h2>
                 <div className="text-[#cccccc] whitespace-pre-wrap flex-1 overflow-auto">
                   {puzzleContent?.soupSurface || '等待开始新汤...'}
+                  {isGameEnded && (
+                    <div className="mt-3 text-sm text-red-200">
+                      房间已结束，点击“开始新汤”重新开局。
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -104,22 +132,29 @@ export const ChatHome = ({
                 ref={chatbotRef} 
                 chatService={chatService} 
                 chatHistoryController={chatHistoryController}
-                disabled={isGameNotStarted} 
+                disabled={isGameNotStarted || isGameEnded} 
               />
+              {(isGameNotStarted || isGameEnded) && (
+                <div className="mt-2 text-xs text-[#aaaaaa]">
+                  {isGameNotStarted
+                    ? '游戏未开始，先点击“开始新汤”开启本局。'
+                    : '本局已结束，重新开始后再继续聊天。'}
+                </div>
+              )}
             </div>
             
             {/* Right side - Action Buttons */}
             <div className="flex flex-col gap-4">
               <button
                 className={`px-6 py-3 rounded-lg transition-colors whitespace-nowrap ${
-                  isGameNotStarted
+                  isGameNotStarted || isGameEnded
                     ? 'bg-[#0e639c] hover:bg-[#1177bb] text-white cursor-pointer'
                     : 'bg-[#3e3e42] text-[#858585] cursor-not-allowed'
                 }`}
                 onClick={handleStartGameClick}
                 disabled={isGameStarted}
               >
-                开始新汤
+                {isGameEnded ? '重新开始' : '开始新汤'}
               </button>
               <button
                 className={`px-6 py-3 rounded-lg transition-colors border border-[#3e3e42] whitespace-nowrap ${
@@ -128,7 +163,7 @@ export const ChatHome = ({
                     : 'bg-[#2d2d30] text-[#858585] cursor-not-allowed'
                 }`}
                 onClick={handleRevealTruth}
-                disabled={isGameNotStarted}
+                disabled={isGameNotStarted || isGameEnded}
               >
                 公布答案
               </button>

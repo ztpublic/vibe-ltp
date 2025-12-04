@@ -19,15 +19,28 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:400
  * Hook that provides a socket-based game state controller for production
  * Manages Socket.IO connection and synchronizes state with server
  */
-export function useSocketGameStateController(onNotify?: (toast: ToastInput) => void): GameStateController {
-  const [gameState, setGameState] = useState<GameState>('NotStarted');
-  const [puzzleContent, setPuzzleContent] = useState<PuzzleContent | null>(null);
+export function useSocketGameStateController(
+  sessionId: string,
+  onNotify?: (toast: ToastInput) => void,
+  initial?: { state?: GameState; puzzleContent?: PuzzleContent | null },
+): GameStateController {
+  const [gameState, setGameState] = useState<GameState>(initial?.state ?? 'NotStarted');
+  const [puzzleContent, setPuzzleContent] = useState<PuzzleContent | null>(initial?.puzzleContent ?? null);
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
+    if (initial?.state) {
+      setGameState(initial.state);
+    }
+    if (initial && 'puzzleContent' in initial) {
+      setPuzzleContent(initial.puzzleContent ?? null);
+    }
+  }, [initial?.puzzleContent, initial?.state]);
+
+  useEffect(() => {
     // Acquire socket from singleton manager
-    const socket = acquireSocket(SOCKET_URL);
+    const socket = acquireSocket(SOCKET_URL, sessionId);
     socketRef.current = socket;
 
     // Attach lifecycle handlers
@@ -52,6 +65,7 @@ export function useSocketGameStateController(onNotify?: (toast: ToastInput) => v
 
     // Listen for game state updates
     const handleGameStateUpdate = (data: GameStateData) => {
+      if (data.sessionId && data.sessionId !== sessionId) return;
       setGameState(data.state);
       if (data.puzzleContent) {
         setPuzzleContent(data.puzzleContent);
@@ -72,7 +86,7 @@ export function useSocketGameStateController(onNotify?: (toast: ToastInput) => v
       releaseSocket(socket);
       socketRef.current = null;
     };
-  }, [onNotify]);
+  }, [onNotify, sessionId]);
 
   const startGame = useCallback(
     (content: PuzzleContent) => {
@@ -132,6 +146,7 @@ export function useSocketGameStateController(onNotify?: (toast: ToastInput) => v
     gameState,
     puzzleContent,
     isConnected,
+    sessionId,
     startGame,
     resetGame,
   };

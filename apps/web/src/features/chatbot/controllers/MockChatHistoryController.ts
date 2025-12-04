@@ -13,7 +13,8 @@ import type { ChatHistoryController, ChatHistoryMessage } from './ChatHistoryCon
  * Stores messages in local state, no external dependencies
  */
 export function useMockChatHistoryController(
-  initialMessages: ChatHistoryMessage[] = []
+  initialMessages: ChatHistoryMessage[] = [],
+  sessionId = 'mock-session',
 ): ChatHistoryController {
   const [messages, setMessages] = useState<ChatHistoryMessage[]>(initialMessages);
 
@@ -38,6 +39,7 @@ export function useMockChatHistoryController(
   }, [messages]);
 
   return {
+    sessionId,
     messages,
     onMessageAdded,
     syncHistory,

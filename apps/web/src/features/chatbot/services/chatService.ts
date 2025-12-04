@@ -1,6 +1,8 @@
 import type { ChatMessage, ChatResponse, UserMessage } from '@vibe-ltp/shared';
 
 export interface ChatService {
+  /** Optional session identifier this service is bound to */
+  sessionId?: string;
   /**
    * Send a user message and receive bot reply
    * @param userMessage - Complete user message with metadata

@@ -6,12 +6,14 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "paths": {
-      "@vibe-ltp/shared": ["../../packages/shared/src/index.ts"]
+      "@vibe-ltp/shared": ["../../packages/shared/src/index.ts"],
+      "@vibe-ltp/puzzle-core": ["../../packages/puzzle-core/src/index.ts"]
     }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"],
   "references": [
-    { "path": "../../packages/shared" }
+    { "path": "../../packages/shared" },
+    { "path": "../../packages/puzzle-core" }
   ]
 }

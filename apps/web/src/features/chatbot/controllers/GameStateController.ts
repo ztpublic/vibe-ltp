@@ -14,6 +14,9 @@ export interface GameStateController {
   
   /** Connection status indicator */
   isConnected: boolean;
+
+  /** Session identifier the controller is bound to */
+  sessionId: string;
   
   /** Initiate a new game session */
   startGame: (content: PuzzleContent) => void;

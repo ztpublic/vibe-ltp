@@ -19,8 +19,12 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${p
  * Hook that provides a socket-based chat history controller for production
  * Handles chat history sync and message persistence via Socket.IO
  */
-export function useSocketChatHistoryController(onNotify?: (toast: ToastInput) => void): ChatHistoryController {
-  const [messages, setMessages] = useState<ChatHistoryMessage[]>([]);
+export function useSocketChatHistoryController(
+  sessionId: string,
+  onNotify?: (toast: ToastInput) => void,
+  initialMessages: ChatHistoryMessage[] = [],
+): ChatHistoryController {
+  const [messages, setMessages] = useState<ChatHistoryMessage[]>(initialMessages);
   const socketRef = useRef<Socket | null>(null);
   const hasRestoredRef = useRef(false);
   const everConnectedRef = useRef(false);
@@ -62,9 +66,15 @@ export function useSocketChatHistoryController(onNotify?: (toast: ToastInput) =>
       return combined;
     });
   }, []);
+  // Adopt initial messages when provided (e.g., join snapshot) before socket sync arrives
+  useEffect(() => {
+    if (initialMessages.length > 0 && !hasRestoredRef.current) {
+      mergeAndSortMessages(initialMessages);
+    }
+  }, [initialMessages, mergeAndSortMessages]);
 
   useEffect(() => {
-    const socket = acquireSocket(SOCKET_URL);
+    const socket = acquireSocket(SOCKET_URL, sessionId);
     socketRef.current = socket;
 
     const handleConnect = () => {
@@ -78,7 +88,8 @@ export function useSocketChatHistoryController(onNotify?: (toast: ToastInput) =>
     };
 
     // Listen for chat history sync (initial load)
-    const handleChatHistorySync = (data: { messages: ChatHistoryMessage[] }) => {
+    const handleChatHistorySync = (data: { sessionId?: string; messages: ChatHistoryMessage[] }) => {
+      if (data.sessionId && data.sessionId !== sessionId) return;
       onNotify?.({
         type: 'info',
         message: `已同步历史消息 (${data.messages.length} 条)`,
@@ -89,7 +100,8 @@ export function useSocketChatHistoryController(onNotify?: (toast: ToastInput) =>
     };
 
     // Listen for new messages broadcast from server
-    const handleMessageAdded = (data: { message: ChatHistoryMessage }) => {
+    const handleMessageAdded = (data: { sessionId?: string; message: ChatHistoryMessage }) => {
+      if (data.sessionId && data.sessionId !== sessionId) return;
       mergeAndSortMessages([data.message]);
     };
 
@@ -106,12 +118,13 @@ export function useSocketChatHistoryController(onNotify?: (toast: ToastInput) =>
       releaseSocket(socket);
       socketRef.current = null;
     };
-  }, [mergeAndSortMessages]);
+  }, [mergeAndSortMessages, onNotify, sessionId]);
 
   const onMessageAdded = useCallback((message: ChatHistoryMessage) => {
     const socket = socketRef.current;
     if (socket?.connected) {
       socket.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, {
+        sessionId,
         message: {
           ...message,
           timestamp: message.timestamp || new Date().toISOString(),
@@ -125,7 +138,7 @@ export function useSocketChatHistoryController(onNotify?: (toast: ToastInput) =>
         });
       }
     }
-  }, []);
+  }, [sessionId]);
 
   const syncHistory = useCallback(async () => {
     if (hasRestoredRef.current) {
@@ -165,9 +178,10 @@ export function useSocketChatHistoryController(onNotify?: (toast: ToastInput) =>
       rejectPendingRestores(error);
       return messages;
     }
-  }, [messages]);
+  }, [messages, sessionId]);
 
   return {
+    sessionId,
     messages,
     onMessageAdded,
     syncHistory,

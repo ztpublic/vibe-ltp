@@ -1,5 +1,12 @@
 import { Router, type Router as RouterType } from 'express';
-import { SOCKET_EVENTS, type ChatRequest, type ChatResponse, type ChatReplyDecoration } from '@vibe-ltp/shared';
+import {
+  SOCKET_EVENTS,
+  type ChatRequest,
+  type ChatResponse,
+  type ChatReplyDecoration,
+  type GameSessionId,
+  type GameSessionSnapshot,
+} from '@vibe-ltp/shared';
 import {
   type PuzzleContext,
   validatePuzzleQuestion,
@@ -18,20 +25,35 @@ const buildReplyPreview = (text: string, maxLength = 80) => {
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 };
 
+function requireActiveSession(
+  sessionId: GameSessionId,
+): { ok: true; session: GameSessionSnapshot } | { ok: false; status: number; message: string } {
+  const session = gameState.getSession(sessionId);
+  if (!session) return { ok: false, status: 404, message: `Session not found: ${sessionId}` };
+  if (session.state === 'Ended') return { ok: false, status: 410, message: `Session ended: ${sessionId}` };
+  return { ok: true, session };
+}
+
 router.post('/chat', async (req, res) => {
-  const body = req.body as ChatRequest;
+  const body = req.body as ChatRequest & { sessionId?: GameSessionId };
 
   try {
     const userMessage = body.message;
     const userText = userMessage.content;
     const userNickname = userMessage.nickname;
+    const sessionId = body.sessionId ?? gameState.getDefaultSessionId();
+
+    const sessionCheck = requireActiveSession(sessionId);
+    if (!sessionCheck.ok) {
+      return res.status(sessionCheck.status).json({ error: sessionCheck.message });
+    }
 
     // Log user identity for analytics
-    console.log(`[Chat] User "${userNickname}" asked: ${userText}`);
+    console.log(`[Chat] User "${userNickname}" asked: ${userText} (session=${sessionId})`);
 
     // Check if game has started and puzzle is loaded
-    const currentGameState = gameState.getGameState();
-    const puzzleContent = gameState.getPuzzleContent();
+    const currentGameState = gameState.getGameState(sessionId);
+    const puzzleContent = gameState.getPuzzleContent(sessionId);
 
     if (currentGameState !== 'Started' || !puzzleContent) {
       const reply: ChatResponse['reply'] = {
@@ -40,15 +62,15 @@ router.post('/chat', async (req, res) => {
         content: '游戏还未开始，请先开始一个谜题。\n\nThe game hasn\'t started yet. Please start a puzzle first.',
         timestamp: new Date().toISOString(),
       };
-      
-      return res.json({ reply });
+
+      return res.status(409).json({ error: 'Game not started', reply, sessionId });
     }
 
     // Build puzzle context for agent
     const puzzleContext: PuzzleContext = {
       surface: puzzleContent.soupSurface,
       truth: puzzleContent.soupTruth,
-      conversationHistory: gameState.getConversationHistory(),
+      conversationHistory: gameState.getConversationHistory(sessionId),
     };
 
     // Use question validator agent to evaluate question
@@ -59,10 +81,7 @@ router.post('/chat', async (req, res) => {
     );
 
     // Add to question history
-    gameState.addQuestionToHistory(
-      userText,
-      evaluation.answer
-    );
+    gameState.addQuestionToHistory(userText, evaluation.answer, sessionId);
 
     // Build decoration payload for the originating user message
     const decoration: ChatReplyDecoration = {
@@ -82,11 +101,11 @@ router.post('/chat', async (req, res) => {
       answerTip: evaluation.tip,
     };
 
-    gameState.addChatMessage(decoratedUserMessage);
+    gameState.addChatMessage(decoratedUserMessage, sessionId);
 
     const io = getSocketServer();
     if (io) {
-      io.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { message: decoratedUserMessage });
+      io.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { sessionId, message: decoratedUserMessage });
     }
 
     const response: ChatResponse = { decoration };
@@ -107,17 +126,23 @@ router.post('/chat', async (req, res) => {
 });
 
 router.post('/solution', async (req, res) => {
-  const body = req.body as ChatRequest;
+  const body = req.body as ChatRequest & { sessionId?: GameSessionId };
 
   try {
     const userMessage = body.message;
     const userText = userMessage.content;
     const userNickname = userMessage.nickname;
+    const sessionId = body.sessionId ?? gameState.getDefaultSessionId();
 
-    console.log(`[Solution] User "${userNickname}" proposed: ${userText}`);
+    const sessionCheck = requireActiveSession(sessionId);
+    if (!sessionCheck.ok) {
+      return res.status(sessionCheck.status).json({ error: sessionCheck.message });
+    }
 
-    const currentGameState = gameState.getGameState();
-    const puzzleContent = gameState.getPuzzleContent();
+    console.log(`[Solution] User "${userNickname}" proposed: ${userText} (session=${sessionId})`);
+
+    const currentGameState = gameState.getGameState(sessionId);
+    const puzzleContent = gameState.getPuzzleContent(sessionId);
 
     if (currentGameState !== 'Started' || !puzzleContent) {
       const reply: ChatResponse['reply'] = {
@@ -126,8 +151,8 @@ router.post('/solution', async (req, res) => {
         content: '游戏还未开始，请先开始一个谜题。\n\nThe game hasn\'t started yet. Please start a puzzle first.',
         timestamp: new Date().toISOString(),
       };
-      
-      return res.json({ reply });
+
+      return res.status(409).json({ error: 'Game not started', reply, sessionId });
     }
 
     const evaluation = await validateTruthProposal(
@@ -170,13 +195,13 @@ router.post('/solution', async (req, res) => {
       timestamp: reply.timestamp ?? new Date().toISOString(),
     };
 
-    gameState.addChatMessage(persistedUserMessage);
-    gameState.addChatMessage(botMessage);
+    gameState.addChatMessage(persistedUserMessage, sessionId);
+    gameState.addChatMessage(botMessage, sessionId);
 
     const io = getSocketServer();
     if (io) {
-      io.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { message: persistedUserMessage });
-      io.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { message: botMessage });
+      io.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { sessionId, message: persistedUserMessage });
+      io.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { sessionId, message: botMessage });
     }
 
     const response: ChatResponse = { reply };

@@ -3,6 +3,7 @@
  */
 
 import type { AnswerType, ChatMessage, UserMessage, BotMessage, MessageId } from '../types/messages';
+import type { GameSessionId } from '../types/game';
 
 /**
  * Chat Request
@@ -14,6 +15,9 @@ export interface ChatRequest {
   
   /** Conversation history for context */
   history: ChatMessage[];
+
+  /** Target session ID for multi-session gameplay */
+  sessionId?: GameSessionId;
 }
 
 /**

@@ -1,0 +1,26 @@
+{
+  "name": "@vibe-ltp/puzzle-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vibe-ltp/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@vibe-ltp/config": "workspace:*",
+    "typescript": "^5.6.3"
+  }
+}
