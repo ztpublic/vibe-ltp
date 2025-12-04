@@ -1,11 +1,11 @@
 import React from 'react';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { ChatbotMessage, UserChatMessage } from '@vibe-ltp/ui/chatbot';
-import type { IChatState, IMessage } from '@vibe-ltp/ui/chatbot';
-import { getFeedbackSnapshot } from '@vibe-ltp/ui/chatbot';
+import { ChatbotMessage, UserChatMessage } from '../src/ui/chatbot';
+import type { IChatState, IMessage } from '../src/ui/chatbot';
+import { getFeedbackSnapshot } from '../src/ui/chatbot';
 
-// Import styles from the package so the bubble renders correctly in Storybook
-import '@vibe-ltp/ui/chatbot/main.css';
+// Import styles from the chatbot kit so the bubble renders correctly in Storybook
+import '../src/ui/chatbot/main.css';
 
 const sampleDecorator = {
   id: 'warning',

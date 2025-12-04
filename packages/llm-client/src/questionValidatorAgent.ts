@@ -239,5 +239,5 @@ export function formatValidationReply(result: QuestionValidationResult): string 
     unknown: '未知',
   };
 
-  return answerLabels[result.answer];
+  return answerLabels[result.answer] ?? '未知';
 }

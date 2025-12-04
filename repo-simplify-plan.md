@@ -1,0 +1,3 @@
+packages/llm-client powers the server chat route (apps/server/src/http/routes/chat.ts) and packages/agent-lab demos. If you’re fine coupling these, relocate it to apps/server/src/llm and have the demos import from there (or drop the demos); otherwise keep it separate.
+packages/agent-lab is purely experimental CLI code. For a leaner workspace, move it to a tools/ folder excluded from pnpm-workspace.yaml or delete it if you’re not running those demos.
+packages/config just centralizes lint/TS/tailwind configs. If you prefer fewer packages, inline those configs into the root/app configs and remove the dependency, but the current setup already keeps duplication low.

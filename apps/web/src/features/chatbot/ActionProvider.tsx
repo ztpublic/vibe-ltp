@@ -3,7 +3,7 @@
 import React, { ReactNode } from 'react';
 import type { BotMessage, ChatMessage, ChatReplyDecoration, ChatResponse, UserMessage } from '@vibe-ltp/shared';
 import type { ChatService } from './services';
-import { truncateText, createChatBotMessage } from '@vibe-ltp/ui/chatbot';
+import { truncateText, createChatBotMessage } from '../../ui/chatbot';
 import type { ChatHistoryController } from './controllers';
 import { v4 as uuidv4 } from 'uuid';
 import type { ChatbotMessageStore, ChatbotUiMessage } from './messageStore';

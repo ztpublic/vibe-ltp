@@ -20,12 +20,11 @@ This document provides context and guidance for AI agents working on the vibe-lt
 ```
 vibe-ltp/
 ├── apps/
-│   ├── web/              # Next.js frontend
+│   ├── web/              # Next.js frontend (local UI kit in src/ui)
 │   └── server/           # Express + Socket.IO backend
 ├── packages/
 │   ├── puzzle-core/      # Domain logic (framework-free)
 │   ├── shared/           # Shared types, DTOs, Zod schemas
-│   ├── ui/               # Shared React components
 │   ├── llm-client/       # OpenRouter client + puzzle agents
 │   ├── agent-lab/        # CLI harness + fixtures for LLM experiments
 │   ├── react-chatbot-kit/ # Vendored chatbot kit used by the web UI
@@ -39,12 +38,11 @@ vibe-ltp/
 |---------|---------|--------------|
 | `puzzle-core` | Pure domain logic (Puzzle, Session models) | `@vibe-ltp/shared` |
 | `shared` | Types, API constants, Zod schemas | `zod` |
-| `ui` | Reusable React components | `react`, `@vibe-ltp/shared` |
 | `llm-client` | OpenRouter client + question validator agent helpers | `ai`, `@openrouter/ai-sdk-provider`, `zod` |
 | `agent-lab` | CLI experiments for LLM agents | `@vibe-ltp/llm-client`, `dotenv` |
 | `react-chatbot-kit` | Vendored chatbot kit | `react-conditionally-render` |
 | `server` | REST API + Socket.IO + LLM question validator | `express`, `socket.io`, `@vibe-ltp/llm-client` |
-| `web` | Next.js UI | `next`, `@vibe-ltp/ui`, `@vibe-ltp/shared` |
+| `web` | Next.js UI (includes local UI kit in `src/ui`) | `next`, `@vibe-ltp/shared` |
 
 ---
 
@@ -125,11 +123,10 @@ pnpm agent-lab:demo:connections # Connection-puzzle agent demo
 - Use Zod for runtime validation
 - Import in both `server` and `web`
 
-### 4. UI Components in `ui`
+### 4. UI Components in `apps/web/src/ui`
 
-- Reusable React components
-- No app-specific logic
-- Use Tailwind for styling
+- Reusable React components co-located with the web app
+- No app-specific logic beyond the chatbot kit; share styles via Tailwind/CSS imports
 
 ### 5. Agent Experiments in `agent-lab`
 

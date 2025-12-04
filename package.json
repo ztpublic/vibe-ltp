@@ -13,7 +13,7 @@
     "build:web": "pnpm -C apps/web build",
     "build:apps": "pnpm run build:server && pnpm run build:web",
     "lint": "eslint .",
-    "typecheck": "pnpm -r exec tsc --noEmit",
+    "typecheck": "pnpm --filter @vibe-ltp/shared build && pnpm --filter @vibe-ltp/llm-client build && pnpm -r exec tsc --noEmit",
     "test": "vitest run",
     "test:agent": "node test-puzzle-agent.mjs",
     "agent-lab:demo": "pnpm -C packages/agent-lab demo",

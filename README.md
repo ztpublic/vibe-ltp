@@ -14,7 +14,7 @@ Multiplayer lateral thinking puzzles with an LLM host, real-time rooms, and a Ne
 
 - **Frontend**: Next.js 16 (App Router), React 18, Tailwind CSS v4, TanStack Query
 - **Backend**: Node.js, Express, Socket.IO (websocket transport)
-- **Shared packages**: `puzzle-core`, `shared`, `ui`, `llm-client`, `agent-lab`, vendored `react-chatbot-kit`
+- **Shared packages**: `puzzle-core`, `shared`, `llm-client`, `agent-lab`, vendored `react-chatbot-kit` (UI kit now lives in `apps/web/src/ui`)
 - **Testing**: Vitest (unit), Playwright (e2e)
 
 ## Getting Started
@@ -62,12 +62,11 @@ Key values from `.env.example`:
 ```
 vibe-ltp/
 ├── apps/
-│   ├── web/              # Next.js frontend (App Router)
+│   ├── web/              # Next.js frontend (App Router; local UI kit in src/ui)
 │   └── server/           # Express + Socket.IO backend
 ├── packages/
 │   ├── puzzle-core/      # Domain logic (pure TS)
 │   ├── shared/           # Shared types, DTOs, Zod schemas
-│   ├── ui/               # Shared React components
 │   ├── llm-client/       # OpenRouter client + question validator agents
 │   ├── agent-lab/        # CLI harness for LLM experiments
 │   ├── react-chatbot-kit/ # Vendored chatbot kit used by web UI

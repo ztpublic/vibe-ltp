@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@vibe-ltp/shared": "workspace:*",
-    "@vibe-ltp/puzzle-core": "workspace:*",
     "@vibe-ltp/llm-client": "workspace:*",
     "express": "^4.21.1",
     "socket.io": "^4.8.1",
