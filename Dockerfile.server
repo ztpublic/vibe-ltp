@@ -1,33 +1,33 @@
-# Dockerfile.web - builds and runs the Next.js web app
+# Dockerfile.server - builds and runs the Express/Socket.IO backend
 FROM node:20-alpine AS base
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-ENV NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable
 
 WORKDIR /app
 
-# Install with maximal cache reuse: copy lockfiles + workspace manifests first
+# Install with good cache reuse: copy lockfiles + workspace manifests first
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY apps/web/package.json apps/web/package.json
 COPY apps/server/package.json apps/server/package.json
+COPY apps/web/package.json apps/web/package.json
 COPY packages/config/package.json packages/config/package.json
 COPY packages/llm-client/package.json packages/llm-client/package.json
 COPY packages/shared/package.json packages/shared/package.json
 
 RUN pnpm install --frozen-lockfile
 
-# Copy full source for the build
+# Copy full source
 COPY . .
 
-# Build shared workspace needed by the web app (force rebuild to refresh dist)
+# Build workspace deps needed by the server (force rebuild to ensure dist exists)
 RUN rm -f packages/shared/tsconfig.tsbuildinfo && pnpm --filter @vibe-ltp/shared exec tsc --build --force
+RUN rm -f packages/llm-client/tsconfig.tsbuildinfo && pnpm --filter @vibe-ltp/llm-client exec tsc --build --force
 
-# Build only the web app
-RUN pnpm build:web
+# Build the server
+RUN pnpm build:server
 
-# Trim devDependencies for the runtime image (CI=true to skip prompt)
+# Trim devDependencies for runtime (CI=true to skip prompt)
 RUN CI=true pnpm prune --prod
 
 # --- RUNTIME IMAGE ---
@@ -36,20 +36,18 @@ FROM node:20-alpine AS runner
 ENV NODE_ENV=production
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-ENV NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable
 
 WORKDIR /app
 
-# Only copy what the running app needs
+# Copy only what is needed at runtime
 COPY --from=base /app/node_modules ./node_modules
-COPY --from=base /app/apps/web ./apps/web
+COPY --from=base /app/apps/server ./apps/server
 COPY --from=base /app/packages ./packages
 COPY --from=base /app/package.json ./package.json
 COPY --from=base /app/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=base /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 
-EXPOSE 3000
+EXPOSE 4000
 
-# Use the app-local start script
-CMD ["pnpm", "-C", "apps/web", "start"]
+CMD ["pnpm", "-C", "apps/server", "start"]
