@@ -52,6 +52,11 @@ export interface IMessageOptions {
   widget?: string;
   delay?: number;
   payload?: any;
+  /** Per-message thumbs visibility + state */
+  showThumbsUp?: boolean;
+  showThumbsDown?: boolean;
+  thumbsUp?: boolean;
+  thumbsDown?: boolean;
   /** Disable automatic loading dismissal for this message */
   disableAutoLoadingDismiss?: boolean;
   
@@ -79,6 +84,11 @@ export interface IMessage extends IBaseMessage {
   delay?: number;
   withAvatar?: boolean;
   payload?: any;
+  /** Thumb feedback controls + state */
+  showThumbsUp?: boolean;
+  showThumbsDown?: boolean;
+  thumbsUp?: boolean;
+  thumbsDown?: boolean;
   
   /** User message: display nickname */
   nickname?: string;

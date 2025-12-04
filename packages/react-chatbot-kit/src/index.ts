@@ -9,6 +9,7 @@ import useChatbot from './hooks/useChatbot';
 // Export utilities
 export * from './utils/messageEncoding';
 export * from './utils/messageRegistry';
+export * from './utils/feedbackRegistry';
 
 export {
   Chatbot,

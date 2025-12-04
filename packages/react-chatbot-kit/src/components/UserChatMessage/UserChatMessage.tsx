@@ -6,9 +6,14 @@ import { callIfExists } from '../Chat/chatUtils';
 import UserIcon from '../../assets/icons/user-alt.svg';
 
 import './UserChatMessage.css';
-import { ICustomComponents, ICustomStyles, IStyleOverride } from '../../interfaces/IConfig';
-import { IMessage } from '../../interfaces/IMessages';
+import {
+  ICustomComponents,
+  ICustomStyles,
+  IStyleOverride,
+} from '../../interfaces/IConfig';
+import { IChatState, IMessage } from '../../interfaces/IMessages';
 import { registerMessageElement } from '../../utils/messageRegistry';
+import ThumbControls from '../ThumbControls/ThumbControls';
 
 const mergeClassNames = (...names: Array<string | undefined | false>) =>
   names.filter(Boolean).join(' ');
@@ -36,6 +41,8 @@ interface IUserChatMessageProps {
   currentUserNickname?: string;
   customStyles?: ICustomStyles;
   messageObject?: IMessage;
+  setState?: React.Dispatch<React.SetStateAction<IChatState>>;
+  onFeedback?: (feedback: unknown) => void;
 }
 
 const UserChatMessage = ({
@@ -46,6 +53,8 @@ const UserChatMessage = ({
   currentUserNickname,
   customStyles,
   messageObject,
+  setState,
+  onFeedback,
 }: IUserChatMessageProps) => {
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -74,6 +83,7 @@ const UserChatMessage = ({
     feedbackOptions: fullMessage.feedbackOptions,
     status: fullMessage.status,
     timestamp: fullMessage.timestamp,
+    onFeedback,
   };
 
   const messageClassName = mergeClassNames(
@@ -83,6 +93,14 @@ const UserChatMessage = ({
   const messageStyle = buildStyle(customStyles?.userMessageBox);
   const decorator = fullMessage.decorators?.[0];
   const decoratorColor = decorator?.color;
+  const showThumbsUp = fullMessage.showThumbsUp ?? true;
+  const showThumbsDown = fullMessage.showThumbsDown ?? true;
+  const feedbackShellClass = mergeClassNames(
+    'message-bubble-shell',
+    showThumbsUp || showThumbsDown
+      ? 'message-bubble-with-feedback-left'
+      : undefined
+  );
   const decoratedMessageStyle = {
     ...messageStyle,
     ...(decoratorColor ? { border: `1px solid ${decoratorColor}` } : {}),
@@ -93,6 +111,16 @@ const UserChatMessage = ({
     customStyles?.userAvatar?.className
   );
   const avatarWrapperStyle = buildStyle(customStyles?.userAvatar);
+  const avatarIcon =
+    typeof UserIcon === 'function' ? (
+      <UserIcon className="react-chatbot-kit-user-avatar-icon" />
+    ) : (
+      <img
+        src={UserIcon as unknown as string}
+        alt="User avatar"
+        className="react-chatbot-kit-user-avatar-icon"
+      />
+    );
 
   return (
     <div 
@@ -111,32 +139,54 @@ const UserChatMessage = ({
         
         <ConditionallyRender
           condition={!!customComponents.userChatMessage}
-          show={callIfExists(customComponents.userChatMessage, {
-            message: fullMessage,
-            currentUserNickname,
-          })}
+          show={
+            <div className={feedbackShellClass}>
+              {callIfExists(customComponents.userChatMessage, {
+                message: fullMessage,
+                currentUserNickname,
+              })}
+              <ThumbControls
+                message={fullMessage}
+                align="left"
+                showThumbsUp={showThumbsUp}
+                showThumbsDown={showThumbsDown}
+                setState={setState}
+                onFeedback={onFeedback}
+              />
+            </div>
+          }
           elseShow={
-            <div className={messageClassName} style={decoratedMessageStyle}>
-              {message}
-              <ConditionallyRender
-                condition={!!decorator?.icon}
-                show={
-                  <div
-                    className="message-decorator-icon"
-                    style={{ color: decoratorColor }}
-                    aria-label="message decorator"
-                  >
-                    {decorator?.icon?.startsWith('http') ? (
-                      <img
-                        src={decorator.icon}
-                        alt={decorator.label || 'Decorator icon'}
-                        className="message-decorator-icon-image"
-                      />
-                    ) : (
-                      decorator?.icon
-                    )}
-                  </div>
-                }
+            <div className={feedbackShellClass}>
+              <div className={messageClassName} style={decoratedMessageStyle}>
+                {message}
+                <ConditionallyRender
+                  condition={!!decorator?.icon}
+                  show={
+                    <div
+                      className="message-decorator-icon"
+                      style={{ color: decoratorColor }}
+                      aria-label="message decorator"
+                    >
+                      {decorator?.icon?.startsWith('http') ? (
+                        <img
+                          src={decorator.icon}
+                          alt={decorator.label || 'Decorator icon'}
+                          className="message-decorator-icon-image"
+                        />
+                      ) : (
+                        decorator?.icon
+                      )}
+                    </div>
+                  }
+                />
+              </div>
+              <ThumbControls
+                message={fullMessage}
+                align="left"
+                showThumbsUp={showThumbsUp}
+                showThumbsDown={showThumbsDown}
+                setState={setState}
+                onFeedback={onFeedback}
               />
             </div>
           }
@@ -165,7 +215,7 @@ const UserChatMessage = ({
             style={avatarWrapperStyle}
           >
             <div className="react-chatbot-kit-user-avatar-container">
-              <UserIcon className="react-chatbot-kit-user-avatar-icon" />
+              {avatarIcon}
             </div>
           </div>
         }

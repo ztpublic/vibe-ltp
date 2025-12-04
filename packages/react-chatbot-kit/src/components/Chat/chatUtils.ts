@@ -58,6 +58,10 @@ export const createChatBotMessage = (
     decorators: options.decorators,
     actions: options.actions,
     feedbackOptions: options.feedbackOptions,
+    showThumbsUp: options.showThumbsUp,
+    showThumbsDown: options.showThumbsDown,
+    thumbsUp: options.thumbsUp,
+    thumbsDown: options.thumbsDown,
     status: options.status,
     timestamp: options.timestamp,
   };
@@ -86,6 +90,10 @@ export const createClientMessage = (
     decorators: options.decorators,
     actions: options.actions,
     feedbackOptions: options.feedbackOptions,
+    showThumbsUp: options.showThumbsUp,
+    showThumbsDown: options.showThumbsDown,
+    thumbsUp: options.thumbsUp,
+    thumbsDown: options.thumbsDown,
     status: options.status,
     timestamp: options.timestamp,
   };

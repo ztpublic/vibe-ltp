@@ -183,6 +183,7 @@ const Chat = ({
           messageObject={messageObject}
           customStyles={customStyles}
           currentUserNickname={currentUserNickname}
+          setState={setState}
         />
         {widget ? widget : null}
       </>

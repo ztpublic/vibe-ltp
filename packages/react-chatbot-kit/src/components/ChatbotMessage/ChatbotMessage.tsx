@@ -14,6 +14,7 @@ import {
 import { scrollToMessage } from '../../utils/messageRegistry';
 import { IChatState, IMessage } from '../../interfaces/IMessages';
 import { registerMessageElement } from '../../utils/messageRegistry';
+import ThumbControls from '../ThumbControls/ThumbControls';
 
 const mergeClassNames = (...names: Array<string | undefined | false>) =>
   names.filter(Boolean).join(' ');
@@ -161,6 +162,14 @@ const ChatbotMessage = ({
     ...bubbleStyle,
     ...(decoratorColor ? { border: `1px solid ${decoratorColor}` } : {}),
   };
+  const showThumbsUp = fullMessage.showThumbsUp ?? true;
+  const showThumbsDown = fullMessage.showThumbsDown ?? true;
+  const feedbackShellClass = mergeClassNames(
+    'message-bubble-shell',
+    showThumbsUp || showThumbsDown
+      ? 'message-bubble-with-feedback-right'
+      : undefined
+  );
   const bubbleClassName = mergeClassNames(
     'react-chatbot-kit-chat-bot-message',
     customStyles?.botMessageBox?.className
@@ -230,52 +239,62 @@ const ChatbotMessage = ({
               }
             />
 
-            <ConditionallyRender
-              condition={!!customComponents?.botChatMessage}
-              show={callIfExists(customComponents?.botChatMessage, {
-                message: fullMessage,
-                defaultLoader: (
-                  <div className={loaderClassName} style={loaderStyle}>
-                    <Loader />
+            <div className={feedbackShellClass}>
+              <ConditionallyRender
+                condition={!!customComponents?.botChatMessage}
+                show={callIfExists(customComponents?.botChatMessage, {
+                  message: fullMessage,
+                  defaultLoader: (
+                    <div className={loaderClassName} style={loaderStyle}>
+                      <Loader />
+                    </div>
+                  ),
+                  onReplyScroll: handleReplyClick,
+                  onFeedback,
+                })}
+                elseShow={
+                  <div className={bubbleClassName} style={decoratedBubbleStyle}>
+                    <ConditionallyRender
+                      condition={!!loading}
+                      show={
+                        <div className={loaderClassName} style={loaderStyle}>
+                          <Loader />
+                        </div>
+                      }
+                      elseShow={<span>{message}</span>}
+                    />
+                    <ConditionallyRender
+                      condition={!!decorator?.icon}
+                      show={
+                        <div
+                          className="message-decorator-icon"
+                          style={{ color: decoratorColor }}
+                          aria-label="message decorator"
+                        >
+                          {decorator?.icon?.startsWith('http') ? (
+                            <img
+                              src={decorator.icon}
+                              alt={decorator.label || 'Decorator icon'}
+                              className="message-decorator-icon-image"
+                            />
+                          ) : (
+                            decorator?.icon
+                          )}
+                        </div>
+                      }
+                    />
                   </div>
-                ),
-                onReplyScroll: handleReplyClick,
-                onFeedback,
-              })}
-              elseShow={
-                <div className={bubbleClassName} style={decoratedBubbleStyle}>
-                  <ConditionallyRender
-                    condition={!!loading}
-                    show={
-                      <div className={loaderClassName} style={loaderStyle}>
-                        <Loader />
-                      </div>
-                    }
-                    elseShow={<span>{message}</span>}
-                  />
-                  <ConditionallyRender
-                    condition={!!decorator?.icon}
-                    show={
-                      <div
-                        className="message-decorator-icon"
-                        style={{ color: decoratorColor }}
-                        aria-label="message decorator"
-                      >
-                        {decorator?.icon?.startsWith('http') ? (
-                          <img
-                            src={decorator.icon}
-                            alt={decorator.label || 'Decorator icon'}
-                            className="message-decorator-icon-image"
-                          />
-                        ) : (
-                          decorator?.icon
-                        )}
-                      </div>
-                    }
-                  />
-                </div>
-              }
-            />
+                }
+              />
+              <ThumbControls
+                message={fullMessage}
+                align="right"
+                showThumbsUp={showThumbsUp}
+                showThumbsDown={showThumbsDown}
+                setState={setState}
+                onFeedback={onFeedback}
+              />
+            </div>
             <ConditionallyRender
               condition={!!customComponents?.botMessageAside}
               show={callIfExists(customComponents?.botMessageAside, decorationProps)}
