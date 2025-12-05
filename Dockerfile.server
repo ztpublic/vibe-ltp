@@ -34,9 +34,12 @@ RUN test -f apps/server/dist/index.js
 # --- RUNTIME IMAGE ---
 FROM node:20-alpine AS runner
 
+ARG CORS_ORIGIN=http://localhost:3000
+
 ENV NODE_ENV=production
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+ENV CORS_ORIGIN=${CORS_ORIGIN}
 RUN corepack enable
 
 WORKDIR /app
