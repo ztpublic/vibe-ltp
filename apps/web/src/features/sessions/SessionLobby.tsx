@@ -28,9 +28,6 @@ export function SessionLobby({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const [title, setTitle] = useState('');
-  const [hostNickname, setHostNickname] = useState('');
-  const [joinId, setJoinId] = useState('');
 
   const refresh = async () => {
     try {
@@ -53,10 +50,7 @@ export function SessionLobby({
   const handleCreate = async () => {
     try {
       setCreating(true);
-      const res = await sessionCreator({
-        title: title || undefined,
-        hostNickname: hostNickname || undefined,
-      });
+      const res = await sessionCreator({});
       const nextId = res.session.id;
       onCreate?.(nextId);
       router.push(`/rooms/${nextId}`);
@@ -75,34 +69,21 @@ export function SessionLobby({
     router.push(`/rooms/${nextId}`);
   };
 
-  return (
-    <div className="min-h-screen bg-[#1e1e1e] text-white flex flex-col">
-      <header className="px-6 py-4 border-b border-[#3e3e42] bg-[#252526] flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">海龟汤 Lobby</h1>
-          <p className="text-sm text-[#cccccc]">浏览现有房间或创建新的游戏。</p>
-        </div>
-        <button
-          className="text-sm text-[#9cdcfe] underline underline-offset-2"
-          onClick={refresh}
-          disabled={loading}
-        >
-          刷新
-        </button>
-      </header>
 
-      <main className="flex-1 px-6 py-6 grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
-        <section className="border border-[#3e3e42] bg-[#252526] rounded-lg p-4 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
+  return (
+    <div className="h-screen bg-[#1e1e1e] text-white flex flex-col overflow-hidden">
+      <main className="flex-1 min-h-0 px-6 py-6 grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 overflow-hidden">
+        <section className="border border-[#3e3e42] bg-[#252526] rounded-lg p-4 flex flex-col gap-4 h-full min-h-0 overflow-hidden">
+          <div className="flex items-center justify-between flex-shrink-0">
             <h2 className="text-lg font-semibold">房间列表</h2>
             {loading && <span className="text-xs text-[#9cdcfe]">加载中...</span>}
           </div>
           {error && (
-            <div className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded p-2">
+            <div className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded p-2 flex-shrink-0">
               {error}
             </div>
           )}
-          <div className="space-y-3 overflow-auto">
+          <div className="space-y-3 overflow-auto flex-1 min-h-0">
             {sessions.length === 0 && !loading && (
               <div className="text-sm text-[#aaaaaa]">暂无房间，创建一个新的吧。</div>
             )}
@@ -113,7 +94,7 @@ export function SessionLobby({
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium">{session.title || '未命名房间'}</p>
+                    <p className="font-medium font-mono">{session.id}</p>
                     <span className={`text-xs px-2 py-0.5 rounded ${
                       session.state === 'Started'
                         ? 'bg-emerald-500/20 text-emerald-200'
@@ -124,7 +105,6 @@ export function SessionLobby({
                       {session.state}
                     </span>
                   </div>
-                  <p className="text-xs text-[#9cdcfe] font-mono break-all">{session.id}</p>
                   <p className="text-xs text-[#cccccc]">
                     玩家数：{session.playerCount} · 主持：{session.hostNickname || '未设置'}
                   </p>
@@ -140,26 +120,7 @@ export function SessionLobby({
           </div>
         </section>
 
-        <section className="border border-[#3e3e42] bg-[#252526] rounded-lg p-4 space-y-4">
-          <h2 className="text-lg font-semibold">创建房间</h2>
-          <div className="space-y-2">
-            <label className="text-sm text-[#cccccc]">房间名</label>
-            <input
-              className="w-full bg-[#1e1e1e] border border-[#3e3e42] rounded px-3 py-2 text-sm focus:outline-none focus:border-[#0e639c]"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="例如：晚间谜题局"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm text-[#cccccc]">昵称（可选，主持人）</label>
-            <input
-              className="w-full bg-[#1e1e1e] border border-[#3e3e42] rounded px-3 py-2 text-sm focus:outline-none focus:border-[#0e639c]"
-              value={hostNickname}
-              onChange={(e) => setHostNickname(e.target.value)}
-              placeholder="主持人昵称"
-            />
-          </div>
+        <section className="border border-[#3e3e42] bg-[#252526] rounded-lg p-4">
           <button
             className="w-full px-4 py-2 rounded bg-[#0e639c] hover:bg-[#1177bb] text-white disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleCreate}
@@ -167,24 +128,6 @@ export function SessionLobby({
           >
             {creating ? '创建中...' : '创建新房间'}
           </button>
-
-          <div className="pt-4 border-t border-[#3e3e42] space-y-2">
-            <label className="text-sm text-[#cccccc]">加入房间</label>
-            <div className="flex gap-2">
-              <input
-                className="flex-1 bg-[#1e1e1e] border border-[#3e3e42] rounded px-3 py-2 text-sm focus:outline-none focus:border-[#0e639c]"
-                value={joinId}
-                onChange={(e) => setJoinId(e.target.value)}
-                placeholder="输入房间 ID"
-              />
-              <button
-                className="px-4 py-2 rounded bg-[#2d2d30] hover:bg-[#3e3e42] text-white border border-[#3e3e42]"
-                onClick={() => handleJoin(joinId)}
-              >
-                加入
-              </button>
-            </div>
-          </div>
         </section>
       </main>
     </div>
