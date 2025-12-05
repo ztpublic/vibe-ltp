@@ -286,7 +286,7 @@ export function getQuestionHistory(sessionId: GameSessionId = DEFAULT_SESSION_ID
 export function getConversationHistory(
   sessionId: GameSessionId = DEFAULT_SESSION_ID,
 ): Array<{ question: string; answer: SessionQuestionHistoryEntry['answer'] }> {
-  return ensureSession(sessionId).stateContainer.questionHistory.map((item) => ({
+  return ensureSession(sessionId).stateContainer.questionHistory.map((item: SessionQuestionHistoryEntry) => ({
     question: item.question,
     answer: item.answer,
   }));

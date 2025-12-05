@@ -12,6 +12,7 @@
     "build:server": "pnpm -C apps/server build",
     "build:web": "pnpm -C apps/web build",
     "build:apps": "pnpm run build:server && pnpm run build:web",
+    "docker-local": "docker compose -f docker-compose.local.yml up --build",
     "lint": "eslint .",
     "typecheck": "pnpm --filter @vibe-ltp/shared build && pnpm --filter @vibe-ltp/llm-client build && pnpm -r exec tsc --noEmit",
     "test": "vitest run",

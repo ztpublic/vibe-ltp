@@ -22,6 +22,7 @@ COPY . .
 
 # Build workspace deps needed by the server (force rebuild to ensure dist exists)
 RUN rm -f packages/shared/tsconfig.tsbuildinfo && pnpm --filter @vibe-ltp/shared exec tsc --build --force
+RUN rm -f packages/puzzle-core/tsconfig.tsbuildinfo && pnpm --filter @vibe-ltp/puzzle-core exec tsc --build --force
 RUN rm -f packages/llm-client/tsconfig.tsbuildinfo && pnpm --filter @vibe-ltp/llm-client exec tsc --build --force
 
 # Build the server (force fresh TS emit)
