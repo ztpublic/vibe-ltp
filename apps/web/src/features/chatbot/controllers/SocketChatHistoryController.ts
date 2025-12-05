@@ -43,35 +43,44 @@ export function useSocketChatHistoryController(
     pendingRestoreRejectors.current = [];
   };
 
-  const mergeAndSortMessages = useCallback((incoming: ChatHistoryMessage[]) => {
-    setMessages((prev) => {
-      const map = new Map<string, ChatHistoryMessage>();
-      for (const msg of prev) {
-        if (msg.id) map.set(msg.id, msg);
-      }
-      for (const msg of incoming) {
-        if (msg.id) map.set(msg.id, msg);
-      }
+  const applyIncomingMessages = useCallback(
+    (incoming: ChatHistoryMessage[], options: { replace?: boolean } = {}) => {
+      const { replace = false } = options;
 
-      const combined = Array.from(map.values());
-      combined.sort((a, b) => {
-        const aTime = Date.parse(a.timestamp);
-        const bTime = Date.parse(b.timestamp);
-        if (!Number.isNaN(aTime) && !Number.isNaN(bTime) && aTime !== bTime) {
-          return aTime - bTime;
+      setMessages((prev) => {
+        const map = new Map<string, ChatHistoryMessage>();
+
+        if (!replace) {
+          for (const msg of prev) {
+            if (msg.id) map.set(msg.id, msg);
+          }
         }
-        return String(a.id).localeCompare(String(b.id));
-      });
 
-      return combined;
-    });
-  }, []);
+        for (const msg of incoming) {
+          if (msg.id) map.set(msg.id, msg);
+        }
+
+        const combined = Array.from(map.values());
+        combined.sort((a, b) => {
+          const aTime = Date.parse(a.timestamp);
+          const bTime = Date.parse(b.timestamp);
+          if (!Number.isNaN(aTime) && !Number.isNaN(bTime) && aTime !== bTime) {
+            return aTime - bTime;
+          }
+          return String(a.id).localeCompare(String(b.id));
+        });
+
+        return combined;
+      });
+    },
+    [],
+  );
   // Adopt initial messages when provided (e.g., join snapshot) before socket sync arrives
   useEffect(() => {
     if (initialMessages.length > 0 && !hasRestoredRef.current) {
-      mergeAndSortMessages(initialMessages);
+      applyIncomingMessages(initialMessages, { replace: true });
     }
-  }, [initialMessages, mergeAndSortMessages]);
+  }, [applyIncomingMessages, initialMessages]);
 
   useEffect(() => {
     const socket = acquireSocket(SOCKET_URL, sessionId);
@@ -94,7 +103,7 @@ export function useSocketChatHistoryController(
         type: 'info',
         message: `已同步历史消息 (${data.messages.length} 条)`,
       });
-      mergeAndSortMessages(data.messages);
+      applyIncomingMessages(data.messages, { replace: true });
       hasRestoredRef.current = true;
       resolvePendingRestores(data.messages);
     };
@@ -102,7 +111,7 @@ export function useSocketChatHistoryController(
     // Listen for new messages broadcast from server
     const handleMessageAdded = (data: { sessionId?: string; message: ChatHistoryMessage }) => {
       if (data.sessionId && data.sessionId !== sessionId) return;
-      mergeAndSortMessages([data.message]);
+      applyIncomingMessages([data.message]);
     };
 
     socket.on('connect', handleConnect);
@@ -118,7 +127,7 @@ export function useSocketChatHistoryController(
       releaseSocket(socket);
       socketRef.current = null;
     };
-  }, [mergeAndSortMessages, onNotify, sessionId]);
+  }, [applyIncomingMessages, onNotify, sessionId]);
 
   const onMessageAdded = useCallback((message: ChatHistoryMessage) => {
     const socket = socketRef.current;

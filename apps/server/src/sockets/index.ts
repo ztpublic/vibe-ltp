@@ -83,12 +83,18 @@ export function setupSocketIO(io: Server): void {
 
       try {
         gameState.startSession(sessionId, puzzleContent);
+        // After starting a new game, clear any previous chat history for all clients
+        const clearedChatHistory = gameState.getChatMessages(sessionId);
         
         // Notify all connected clients
         io.to(sessionId).emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
           sessionId,
           state: 'Started',
           puzzleContent,
+        });
+        io.to(sessionId).emit(SOCKET_EVENTS.CHAT_HISTORY_SYNC, {
+          sessionId,
+          messages: clearedChatHistory,
         });
         io.emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session: gameState.getSession(sessionId) });
         

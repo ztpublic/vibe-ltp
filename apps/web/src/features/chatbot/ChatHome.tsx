@@ -6,6 +6,7 @@ import type { ChatService } from './services';
 import type { GameStateController, ChatHistoryController } from './controllers';
 import { IdentityProvider } from './identity/useChatIdentity';
 import { PuzzleInputDialog } from './components';
+import { pickRandomPuzzle } from '@/src/features/puzzles/randomPuzzle';
 import type { BotMessage } from '@vibe-ltp/shared';
 import type { Toast } from './utils/notifications';
 
@@ -32,6 +33,8 @@ export const ChatHome = ({
 }: ChatHomeProps) => {
   const { gameState, puzzleContent, startGame, resetGame } = gameStateController;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isRandomLoading, setIsRandomLoading] = useState(false);
+  const [randomError, setRandomError] = useState<string | null>(null);
   const chatbotRef = useRef<SoupBotChatRef>(null);
   
   const isGameNotStarted = gameState === 'NotStarted';
@@ -39,7 +42,26 @@ export const ChatHome = ({
   const isGameEnded = gameState === 'Ended';
 
   const handleStartGameClick = () => {
+    setRandomError(null);
     setIsDialogOpen(true);
+  };
+
+  const handleRandomStart = async () => {
+    if (isGameStarted) return;
+
+    try {
+      setRandomError(null);
+      setIsRandomLoading(true);
+      const puzzle = await pickRandomPuzzle();
+      startGame(puzzle);
+      onStartGame?.({ soupSurface: puzzle.soupSurface, soupTruth: puzzle.soupTruth });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '无法加载随机谜题';
+      setRandomError(`随机开局失败：${message}`);
+      console.error('[ChatHome] Failed to start random puzzle', error);
+    } finally {
+      setIsRandomLoading(false);
+    }
   };
 
   const handleDialogConfirm = (soupSurface: string, soupTruth: string) => {
@@ -139,17 +161,39 @@ export const ChatHome = ({
             
             {/* Right side - Action Buttons */}
             <div className="flex flex-col gap-4">
-              <button
-                className={`px-6 py-3 rounded-lg transition-colors whitespace-nowrap ${
-                  isGameNotStarted || isGameEnded
-                    ? 'bg-[#0e639c] hover:bg-[#1177bb] text-white cursor-pointer'
-                    : 'bg-[#3e3e42] text-[#858585] cursor-not-allowed'
-                }`}
-                onClick={handleStartGameClick}
-                disabled={isGameStarted}
-              >
-                {isGameEnded ? '重新开始' : '开始新汤'}
-              </button>
+              <div className="flex flex-col gap-2">
+                <button
+                  className={`px-6 py-3 rounded-lg transition-colors whitespace-nowrap ${
+                    !isGameStarted && !isRandomLoading
+                      ? 'bg-[#0e639c] hover:bg-[#1177bb] text-white cursor-pointer'
+                      : 'bg-[#3e3e42] text-[#858585] cursor-not-allowed'
+                  }`}
+                  onClick={handleRandomStart}
+                  disabled={isGameStarted || isRandomLoading}
+                >
+                  {isRandomLoading
+                    ? '载入随机汤...'
+                    : isGameEnded
+                      ? '随机重新开始'
+                      : '随机开汤'}
+                </button>
+                <button
+                  className={`px-6 py-3 rounded-lg transition-colors whitespace-nowrap border border-[#3e3e42] ${
+                    !isGameStarted && !isRandomLoading
+                      ? 'bg-[#2d2d30] hover:bg-[#3e3e42] text-white cursor-pointer'
+                      : 'bg-[#2d2d30] text-[#858585] cursor-not-allowed'
+                  }`}
+                  onClick={handleStartGameClick}
+                  disabled={isGameStarted || isRandomLoading}
+                >
+                  {isGameEnded ? '自定义重新开始' : '自定义开汤'}
+                </button>
+                {randomError && (
+                  <div className="text-xs text-red-200 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">
+                    {randomError}
+                  </div>
+                )}
+              </div>
               <button
                 className={`px-6 py-3 rounded-lg transition-colors border border-[#3e3e42] whitespace-nowrap ${
                   isGameStarted
