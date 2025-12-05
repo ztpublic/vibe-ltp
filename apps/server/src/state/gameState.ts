@@ -21,6 +21,7 @@ import type { Embedding } from '@vibe-ltp/llm-client';
 export const DEFAULT_SESSION_ID: GameSessionId = 'default';
 export const SESSION_TTL_MS = 1000 * 60 * 60 * 4; // 4 hours
 const CLEANUP_INTERVAL_MS = 1000 * 60 * 5; // 5 minutes
+const EMPTY_ROOM_CLEANUP_MS = 1000 * 60 * 10; // 10 minutes
 
 let nextSessionId = 1;
 
@@ -32,6 +33,7 @@ interface SessionRecord {
 }
 
 const sessionStore = new Map<GameSessionId, SessionRecord>();
+const emptyRoomTimers = new Map<GameSessionId, NodeJS.Timeout>();
 
 const nowIso = (value = Date.now()): string => new Date(value).toISOString();
 
@@ -99,9 +101,46 @@ function buildSnapshot(session: SessionRecord): GameSessionSnapshot {
 
 function bumpPlayerCount(sessionId: GameSessionId, delta: number): void {
   const session = ensureSession(sessionId);
-  const nextCount = Math.max(0, session.meta.playerCount + delta);
+  const prevCount = session.meta.playerCount;
+  const nextCount = Math.max(0, prevCount + delta);
   session.meta.playerCount = nextCount;
   touchSession(sessionId);
+
+  // Handle empty room cleanup
+  if (prevCount > 0 && nextCount === 0) {
+    // Room just became empty, start cleanup timer
+    startEmptyRoomCleanup(sessionId);
+  } else if (prevCount === 0 && nextCount > 0) {
+    // Room is no longer empty, cancel cleanup timer
+    cancelEmptyRoomCleanup(sessionId);
+  }
+}
+
+function startEmptyRoomCleanup(sessionId: GameSessionId): void {
+  // Cancel any existing timer
+  cancelEmptyRoomCleanup(sessionId);
+
+  // Start new cleanup timer
+  const timer = setTimeout(() => {
+    if (sessionStore.has(sessionId)) {
+      const session = sessionStore.get(sessionId)!;
+      if (session.meta.playerCount === 0 && sessionId !== DEFAULT_SESSION_ID) {
+        console.log(`[EmptyRoomCleanup] Removing empty room: ${sessionId}`);
+        sessionStore.delete(sessionId);
+        emptyRoomTimers.delete(sessionId);
+      }
+    }
+  }, EMPTY_ROOM_CLEANUP_MS);
+
+  emptyRoomTimers.set(sessionId, timer);
+}
+
+function cancelEmptyRoomCleanup(sessionId: GameSessionId): void {
+  const timer = emptyRoomTimers.get(sessionId);
+  if (timer) {
+    clearTimeout(timer);
+    emptyRoomTimers.delete(sessionId);
+  }
 }
 
 export interface CreateSessionOptions {
@@ -353,6 +392,7 @@ export function cleanupIdleSessions(now: number = Date.now()): GameSessionId[] {
     if (now - session.lastActiveAt > SESSION_TTL_MS) {
       session.meta.isActive = false;
       sessionStore.delete(sessionId);
+      cancelEmptyRoomCleanup(sessionId); // Clean up timer
       removed.push(sessionId);
     }
   }
@@ -371,6 +411,12 @@ const cleanupInterval = setInterval(() => {
 cleanupInterval.unref?.();
 
 export function clearAllState(): void {
+  // Clear all cleanup timers
+  for (const timer of emptyRoomTimers.values()) {
+    clearTimeout(timer);
+  }
+  emptyRoomTimers.clear();
+
   sessionStore.clear();
   ensureDefaultSession();
 }
