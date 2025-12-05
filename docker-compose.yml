@@ -6,8 +6,11 @@ services:
     restart: "no"
     environment:
       - NODE_ENV=production
+      - GAME_EXPORT_DIR=/app/game-exports
     ports:
       - "4000:4000"
+    volumes:
+      - ./game-exports:/app/game-exports
 
   web:
     image: ghcr.io/ztpublic/vibe-ltp-web:latest

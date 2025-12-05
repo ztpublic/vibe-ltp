@@ -70,6 +70,7 @@ export interface SessionQuestionHistoryEntry {
   question: string;
   answer: AnswerType;
   timestamp: string;
+  thumbsDown?: boolean;
 }
 
 /**

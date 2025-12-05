@@ -17,6 +17,7 @@ import type {
   SessionQuestionHistoryEntry,
 } from '@vibe-ltp/shared';
 import type { Embedding } from '@vibe-ltp/llm-client';
+import { exportGameSession, type ExportReason } from '../utils/gameExport.js';
 
 export const DEFAULT_SESSION_ID: GameSessionId = 'default';
 export const SESSION_TTL_MS = 1000 * 60 * 60 * 4; // 4 hours
@@ -63,6 +64,30 @@ function ensureSession(sessionId: GameSessionId): SessionRecord {
     throw new Error(`Session not found: ${sessionId}`);
   }
   return session;
+}
+
+function exportSessionForAudit(sessionId: GameSessionId, reason: ExportReason): string | undefined {
+  if (!sessionStore.has(sessionId)) return undefined;
+
+  try {
+    const session = ensureSession(sessionId);
+    const { puzzleContent, questionHistory } = session.stateContainer;
+    if (!puzzleContent) return undefined;
+
+    return exportGameSession({
+      sessionId,
+      title: session.meta.title,
+      hostNickname: session.meta.hostNickname,
+      createdAt: session.meta.createdAt,
+      updatedAt: session.meta.updatedAt,
+      puzzleContent,
+      questions: questionHistory,
+      reason,
+    });
+  } catch (error) {
+    console.error('[SessionExport] Failed to export session', sessionId, error);
+    return undefined;
+  }
 }
 
 function touchSession(sessionId: GameSessionId, at: number = Date.now()): void {
@@ -126,6 +151,8 @@ function startEmptyRoomCleanup(sessionId: GameSessionId): void {
       const session = sessionStore.get(sessionId)!;
       if (session.meta.playerCount === 0 && sessionId !== DEFAULT_SESSION_ID) {
         console.log(`[EmptyRoomCleanup] Removing empty room: ${sessionId}`);
+        exportSessionForAudit(sessionId, 'empty-room-timeout');
+        session.meta.isActive = false;
         sessionStore.delete(sessionId);
         emptyRoomTimers.delete(sessionId);
       }
@@ -308,6 +335,7 @@ export function resetGameState(
 ): void {
   const { preserveChat = true, revealExistingContent = true } = options;
   const session = ensureSession(sessionId);
+  exportSessionForAudit(sessionId, 'reset');
   const revealed = revealExistingContent ? revealPuzzleContent(session.stateContainer.puzzleContent) : undefined;
 
   session.stateContainer = {
@@ -344,9 +372,10 @@ export function addQuestionToHistory(
   sessionId: GameSessionId = DEFAULT_SESSION_ID,
   limit = DEFAULT_QUESTION_HISTORY_LIMIT,
   timestamp: Date = new Date(),
+  thumbsDown = false,
 ): void {
   const session = ensureSession(sessionId);
-  session.stateContainer = addQuestionToSession(session.stateContainer, question, answer, limit, timestamp);
+  session.stateContainer = addQuestionToSession(session.stateContainer, question, answer, limit, timestamp, thumbsDown);
   touchSession(sessionId);
 }
 
@@ -390,6 +419,7 @@ export function cleanupIdleSessions(now: number = Date.now()): GameSessionId[] {
     }
 
     if (now - session.lastActiveAt > SESSION_TTL_MS) {
+      exportSessionForAudit(sessionId, 'idle-timeout');
       session.meta.isActive = false;
       sessionStore.delete(sessionId);
       cancelEmptyRoomCleanup(sessionId); // Clean up timer
