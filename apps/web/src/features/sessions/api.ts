@@ -43,6 +43,12 @@ export function joinSession(sessionId: GameSessionId, nickname?: string): Promis
   });
 }
 
+export function leaveSession(sessionId: GameSessionId): Promise<void> {
+  return fetchJson(`/api/sessions/${sessionId}/leave`, {
+    method: 'POST',
+  });
+}
+
 export function getSession(sessionId: GameSessionId): Promise<GetSessionResponse> {
   return fetchJson(`/api/sessions/${sessionId}`);
 }

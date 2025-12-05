@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import {
   DEFAULT_CHAT_HISTORY_LIMIT,
   DEFAULT_QUESTION_HISTORY_LIMIT,
@@ -22,6 +21,8 @@ import type { Embedding } from '@vibe-ltp/llm-client';
 export const DEFAULT_SESSION_ID: GameSessionId = 'default';
 export const SESSION_TTL_MS = 1000 * 60 * 60 * 4; // 4 hours
 const CLEANUP_INTERVAL_MS = 1000 * 60 * 5; // 5 minutes
+
+let nextSessionId = 1;
 
 interface SessionRecord {
   meta: GameSession;
@@ -112,16 +113,16 @@ export interface CreateSessionOptions {
 }
 
 export function createSession(options: CreateSessionOptions = {}): GameSessionSnapshot {
+  const sessionIdToUse = options.sessionId || (nextSessionId++).toString();
   const {
-    sessionId = uuidv4(),
     title,
     hostNickname,
     state = 'NotStarted',
-    puzzleContent,
+    puzzleContent
   } = options;
 
-  if (sessionStore.has(sessionId)) {
-    throw new Error(`Session already exists: ${sessionId}`);
+  if (sessionStore.has(sessionIdToUse)) {
+    throw new Error(`Session already exists: ${sessionIdToUse}`);
   }
 
   if (state === 'Started' && !puzzleContent) {
@@ -130,7 +131,7 @@ export function createSession(options: CreateSessionOptions = {}): GameSessionSn
 
   const createdAt = nowIso();
   const stateContainer = createSessionStateContainer({
-    sessionId,
+    sessionId: sessionIdToUse,
     state,
     puzzleContent,
     chatHistory: [],
@@ -138,7 +139,7 @@ export function createSession(options: CreateSessionOptions = {}): GameSessionSn
   });
 
   const meta: GameSession = {
-    id: sessionId,
+    id: sessionIdToUse,
     title,
     state,
     hostNickname,
@@ -156,20 +157,51 @@ export function createSession(options: CreateSessionOptions = {}): GameSessionSn
     lastActiveAt: Date.now(),
   };
 
-  sessionStore.set(sessionId, record);
+  sessionStore.set(sessionIdToUse, record);
   return buildSnapshot(record);
 }
 
 function ensureDefaultSession(): void {
   if (!sessionStore.has(DEFAULT_SESSION_ID)) {
-    createSession({ sessionId: DEFAULT_SESSION_ID, title: 'Default Session' });
+    // Create default session with explicit ID (not using auto-increment)
+    const stateContainer = createSessionStateContainer({
+      sessionId: DEFAULT_SESSION_ID,
+      state: 'NotStarted',
+      puzzleContent: undefined,
+      chatHistory: [],
+      questionHistory: [],
+    });
+
+    const createdAt = nowIso();
+    const meta: GameSession = {
+      id: DEFAULT_SESSION_ID,
+      title: 'Default Session',
+      state: 'NotStarted',
+      hostNickname: undefined,
+      createdAt,
+      updatedAt: createdAt,
+      playerCount: 0,
+      puzzleSummary: undefined,
+      isActive: true,
+    };
+
+    const record: SessionRecord = {
+      meta,
+      stateContainer,
+      keywordEmbeddings: [],
+      lastActiveAt: Date.now(),
+    };
+
+    sessionStore.set(DEFAULT_SESSION_ID, record);
   }
 }
 
 ensureDefaultSession();
 
 export function listSessions(): GameSession[] {
-  return Array.from(sessionStore.values()).map((session) => session.meta);
+  return Array.from(sessionStore.values())
+    .filter((session) => session.meta.id !== DEFAULT_SESSION_ID)
+    .map((session) => session.meta);
 }
 
 export function getSession(sessionId: GameSessionId = DEFAULT_SESSION_ID): GameSessionSnapshot | undefined {

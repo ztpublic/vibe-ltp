@@ -22,6 +22,8 @@ export function setupSocketIO(io: Server): void {
 
     console.log(`[Socket] Client connected: ${socket.id} (session=${sessionId})`);
 
+    // Join the session (increment player count)
+    gameState.joinSession(sessionId);
     socket.join(sessionId);
 
     // Send current game state to the connecting client
@@ -146,6 +148,8 @@ export function setupSocketIO(io: Server): void {
     // Handle disconnect
     socket.on(SOCKET_EVENTS.DISCONNECT, (reason: string) => {
       console.log(`[Socket] Client disconnected: ${socket.id}, reason: ${reason}, session=${sessionId}`);
+      // Leave the session (decrement player count)
+      gameState.leaveSession(sessionId);
     });
   });
 }

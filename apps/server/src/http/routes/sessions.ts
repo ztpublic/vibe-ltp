@@ -82,6 +82,24 @@ router.post('/:sessionId/join', (req, res) => {
   }
 });
 
+router.post('/:sessionId/leave', (req, res) => {
+  const { sessionId } = req.params as { sessionId: GameSessionId };
+  try {
+    const session = gameState.leaveSession(sessionId);
+    if (!session) return notFound(res, sessionId);
+
+    res.json({ session });
+
+    const io = getSocketServer();
+    if (io) {
+      io.emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session });
+      io.emit(SESSION_SOCKET_EVENTS.SESSION_LIST_UPDATED, { sessions: gameState.listSessions() });
+    }
+  } catch (error) {
+    return notFound(res, sessionId);
+  }
+});
+
 router.post('/:sessionId/start', (req, res) => {
   const { sessionId } = req.params as { sessionId: GameSessionId };
   const { puzzleContent } = req.body as { puzzleContent?: any };

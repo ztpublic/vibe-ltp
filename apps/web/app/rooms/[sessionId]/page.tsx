@@ -6,7 +6,7 @@ import { ChatHome } from '@/src/features/chatbot/ChatHome';
 import { ApiChatService } from '@/src/features/chatbot/services';
 import { useGameStateController, useChatHistoryController } from '@/src/features/chatbot/controllers';
 import { useToastQueue } from '@/src/features/chatbot/utils/notifications';
-import { joinSession } from '@/src/features/sessions/api';
+import { getSession } from '@/src/features/sessions/api';
 import type { GameSessionSnapshot, SessionChatMessage, ChatMessage } from '@vibe-ltp/shared';
 
 type RoomPageParams = {
@@ -63,7 +63,7 @@ export default function RoomPage() {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await joinSession(safeSessionId);
+        const res = await getSession(safeSessionId);
         if (!active) return;
         setSnapshot(res.session);
         setChatHistory(res.chatHistory ? normalizeHistory(res.chatHistory) : []);
