@@ -1,7 +1,7 @@
 'use client';
 
 import React, { ReactNode } from 'react';
-import type { BotMessage, ChatMessage, ChatReplyDecoration, ChatResponse, UserMessage } from '@vibe-ltp/shared';
+import type { BotMessage, ChatMessage, ChatReplyDecoration, ChatResponse, UserMessage, GameState } from '@vibe-ltp/shared';
 import type { ChatService } from './services';
 import { truncateText, createChatBotMessage } from '../../ui/chatbot';
 import type { ChatHistoryController } from './controllers';
@@ -19,6 +19,7 @@ type ActionProviderProps = {
   chatService: ChatService;
   chatHistoryController?: ChatHistoryController;
   messageStore: ChatbotMessageStore;
+  gameState?: GameState;
 };
 
 const ActionProvider: React.FC<ActionProviderProps> = ({
@@ -27,6 +28,7 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
   chatService,
   chatHistoryController,
   messageStore,
+  gameState,
 }) => {
   const emitMessageToServer = (message: ChatMessage) => {
     if (chatHistoryController) {
@@ -165,6 +167,9 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
             nickname: msgNickname,
             id: userMessageId,
             serverMessageId: userMessageId,
+            // Show thumbs only when game has ended, and only thumbs down
+            showThumbsUp: false,
+            showThumbsDown: gameState === 'Ended',
           };
           break;
         }

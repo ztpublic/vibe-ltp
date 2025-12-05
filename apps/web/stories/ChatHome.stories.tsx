@@ -67,3 +67,25 @@ export const Started_WithConversation: Story = {
     );
   },
 };
+
+// Story 3: Game ended state with conversation showing feedback buttons
+export const End_WithConversation: Story = {
+  render: () => {
+    const gameStateController = useMockGameStateController({
+      gameState: 'Ended',
+      puzzleContent: samplePuzzle,
+      isConnected: true,
+    });
+    const chatHistoryController = useMockChatHistoryController(generateMockConversation(20));
+    const chatService = new MockChatService();
+
+    return (
+      <ChatHome
+        sessionId="storybook-session"
+        gameStateController={gameStateController}
+        chatService={chatService}
+        chatHistoryController={chatHistoryController}
+      />
+    );
+  },
+};

@@ -117,11 +117,12 @@ export const ChatHome = ({
             
             {/* Center - Chatbot */}
             <div className="w-[40vw] h-full flex flex-col">
-              <SoupBotChat 
-                ref={chatbotRef} 
-                chatService={chatService} 
+              <SoupBotChat
+                ref={chatbotRef}
+                chatService={chatService}
                 chatHistoryController={chatHistoryController}
-                disabled={isGameNotStarted || isGameEnded} 
+                disabled={isGameNotStarted || isGameEnded}
+                gameState={gameState}
               />
               {(isGameNotStarted || isGameEnded) && (
                 <div className="mt-2 text-xs text-[#aaaaaa]">

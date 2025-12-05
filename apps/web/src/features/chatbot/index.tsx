@@ -10,7 +10,7 @@ import MessageParser from './MessageParser';
 import type { ChatService } from './services';
 import type { ChatHistoryController } from './controllers';
 import { useChatIdentity } from './identity/useChatIdentity';
-import { isUserMessage, isBotMessage, type BotMessage, type ChatMessage } from '@vibe-ltp/shared';
+import { isUserMessage, isBotMessage, type BotMessage, type ChatMessage, type GameState } from '@vibe-ltp/shared';
 import { buildAnswerDecorator } from './utils/answerDecorators';
 import {
   createChatbotMessageStore,
@@ -22,7 +22,7 @@ import {
 type CreateChatBotMessage = typeof createChatBotMessage;
 type ChatbotKitMessage = ChatbotUiMessage;
 
-const convertHistoryMessages = (messages: ChatMessage[]): ChatbotKitMessage[] => {
+const convertHistoryMessages = (messages: ChatMessage[], gameState?: GameState): ChatbotKitMessage[] => {
   return messages
     .map((msg) => {
       if (isUserMessage(msg)) {
@@ -37,6 +37,9 @@ const convertHistoryMessages = (messages: ChatMessage[]): ChatbotKitMessage[] =>
           nickname: msg.nickname,
           id: msg.id ?? Date.now(),
           serverMessageId: msg.id,
+          // Show thumbs only when game has ended, and only thumbs down
+          showThumbsUp: false,
+          showThumbsDown: gameState === 'Ended',
           ...(decorator ? { decorators: [decorator] } : {}),
         };
       }
@@ -69,6 +72,7 @@ export type SoupBotChatProps = {
   chatService: ChatService;
   chatHistoryController?: ChatHistoryController;
   disabled?: boolean;
+  gameState?: GameState;
 };
 
 export interface SoupBotChatRef {
@@ -76,7 +80,7 @@ export interface SoupBotChatRef {
 }
 
 export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
-  { chatService, chatHistoryController, disabled = false },
+  { chatService, chatHistoryController, disabled = false, gameState },
   ref
 ) => {
   const { nickname } = useChatIdentity();
@@ -91,8 +95,8 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
       return [];
     }
 
-    return convertHistoryMessages(chatHistoryController.messages);
-  }, [chatHistoryController, chatHistoryController?.messages]);
+    return convertHistoryMessages(chatHistoryController.messages, gameState);
+  }, [chatHistoryController, chatHistoryController?.messages, gameState]);
   
   // Create config with initial messages
   const chatConfig = useMemo(() => ({
@@ -106,9 +110,29 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
       return;
     }
 
-    const historyMessages = convertHistoryMessages(chatHistoryController.messages);
+    const historyMessages = convertHistoryMessages(chatHistoryController.messages, gameState);
     messageStoreRef.current.replaceMessages(historyMessages, { preserveTrailingLoading: true });
-  }, [chatHistoryController?.messages]);
+  }, [chatHistoryController?.messages, gameState]);
+
+  // Update thumb visibility when game state changes to 'Ended'
+  useEffect(() => {
+    if (!messageStoreRef.current || gameState !== 'Ended') {
+      return;
+    }
+
+    messageStoreRef.current.mutateMessages((messages) => {
+      return messages.map((msg) => {
+        if (msg.type === 'user') {
+          return {
+            ...msg,
+            showThumbsUp: false,
+            showThumbsDown: true,
+          };
+        }
+        return msg;
+      });
+    });
+  }, [gameState]);
 
   // Trigger initial history sync lifecycle
   useEffect(() => {
@@ -123,7 +147,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
         const synced = await chatHistoryController.syncHistory();
         if (!isActive || !messageStoreRef.current) return;
         if (synced.length > 0) {
-          const historyMessages = convertHistoryMessages(synced);
+          const historyMessages = convertHistoryMessages(synced, gameState);
           messageStoreRef.current.replaceMessages(historyMessages, { preserveTrailingLoading: true });
         }
       } catch (error) {
@@ -193,6 +217,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
             chatService={chatService}
             chatHistoryController={chatHistoryController}
             messageStore={messageStoreRef.current!}
+            gameState={gameState}
           />
         );
       },
