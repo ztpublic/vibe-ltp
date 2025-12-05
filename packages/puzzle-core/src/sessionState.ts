@@ -69,8 +69,10 @@ export function appendQuestionHistory(
   limit = DEFAULT_QUESTION_HISTORY_LIMIT,
   timestamp: Date = new Date(),
   thumbsDown = false,
+  messageId?: string,
 ): SessionQuestionHistoryEntry[] {
   const next: SessionQuestionHistoryEntry = {
+    messageId,
     question,
     answer,
     timestamp: timestamp.toISOString(),
@@ -120,9 +122,18 @@ export function addQuestionToSession(
   limit = DEFAULT_QUESTION_HISTORY_LIMIT,
   timestamp: Date = new Date(),
   thumbsDown = false,
+  messageId?: string,
 ): SessionStateContainer {
   return {
     ...session,
-    questionHistory: appendQuestionHistory(session.questionHistory, question, answer, limit, timestamp, thumbsDown),
+    questionHistory: appendQuestionHistory(
+      session.questionHistory,
+      question,
+      answer,
+      limit,
+      timestamp,
+      thumbsDown,
+      messageId,
+    ),
   };
 }

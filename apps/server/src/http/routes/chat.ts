@@ -81,7 +81,7 @@ router.post('/chat', async (req, res) => {
     );
 
     // Add to question history
-    gameState.addQuestionToHistory(userText, evaluation.answer, sessionId);
+    gameState.addQuestionToHistory(userText, evaluation.answer, sessionId, undefined, undefined, false, userMessage.id);
 
     // Build decoration payload for the originating user message
     const decoration: ChatReplyDecoration = {
@@ -122,6 +122,34 @@ router.post('/chat', async (req, res) => {
     };
     
     res.status(500).json({ reply });
+  }
+});
+
+router.post('/feedback', (req, res) => {
+  const body = req.body as {
+    sessionId?: GameSessionId;
+    messageId?: string;
+    direction?: 'up' | 'down' | null;
+    question?: string;
+  };
+  const sessionId = body.sessionId ?? gameState.getDefaultSessionId();
+  const { messageId, direction } = body;
+
+  if (!messageId) {
+    return res.status(400).json({ error: 'Missing messageId' });
+  }
+
+  const thumbsDown = direction === 'down';
+
+  try {
+    const ok = gameState.updateQuestionFeedback(sessionId, messageId, thumbsDown, body.question);
+    if (!ok) {
+      return res.status(404).json({ error: 'Question not found for messageId' });
+    }
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Error in feedback route:', error);
+    return res.status(500).json({ error: 'Failed to record feedback' });
   }
 });
 

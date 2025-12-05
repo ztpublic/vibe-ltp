@@ -79,4 +79,21 @@ export class ApiChatService implements ChatService {
 
     return this.postChat('/api/solution', body);
   }
+
+  async setQuestionFeedback(messageId: string, direction: 'up' | 'down' | null, question?: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/api/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: this.sessionId,
+        messageId,
+        direction,
+        question,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to record feedback: ${res.status}`);
+    }
+  }
 }

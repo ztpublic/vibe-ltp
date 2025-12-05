@@ -18,4 +18,9 @@ export interface ChatService {
    * @returns Chat response payload (usually a bot reply)
    */
   requestSolution(userMessage: UserMessage, history?: ChatMessage[]): Promise<ChatResponse>;
+
+  /**
+   * Record feedback for a question (e.g., thumbs down)
+   */
+  setQuestionFeedback?(messageId: string, direction: 'up' | 'down' | null, question?: string): Promise<void>;
 }

@@ -61,7 +61,11 @@ export const ChatHome = ({
         content: `💡 谜题真相：\n\n${puzzleContent.soupTruth}`,
         timestamp: new Date().toISOString(),
       };
-      chatbotRef.current.addBotMessage(truthMessage);
+      chatbotRef.current.addBotMessage(truthMessage, {
+        showThumbsUp: false,
+        showThumbsDown: false,
+      });
+      chatbotRef.current.showUserThumbsDown();
       
       // Wait a bit to ensure message is sent to server before resetting
       await new Promise(resolve => setTimeout(resolve, 150));

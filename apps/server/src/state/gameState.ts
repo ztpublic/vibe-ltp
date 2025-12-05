@@ -303,8 +303,24 @@ export function setPuzzleContent(content: PuzzleContent | undefined, sessionId: 
 }
 
 export function startSession(sessionId: GameSessionId, content: PuzzleContent): GameSessionSnapshot {
-  setSessionPuzzleContent(sessionId, content);
+  const session = ensureSession(sessionId);
+  const hasExistingPuzzle = Boolean(session.stateContainer.puzzleContent);
+  const hasHistory =
+    session.stateContainer.chatHistory.length > 0 || session.stateContainer.questionHistory.length > 0;
+
+  if (hasExistingPuzzle || hasHistory) {
+    exportSessionForAudit(sessionId, 'reset');
+  }
+
+  session.stateContainer = {
+    ...session.stateContainer,
+    puzzleContent: content,
+    chatHistory: [],
+    questionHistory: [],
+  };
+
   setSessionState(sessionId, 'Started');
+  setSessionPuzzleContent(sessionId, content);
   return getSession(sessionId)!;
 }
 
@@ -335,14 +351,13 @@ export function resetGameState(
 ): void {
   const { preserveChat = true, revealExistingContent = true } = options;
   const session = ensureSession(sessionId);
-  exportSessionForAudit(sessionId, 'reset');
   const revealed = revealExistingContent ? revealPuzzleContent(session.stateContainer.puzzleContent) : undefined;
 
   session.stateContainer = {
     ...session.stateContainer,
     state: 'NotStarted',
     puzzleContent: revealed,
-    questionHistory: [],
+    questionHistory: session.stateContainer.questionHistory,
     chatHistory: preserveChat ? session.stateContainer.chatHistory : [],
   };
 
@@ -373,14 +388,53 @@ export function addQuestionToHistory(
   limit = DEFAULT_QUESTION_HISTORY_LIMIT,
   timestamp: Date = new Date(),
   thumbsDown = false,
+  messageId?: string,
 ): void {
   const session = ensureSession(sessionId);
-  session.stateContainer = addQuestionToSession(session.stateContainer, question, answer, limit, timestamp, thumbsDown);
+  session.stateContainer = addQuestionToSession(
+    session.stateContainer,
+    question,
+    answer,
+    limit,
+    timestamp,
+    thumbsDown,
+    messageId,
+  );
   touchSession(sessionId);
 }
 
 export function getQuestionHistory(sessionId: GameSessionId = DEFAULT_SESSION_ID): readonly SessionQuestionHistoryEntry[] {
   return ensureSession(sessionId).stateContainer.questionHistory;
+}
+
+export function updateQuestionFeedback(
+  sessionId: GameSessionId,
+  messageId: string,
+  thumbsDown: boolean,
+  questionText?: string,
+): boolean {
+  const session = ensureSession(sessionId);
+  let updated = false;
+
+  const nextHistory = session.stateContainer.questionHistory.map((entry, idx, arr) => {
+    const isTargetId = entry.messageId && entry.messageId === messageId;
+    const isTargetQuestion = !isTargetId && questionText && entry.question === questionText && !updated;
+
+    if (isTargetId || isTargetQuestion) {
+      updated = true;
+      return { ...entry, thumbsDown };
+    }
+    return entry;
+  });
+
+  if (!updated) return false;
+
+  session.stateContainer = {
+    ...session.stateContainer,
+    questionHistory: nextHistory,
+  };
+  touchSession(sessionId);
+  return true;
 }
 
 export function getConversationHistory(

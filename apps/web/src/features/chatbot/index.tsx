@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useImperativeHandle, useRef, useEffect, useMemo } from 'react';
+import React, { useImperativeHandle, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Chatbot, createChatBotMessage } from '../../ui/chatbot';
 import '../../ui/chatbot/main.css';
 import './chatbot.css';
@@ -22,11 +22,18 @@ import {
 type CreateChatBotMessage = typeof createChatBotMessage;
 type ChatbotKitMessage = ChatbotUiMessage;
 
-const convertHistoryMessages = (messages: ChatMessage[], gameState?: GameState): ChatbotKitMessage[] => {
+const convertHistoryMessages = (
+  messages: ChatMessage[],
+  gameState?: GameState,
+  forceUserThumbsDown?: boolean
+): ChatbotKitMessage[] => {
   return messages
     .map((msg) => {
       if (isUserMessage(msg)) {
         const decorator = msg.answer ? buildAnswerDecorator(msg.answer, msg.answerTip) : null;
+        const showThumbsDown =
+          msg.showThumbsDown ?? (forceUserThumbsDown || gameState === 'Ended');
+        const showThumbsUp = msg.showThumbsUp ?? false;
 
         return {
           loading: false,
@@ -37,15 +44,18 @@ const convertHistoryMessages = (messages: ChatMessage[], gameState?: GameState):
           nickname: msg.nickname,
           id: msg.id ?? Date.now(),
           serverMessageId: msg.id,
-          // Show thumbs only when game has ended, and only thumbs down
-          showThumbsUp: false,
-          showThumbsDown: gameState === 'Ended',
+          showThumbsUp,
+          showThumbsDown,
+          thumbsUp: msg.thumbsUp,
+          thumbsDown: msg.thumbsDown,
           ...(decorator ? { decorators: [decorator] } : {}),
         };
       }
 
       if (isBotMessage(msg)) {
         const botMsg = msg as Extract<ChatMessage, { type: 'bot' }>;
+        const showThumbsUp = botMsg.showThumbsUp;
+        const showThumbsDown = botMsg.showThumbsDown;
         const botMessage = {
           ...(createChatBotMessage(botMsg.content, {
             replyToId: botMsg.replyMetadata?.replyToId,
@@ -54,6 +64,8 @@ const convertHistoryMessages = (messages: ChatMessage[], gameState?: GameState):
           }) as unknown as ChatbotUiMessage),
           type: 'bot' as const,
           withAvatar: true,
+          ...(showThumbsUp !== undefined ? { showThumbsUp } : {}),
+          ...(showThumbsDown !== undefined ? { showThumbsDown } : {}),
         };
 
         return {
@@ -75,8 +87,14 @@ export type SoupBotChatProps = {
   gameState?: GameState;
 };
 
+type BotMessageUiOptions = {
+  showThumbsUp?: boolean;
+  showThumbsDown?: boolean;
+};
+
 export interface SoupBotChatRef {
-  addBotMessage: (message: BotMessage) => void;
+  addBotMessage: (message: BotMessage, options?: BotMessageUiOptions) => void;
+  showUserThumbsDown: () => void;
 }
 
 export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
@@ -88,6 +106,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
   const setStateRef = useRef<React.Dispatch<React.SetStateAction<ChatbotState>> | null>(null);
   const chatbotStateRef = useRef<ChatbotState | null>(null);
   const messageStoreRef = useRef<ChatbotMessageStore | null>(null);
+  const userFeedbackLockedRef = useRef(false);
   
   // Convert chat history messages to chatbot format
   const initialMessages = useMemo(() => {
@@ -95,7 +114,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
       return [];
     }
 
-    return convertHistoryMessages(chatHistoryController.messages, gameState);
+    return convertHistoryMessages(chatHistoryController.messages, gameState, userFeedbackLockedRef.current);
   }, [chatHistoryController, chatHistoryController?.messages, gameState]);
   
   // Create config with initial messages
@@ -110,15 +129,18 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
       return;
     }
 
-    const historyMessages = convertHistoryMessages(chatHistoryController.messages, gameState);
+    const historyMessages = convertHistoryMessages(
+      chatHistoryController.messages,
+      gameState,
+      userFeedbackLockedRef.current
+    );
     messageStoreRef.current.replaceMessages(historyMessages, { preserveTrailingLoading: true });
   }, [chatHistoryController?.messages, gameState]);
 
   // Update thumb visibility when game state changes to 'Ended'
-  useEffect(() => {
-    if (!messageStoreRef.current || gameState !== 'Ended') {
-      return;
-    }
+  const forceUserThumbsDown = useCallback(() => {
+    userFeedbackLockedRef.current = true;
+    if (!messageStoreRef.current) return;
 
     messageStoreRef.current.mutateMessages((messages) => {
       return messages.map((msg) => {
@@ -132,7 +154,18 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
         return msg;
       });
     });
-  }, [gameState]);
+  }, []);
+
+  useEffect(() => {
+    if (gameState === 'Ended') {
+      forceUserThumbsDown();
+      return;
+    }
+
+    if (gameState === 'Started') {
+      userFeedbackLockedRef.current = false;
+    }
+  }, [forceUserThumbsDown, gameState]);
 
   // Trigger initial history sync lifecycle
   useEffect(() => {
@@ -147,7 +180,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
         const synced = await chatHistoryController.syncHistory();
         if (!isActive || !messageStoreRef.current) return;
         if (synced.length > 0) {
-          const historyMessages = convertHistoryMessages(synced, gameState);
+          const historyMessages = convertHistoryMessages(synced, gameState, userFeedbackLockedRef.current);
           messageStoreRef.current.replaceMessages(historyMessages, { preserveTrailingLoading: true });
         }
       } catch (error) {
@@ -165,8 +198,13 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
   useImperativeHandle(
     ref,
     () => ({
-      addBotMessage: (message: BotMessage) => {
+      addBotMessage: (message: BotMessage, options?: BotMessageUiOptions) => {
         if (!messageStoreRef.current || !createChatBotMessageRef.current) return;
+
+        const visibility = {
+          ...(options?.showThumbsUp !== undefined ? { showThumbsUp: options.showThumbsUp } : {}),
+          ...(options?.showThumbsDown !== undefined ? { showThumbsDown: options.showThumbsDown } : {}),
+        };
 
         const botMessageNode: ChatbotUiMessage = {
           ...(createChatBotMessageRef.current(message.content, {
@@ -175,6 +213,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
             replyToNickname: message.replyMetadata?.replyToNickname,
           }) as unknown as ChatbotUiMessage),
           type: 'bot',
+          ...visibility,
         };
 
         messageStoreRef.current.appendMessage(botMessageNode);
@@ -183,12 +222,14 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
           const botChatMessage: ChatMessage = {
             ...message,
             timestamp: message.timestamp ?? new Date().toISOString(),
+            ...visibility,
           };
           chatHistoryController.onMessageAdded(botChatMessage);
         }
       },
+      showUserThumbsDown: forceUserThumbsDown,
     }),
-    [chatHistoryController]
+    [chatHistoryController, forceUserThumbsDown]
   );
 
   // Create a wrapper that injects the chatService and chatHistoryController
@@ -230,6 +271,31 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
     return true;
   };
 
+  const handleFeedback = useCallback(
+    (feedback: any) => {
+      const direction = feedback?.direction;
+      if (direction !== 'down' && direction !== null) {
+        return;
+      }
+
+      const message = feedback?.message;
+      const messageId =
+        (message?.serverMessageId && typeof message.serverMessageId === 'string'
+          ? message.serverMessageId
+          : undefined) ??
+        (typeof feedback?.messageId === 'string' ? feedback.messageId : undefined) ??
+        (typeof message?.id === 'string' ? message.id : undefined);
+
+      if (!messageId) return;
+      if (typeof chatService.setQuestionFeedback !== 'function') return;
+
+      chatService
+        .setQuestionFeedback(messageId, direction, message?.message)
+        .catch((err) => console.warn('[SoupBotChat] Failed to persist feedback', err));
+    },
+    [chatService]
+  );
+
   return (
     <div className="w-full h-full flex flex-col border border-[#3e3e42] rounded-lg overflow-hidden">
       <div className={`h-full flex flex-col ${disabled ? 'chatbot-disabled' : ''}`}>
@@ -241,6 +307,7 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
           placeholderText={disabled ? "游戏未开始" : "向主持人提问"}
           validator={validateAndEncodeMessage}
           currentUserNickname={nickname}
+          onFeedback={handleFeedback}
         />
       </div>
     </div>

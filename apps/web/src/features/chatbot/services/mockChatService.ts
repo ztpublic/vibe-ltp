@@ -43,4 +43,8 @@ export class MockChatService implements ChatService {
       },
     };
   }
+
+  async setQuestionFeedback(_messageId: string, _direction: 'up' | 'down' | null): Promise<void> {
+    return;
+  }
 }

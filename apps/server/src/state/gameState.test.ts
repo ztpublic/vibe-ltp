@@ -68,7 +68,7 @@ describe('Session Store', () => {
     expect(snapshot.puzzleContent).toEqual(puzzle);
   });
 
-  it('resets a session while preserving chat and clearing questions', () => {
+  it('resets a session while preserving chat and keeping questions for export', () => {
     const sessionId = createSession().id;
     setPuzzleContent({ soupSurface: 'Surface', soupTruth: 'Truth' }, sessionId);
     setGameState('Started', sessionId);
@@ -87,7 +87,7 @@ describe('Session Store', () => {
 
     expect(getGameState(sessionId)).toBe('NotStarted');
     expect(getPuzzleContent(sessionId)?.soupTruth).toBe('Truth');
-    expect(getQuestionHistory(sessionId)).toHaveLength(0);
+    expect(getQuestionHistory(sessionId)).toHaveLength(1);
     expect(getChatMessages(sessionId)).toHaveLength(1);
   });
 

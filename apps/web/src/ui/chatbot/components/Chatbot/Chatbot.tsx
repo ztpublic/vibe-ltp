@@ -30,6 +30,7 @@ interface IChatbotProps {
   runInitialMessagesWithHistory?: boolean;
   disableScrollToBottom?: boolean;
   currentUserNickname?: string;
+  onFeedback?: (feedback: unknown) => void;
 }
 
 const Chatbot = ({
@@ -44,6 +45,7 @@ const Chatbot = ({
   disableScrollToBottom,
   validator,
   currentUserNickname,
+  onFeedback,
   ...rest
 }: IChatbotProps) => {
   const chatbotContext = useChatbot({
@@ -112,6 +114,7 @@ const Chatbot = ({
         disableScrollToBottom={disableScrollToBottom}
         messageContainerRef={messageContainerRef}
         currentUserNickname={currentUserNickname}
+        onFeedback={onFeedback}
       />
     );
   } else {
@@ -139,6 +142,7 @@ const Chatbot = ({
             disableScrollToBottom={disableScrollToBottom}
             messageContainerRef={messageContainerRef}
             currentUserNickname={currentUserNickname}
+            onFeedback={onFeedback}
           />
         </MessageParser>
       </ActionProvider>

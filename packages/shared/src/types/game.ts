@@ -1,4 +1,4 @@
-import type { AnswerType } from './messages.js';
+import type { AnswerType, MessageId } from './messages.js';
 
 /**
  * Game + session types
@@ -67,6 +67,7 @@ export interface GameSessionSnapshot extends GameSession {
 }
 
 export interface SessionQuestionHistoryEntry {
+  messageId?: MessageId;
   question: string;
   answer: AnswerType;
   timestamp: string;

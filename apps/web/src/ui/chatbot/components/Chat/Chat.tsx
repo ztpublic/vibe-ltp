@@ -51,6 +51,7 @@ interface IChatProps {
   actions?: object;
   messageContainerRef: React.MutableRefObject<HTMLDivElement | null>;
   currentUserNickname?: string;
+  onFeedback?: (feedback: unknown) => void;
 }
 
 const Chat = ({
@@ -73,6 +74,7 @@ const Chat = ({
   messageContainerRef,
   currentUserNickname,
   answerParse,
+  onFeedback,
 }: IChatProps) => {
   const { messages } = state;
 
@@ -186,6 +188,7 @@ const Chat = ({
           customStyles={customStyles}
           currentUserNickname={currentUserNickname}
           setState={setState}
+          onFeedback={onFeedback}
         />
         {widget ? widget : null}
       </>
@@ -209,12 +212,13 @@ const Chat = ({
       replyToNickname: messageObject.replyToNickname,
       loading: messageObject.loading,
       delay: messageObject.delay,
-      id: messageObject.id,
-      setState,
-      customComponents,
-      messages,
-      messageObject,
-    };
+          id: messageObject.id,
+          setState,
+          customComponents,
+          messages,
+          messageObject,
+          onFeedback,
+        };
 
     if (messageObject.widget) {
       const widget = widgetRegistry.getWidget(messageObject.widget, {

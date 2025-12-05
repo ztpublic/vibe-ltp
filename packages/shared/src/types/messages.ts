@@ -35,6 +35,12 @@ export interface BaseMessage {
   
   /** ISO timestamp */
   timestamp: string;
+
+  /** Optional per-message feedback visibility/state */
+  showThumbsUp?: boolean;
+  showThumbsDown?: boolean;
+  thumbsUp?: boolean;
+  thumbsDown?: boolean;
 }
 
 /**

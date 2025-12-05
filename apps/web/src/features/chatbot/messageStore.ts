@@ -18,6 +18,10 @@ export type ChatbotUiMessage = {
   serverMessageId?: string;
   answer?: AnswerType;
   answerTip?: string;
+  showThumbsUp?: boolean;
+  showThumbsDown?: boolean;
+  thumbsUp?: boolean;
+  thumbsDown?: boolean;
   [key: string]: unknown;
 };
 
