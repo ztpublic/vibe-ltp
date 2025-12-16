@@ -4,10 +4,13 @@
  */
 
 import { generateText } from 'ai';
+import { createLogger } from '@vibe-ltp/shared';
 import { callWithFallbackModel } from './fallback.js';
 import { openRouterLanguageModel } from './models.js';
 import type { ChatMessage } from './types.js';
 import type { QuestionAnswerPair } from './questionValidatorAgent.js';
+
+const logger = createLogger({ module: 'historySummarizer' });
 
 export interface HistorySummaryContext {
   surface: string;
@@ -94,7 +97,7 @@ export async function summarizePuzzleHistory(
     ...buildContextMessages(context),
   ];
 
-  console.log('\n[History Message Summarizer Agent]');
+  logger.info('[History Message Summarizer Agent]');
 
   const callModel = async (modelToUse: string) => {
     const result = await generateText({
@@ -107,7 +110,7 @@ export async function summarizePuzzleHistory(
       return { summary: result.text.trim() };
     }
 
-    console.warn('No text returned; defaulting to empty summary.');
+    logger.warn('No text returned; defaulting to empty summary.');
     return { summary: '' };
   };
 

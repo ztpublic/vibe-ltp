@@ -4,6 +4,7 @@
  */
 
 import { generateText } from 'ai';
+import { createLogger } from '@vibe-ltp/shared';
 import { callWithFallbackModel } from './fallback.js';
 import { openRouterLanguageModel } from './models.js';
 import {
@@ -11,6 +12,8 @@ import {
   type DistillFactsArgs,
 } from './tools.js';
 import type { ChatMessage } from './types.js';
+
+const logger = createLogger({ module: 'factDistiller' });
 
 export interface FactDistillationResult {
   facts: string[];
@@ -78,7 +81,7 @@ export async function distillPuzzleFacts(
     },
   };
 
-  console.log('\n[Fact Distiller Agent]');
+  logger.info('[Fact Distiller Agent]');
 
   const callModel = async (modelToUse: string) => {
     const result = await generateText({
@@ -96,7 +99,7 @@ export async function distillPuzzleFacts(
       }
     }
 
-    console.warn('No tool call returned; defaulting to empty facts.');
+    logger.warn('No tool call returned; defaulting to empty facts.');
     return { facts: [] };
   };
 

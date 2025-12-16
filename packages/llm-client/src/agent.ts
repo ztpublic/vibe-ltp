@@ -4,8 +4,11 @@
  */
 
 import { generateText, type CoreTool } from 'ai';
+import { createLogger } from '@vibe-ltp/shared';
 import { openRouterLanguageModel } from './models.js';
 import type { AgentRunOptions, AgentRunResult, ChatMessage, ToolMessage } from './types.js';
+
+const logger = createLogger({ module: 'agent' });
 
 /**
  * Run an agentic workflow with tool calling
@@ -72,7 +75,7 @@ export async function runAgent(options: AgentRunOptions): Promise<AgentRunResult
         for (const toolCall of result.toolCalls) {
           const tool = tools.find(t => t.name === toolCall.toolName);
           if (!tool) {
-            console.warn(`Tool not found: ${toolCall.toolName}`);
+            logger.warn({ toolName: toolCall.toolName }, 'Tool not found');
             continue;
           }
 
@@ -89,7 +92,7 @@ export async function runAgent(options: AgentRunOptions): Promise<AgentRunResult
             };
             conversationHistory.push(toolMessage);
           } catch (error) {
-            console.error(`Error executing tool ${toolCall.toolName}:`, error);
+            logger.error({ err: error, toolName: toolCall.toolName }, 'Error executing tool');
             conversationHistory.push({
               role: 'tool',
               content: JSON.stringify({ error: 'Tool execution failed' }),
@@ -106,7 +109,7 @@ export async function runAgent(options: AgentRunOptions): Promise<AgentRunResult
       // No text and no tool calls - shouldn't happen, but handle it
       break;
     } catch (error) {
-      console.error('Error in agent step:', error);
+      logger.error({ err: error }, 'Error in agent step');
       throw new Error('Failed to execute agent workflow');
     }
   }

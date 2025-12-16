@@ -7,6 +7,9 @@ import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { setupRoutes } from './http/routes/index.js';
 import { setupSocketIO } from './sockets/index.js';
+import { createLogger } from '@vibe-ltp/shared';
+
+const logger = createLogger({ module: 'server' });
 
 // Load .env from workspace root
 // Note: override: false ensures environment variables passed via CLI take precedence
@@ -15,11 +18,11 @@ const __dirname = dirname(__filename);
 const envPath = resolve(__dirname, '../../../.env');
 dotenv.config({ path: envPath, override: false });
 
-console.log('🔧 Loading .env from:', envPath);
-console.log('🔑 OPENROUTER_API_KEY present:', !!process.env.OPENROUTER_API_KEY);
-console.log('🔌 BACKEND_PORT:', process.env.BACKEND_PORT || 4000);
-console.log('🌐 FRONTEND_PORT:', process.env.FRONTEND_PORT || 3000);
-console.log('🔒 CORS_ORIGIN:', process.env.CORS_ORIGIN || 'auto-generated');
+logger.info({ envPath }, '🔧 Loading .env');
+logger.info({ hasApiKey: !!process.env.OPENROUTER_API_KEY }, '🔑 OPENROUTER_API_KEY present');
+logger.info({ port: process.env.BACKEND_PORT || 4000 }, '🔌 BACKEND_PORT');
+logger.info({ port: process.env.FRONTEND_PORT || 3000 }, '🌐 FRONTEND_PORT');
+logger.info({ origin: process.env.CORS_ORIGIN || 'auto-generated' }, '🔒 CORS_ORIGIN');
 
 const app = express();
 const httpServer = createServer(app);
@@ -42,10 +45,10 @@ const io = new Server(httpServer, {
   pingInterval: 25000,
 });
 
-console.log('🔌 Socket.IO configured with:', {
+logger.info({
   transports: ['websocket'],
   allowedOrigins,
-});
+}, '🔌 Socket.IO configured');
 
 // Middleware
 app.use(cors({
@@ -66,5 +69,5 @@ setupSocketIO(io);
 const PORT = process.env.BACKEND_PORT || 4000;
 
 httpServer.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  logger.info({ url: `http://localhost:${PORT}` }, '🚀 Server running');
 });

@@ -2,6 +2,9 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { PuzzleContent, PuzzleContentPublic } from '@vibe-ltp/shared';
+import { createLogger } from '@vibe-ltp/shared';
+
+const logger = createLogger({ module: 'puzzleCatalog' });
 
 type RawPuzzle = {
   puzzleSurface?: string;
@@ -30,8 +33,9 @@ function normalizePuzzle(
   const soupTruth = item.puzzleTruth?.trim();
 
   if (!soupSurface || !soupTruth) {
-    console.warn(
-      `[puzzleCatalog] Missing content for ${source} puzzle index ${index}`
+    logger.warn(
+      { source, index },
+      '[puzzleCatalog] Missing content for puzzle'
     );
     return null;
   }

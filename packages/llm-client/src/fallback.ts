@@ -7,6 +7,10 @@
  * - if both fail, throw a compact aggregated error
  */
 
+import { createLogger } from '@vibe-ltp/shared';
+
+const logger = createLogger({ module: 'llm-fallback' });
+
 export interface ModelFallbackOptions {
   model: string;
   fallbackModel?: string;
@@ -31,21 +35,22 @@ export async function callWithFallbackModel<T>({
     return await call(model);
   } catch (primaryError) {
     if (!fallbackModel) {
-      console.error(`❌ ${operation} primary model (${model}) failed and no fallbackModel was provided`);
+      logger.error({ err: primaryError, model }, `❌ ${operation} primary model failed`);
       throw primaryError;
     }
 
-    console.warn(
-      `⚠️ ${operation} primary model (${model}) failed, trying fallback model (${fallbackModel})...`,
-      primaryError
+    logger.warn(
+      { err: primaryError, model, fallbackModel },
+      `⚠️ ${operation} primary model failed, trying fallback`
     );
 
     try {
       return await call(fallbackModel);
     } catch (fallbackError) {
-      console.error(`❌ ${operation}: both primary and fallback models failed`);
-      console.error('Primary error:', primaryError);
-      console.error('Fallback error:', fallbackError);
+      logger.error(
+        { primaryError, fallbackError },
+        `❌ ${operation}: both primary and fallback models failed`
+      );
 
       throw new Error(
         `Failed to ${operation}: Primary(${shortenError(primaryError)}), Fallback(${shortenError(fallbackError)})`

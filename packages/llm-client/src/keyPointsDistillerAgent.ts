@@ -4,11 +4,14 @@
  */
 
 import type { PuzzleContext } from './questionValidatorAgent.js';
+import { createLogger } from '@vibe-ltp/shared';
 import {
   distillPuzzleFacts,
   type FactDistillerOptions,
   type FactDistillationResult,
 } from './factDistillerAgent.js';
+
+const logger = createLogger({ module: 'keyPointsDistiller' });
 
 export interface KeyPointsDistillationResult {
   keyPoints: string[];
@@ -45,7 +48,7 @@ export async function distillPuzzleKeyPoints(
     systemPrompt: options.factSystemPrompt,
   };
 
-  console.log('\n[Key Points Distiller Agent]');
+  logger.info('[Key Points Distiller Agent]');
 
   const factResult = await distillPuzzleFacts(context.truth, factOptions);
 

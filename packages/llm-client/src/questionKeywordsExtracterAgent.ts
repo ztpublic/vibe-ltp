@@ -4,12 +4,15 @@
  */
 
 import { generateText } from 'ai';
+import { createLogger } from '@vibe-ltp/shared';
 import { callWithFallbackModel } from './fallback.js';
 import { openRouterLanguageModel } from './models.js';
 import {
   createExtractQuestionKeywordsTool,
   type ExtractQuestionKeywordsArgs,
 } from './tools.js';
+
+const logger = createLogger({ module: 'questionKeywordsExtracter' });
 
 export interface QuestionKeywordsExtracterOptions {
   model: string;
@@ -74,7 +77,7 @@ export async function extractQuestionKeywords(
     },
   };
 
-  console.log('\n[Question Keywords Extracter Agent]');
+  logger.info('[Question Keywords Extracter Agent]');
 
   const callModel = async (modelToUse: string) => {
     const result = await generateText({
@@ -92,7 +95,7 @@ export async function extractQuestionKeywords(
       }
     }
 
-    console.warn('No tool call returned; defaulting to empty keyword list.');
+    logger.warn('No tool call returned; defaulting to empty keyword list.');
     return { keywords: [] };
   };
 

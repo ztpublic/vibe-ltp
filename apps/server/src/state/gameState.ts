@@ -17,8 +17,11 @@ import type {
   SessionChatMessage,
   SessionQuestionHistoryEntry,
 } from '@vibe-ltp/shared';
+import { createLogger } from '@vibe-ltp/shared';
 import type { Embedding } from '@vibe-ltp/llm-client';
 import { exportGameSession, type ExportReason } from '../utils/gameExport.js';
+
+const logger = createLogger({ module: 'gameState' });
 
 export const DEFAULT_SESSION_ID: GameSessionId = 'default';
 export const SESSION_TTL_MS = 1000 * 60 * 60 * 4; // 4 hours
@@ -96,7 +99,7 @@ function exportSessionForAudit(sessionId: GameSessionId, reason: ExportReason): 
       reason,
     });
   } catch (error) {
-    console.error('[SessionExport] Failed to export session', sessionId, error);
+    logger.error({ err: error, sessionId }, '[SessionExport] Failed to export session');
     return undefined;
   }
 }
@@ -161,7 +164,7 @@ function startEmptyRoomCleanup(sessionId: GameSessionId): void {
     if (sessionStore.has(sessionId)) {
       const session = sessionStore.get(sessionId)!;
       if (session.meta.playerCount === 0 && sessionId !== DEFAULT_SESSION_ID) {
-        console.log(`[EmptyRoomCleanup] Removing empty room: ${sessionId}`);
+        logger.info({ sessionId }, '[EmptyRoomCleanup] Removing empty room');
         exportSessionForAudit(sessionId, 'empty-room-timeout');
         session.meta.isActive = false;
         sessionStore.delete(sessionId);
@@ -498,7 +501,7 @@ export function cleanupIdleSessions(now: number = Date.now()): GameSessionId[] {
 const cleanupInterval = setInterval(() => {
   const removed = cleanupIdleSessions();
   if (removed.length > 0) {
-    console.log(`[SessionStore] Cleaned up idle sessions: ${removed.join(', ')}`);
+    logger.info({ removedSessionIds: removed }, '[SessionStore] Cleaned up idle sessions');
   }
 }, CLEANUP_INTERVAL_MS);
 

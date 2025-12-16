@@ -4,9 +4,12 @@
  */
 
 import { generateText } from 'ai';
+import { createLogger } from '@vibe-ltp/shared';
 import { callWithFallbackModel } from './fallback.js';
 import { openRouterLanguageModel } from './models.js';
 import type { ChatMessage } from './types.js';
+
+const logger = createLogger({ module: 'truthValidator' });
 
 export interface TruthValidationInput {
   /** Player-proposed solution text */
@@ -94,8 +97,7 @@ export async function validateTruthProposal(
     ...buildContextMessages(input),
   ];
 
-  console.log('\n[Truth Validator Agent]');
-  console.log('Proposed truth:', input.proposedTruth);
+  logger.info({ proposedTruth: input.proposedTruth }, '[Truth Validator Agent]');
 
   const callModel = async (modelToUse: string) => {
     const result = await generateText({

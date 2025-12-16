@@ -15,10 +15,12 @@ import {
   validateTruthProposal,
   formatTruthValidationReply,
 } from '@vibe-ltp/llm-client';
+import { createLogger } from '@vibe-ltp/shared';
 import * as gameState from '../../state/gameState.js';
 import { v4 as uuidv4 } from 'uuid';
 import { getSocketServer } from '../../sockets/ioReference.js';
 
+const logger = createLogger({ module: 'chat' });
 const router = Router();
 const modelSelection = getModelSelection();
 
@@ -56,7 +58,7 @@ router.post('/chat', async (req, res) => {
     }
 
     // Log user identity for analytics
-    console.log(`[Chat] User "${userNickname}" asked: ${userText} (session=${sessionId})`);
+    logger.info({ userNickname, userText, sessionId }, '[Chat] User asked question');
 
     // Check if game has started and puzzle is loaded
     const currentGameState = gameState.getGameState(sessionId);
@@ -131,7 +133,7 @@ router.post('/chat', async (req, res) => {
     const response: ChatResponse = { decoration };
     res.json(response);
   } catch (error) {
-    console.error('Error in chat route:', error);
+    logger.error({ err: error }, 'Error in chat route');
     
     // Fallback response on error
     const reply: ChatResponse['reply'] = {
@@ -163,7 +165,7 @@ router.post('/feedback', (req, res) => {
     }
     return res.json({ success: true });
   } catch (error) {
-    console.error('Error in feedback route:', error);
+    logger.error({ err: error }, 'Error in feedback route');
     return res.status(500).json({ error: 'Failed to record feedback' });
   }
 });
@@ -187,7 +189,7 @@ router.post('/solution', async (req, res) => {
       return res.status(sessionCheck.status).json({ error: sessionCheck.message });
     }
 
-    console.log(`[Solution] User "${userNickname}" proposed: ${userText} (session=${sessionId})`);
+    logger.info({ userNickname, userText, sessionId }, '[Solution] User proposed solution');
 
     const currentGameState = gameState.getGameState(sessionId);
     const puzzleContent = gameState.getPuzzleContent(sessionId);
@@ -243,7 +245,7 @@ router.post('/solution', async (req, res) => {
     const response: ChatResponse = { reply };
     res.json(response);
   } catch (error) {
-    console.error('Error in solution route:', error);
+    logger.error({ err: error }, 'Error in solution route');
     
     const reply: ChatResponse['reply'] = {
       id: uuidv4(),

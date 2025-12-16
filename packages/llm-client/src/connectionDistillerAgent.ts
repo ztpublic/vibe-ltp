@@ -6,12 +6,15 @@
 import { generateText } from 'ai';
 import { callWithFallbackModel } from './fallback.js';
 import { openRouterLanguageModel } from './models.js';
+import { createLogger } from '@vibe-ltp/shared';
 import {
   createDistillConnectionsTool,
   type DistillConnectionsArgs,
 } from './tools.js';
 import type { PuzzleContext } from './questionValidatorAgent.js';
 import type { ChatMessage } from './types.js';
+
+const logger = createLogger({ module: 'connectionDistiller' });
 
 export interface ConnectionDistillationResult {
   connections: string[];
@@ -104,7 +107,7 @@ export async function distillPuzzleConnections(
     },
   };
 
-  console.log('\n[Connection Distiller Agent]');
+  logger.info('[Connection Distiller Agent]');
 
   const callModel = async (modelToUse: string) => {
     const result = await generateText({
@@ -122,7 +125,7 @@ export async function distillPuzzleConnections(
       }
     }
 
-    console.warn('No tool call returned; defaulting to empty connections.');
+    logger.warn('No tool call returned; defaulting to empty connections.');
     return { connections: [] };
   };
 

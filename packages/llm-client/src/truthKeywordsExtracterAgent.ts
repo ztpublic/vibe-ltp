@@ -4,6 +4,7 @@
  */
 
 import { generateText } from 'ai';
+import { createLogger } from '@vibe-ltp/shared';
 import { callWithFallbackModel } from './fallback.js';
 import { openRouterLanguageModel } from './models.js';
 import {
@@ -11,6 +12,8 @@ import {
   type ExtractTruthKeywordsArgs,
 } from './tools.js';
 import type { ChatMessage } from './types.js';
+
+const logger = createLogger({ module: 'truthKeywordsExtracter' });
 
 export interface TruthKeywordsContext {
   /** The puzzle surface (汤面) shown to players */
@@ -100,7 +103,7 @@ export async function extractTruthKeywords(
     },
   };
 
-  console.log('\n[Truth Keywords Extracter Agent]');
+  logger.info('[Truth Keywords Extracter Agent]');
 
   const callModel = async (modelToUse: string) => {
     const result = await generateText({
@@ -118,7 +121,7 @@ export async function extractTruthKeywords(
       }
     }
 
-    console.warn('No tool call returned; defaulting to empty keyword list.');
+    logger.warn('No tool call returned; defaulting to empty keyword list.');
     return { keywords: [] };
   };
 

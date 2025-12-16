@@ -15,9 +15,11 @@ import {
   JoinSessionRequestSchema,
   StartSessionRequestSchema,
 } from '@vibe-ltp/shared/schemas';
+import { createLogger } from '@vibe-ltp/shared';
 import * as gameState from '../../state/gameState.js';
 import { getSocketServer } from '../../sockets/ioReference.js';
 
+const logger = createLogger({ module: 'sessions' });
 const router = Router();
 
 const notFound = (res: Response, sessionId: GameSessionId) =>
@@ -54,7 +56,7 @@ router.post('/', (req, res) => {
       io.emit(SESSION_SOCKET_EVENTS.SESSION_LIST_UPDATED, { sessions: gameState.listSessions() });
     }
   } catch (error) {
-    console.error('[Sessions] Create failed', error);
+    logger.error({ err: error }, '[Sessions] Create failed');
     const message = error instanceof Error ? error.message : String(error);
     res.status(400).json({ error: message });
   }
@@ -162,7 +164,7 @@ router.post('/:sessionId/start', (req, res) => {
       io.emit(SESSION_SOCKET_EVENTS.SESSION_LIST_UPDATED, { sessions: gameState.listSessions() });
     }
   } catch (error) {
-    console.error('[Sessions] Start failed', error);
+    logger.error({ err: error }, '[Sessions] Start failed');
     return notFound(res, sessionId);
   }
 });
@@ -189,7 +191,7 @@ router.post('/:sessionId/reset', (req, res) => {
       io.emit(SESSION_SOCKET_EVENTS.SESSION_LIST_UPDATED, { sessions: gameState.listSessions() });
     }
   } catch (error) {
-    console.error('[Sessions] Reset failed', error);
+    logger.error({ err: error }, '[Sessions] Reset failed');
     return notFound(res, sessionId);
   }
 });
@@ -221,7 +223,7 @@ router.post('/:sessionId/end', (req, res) => {
       io.emit(SESSION_SOCKET_EVENTS.SESSION_LIST_UPDATED, { sessions: gameState.listSessions() });
     }
   } catch (error) {
-    console.error('[Sessions] End failed', error);
+    logger.error({ err: error }, '[Sessions] End failed');
     return notFound(res, sessionId);
   }
 });

@@ -1,6 +1,9 @@
 import { mkdirSync, writeFileSync } from 'fs';
 import path from 'path';
 import type { PuzzleContent, SessionQuestionHistoryEntry } from '@vibe-ltp/shared';
+import { createLogger } from '@vibe-ltp/shared';
+
+const logger = createLogger({ module: 'gameExport' });
 
 const EXPORT_ENABLED = process.env.GAME_EXPORT_ENABLED !== 'false' && process.env.NODE_ENV !== 'test';
 const DEFAULT_EXPORT_DIR = path.resolve(process.cwd(), '../../game-exports');
@@ -84,10 +87,10 @@ export function exportGameSession(input: ExportInput): string | undefined {
     const filename = formatFilename(sessionId, exportedAt, reason);
     const filePath = path.join(dir, filename);
     writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf-8');
-    console.log(`[GameExport] Saved session ${sessionId} (${reason}) -> ${filePath}`);
+    logger.info({ sessionId, reason, filePath }, '[GameExport] Saved session');
     return filePath;
   } catch (error) {
-    console.error('[GameExport] Failed to export session', sessionId, error);
+    logger.error({ err: error, sessionId }, '[GameExport] Failed to export session');
     return undefined;
   }
 }

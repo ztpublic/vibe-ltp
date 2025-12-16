@@ -7,10 +7,13 @@ import {
   type PuzzleContent,
   type SessionChatMessage,
 } from '@vibe-ltp/shared';
+import { createLogger } from '@vibe-ltp/shared';
 import * as gameState from '../state/gameState.js';
 import { handleSocketError, sendSocketSuccess } from '../utils/errorHandler.js';
 import { setSocketServer } from './ioReference.js';
 import { pickRandomPuzzle } from '../puzzles/randomPuzzle.js';
+
+const logger = createLogger({ module: 'sockets' });
 
 export function setupSocketIO(io: Server): void {
   setSocketServer(io);
@@ -22,7 +25,7 @@ export function setupSocketIO(io: Server): void {
         ? requestedSessionId
         : defaultSessionId;
 
-    console.log(`[Socket] Client connected: ${socket.id} (session=${sessionId})`);
+    logger.info({ socketId: socket.id, sessionId }, '[Socket] Client connected');
 
     // Join the session (increment player count)
     const joinedSnapshot = gameState.joinSession(sessionId);
@@ -168,7 +171,7 @@ export function setupSocketIO(io: Server): void {
 
     // Handle disconnect
     socket.on(SOCKET_EVENTS.DISCONNECT, (reason: string) => {
-      console.log(`[Socket] Client disconnected: ${socket.id}, reason: ${reason}, session=${sessionId}`);
+      logger.info({ socketId: socket.id, reason, sessionId }, '[Socket] Client disconnected');
       // Leave the session (decrement player count)
       gameState.leaveSession(sessionId);
     });

@@ -4,6 +4,7 @@
  */
 
 import { generateText } from 'ai';
+import { createLogger } from '@vibe-ltp/shared';
 import { callWithFallbackModel } from './fallback.js';
 import { openRouterLanguageModel } from './models.js';
 import {
@@ -11,6 +12,8 @@ import {
   type MatchKeyPointsArgs,
 } from './tools.js';
 import type { ChatMessage } from './types.js';
+
+const logger = createLogger({ module: 'keyPointsMatcher' });
 
 export interface KeyPointsMatchInput {
   question: string;
@@ -108,9 +111,7 @@ export async function matchKeyPoints(
     },
   };
 
-  console.log('\n[Key Points Matcher Agent]');
-  console.log('Question:', input.question);
-  console.log('Answer:', input.answer);
+  logger.info({ question: input.question, answer: input.answer }, '[Key Points Matcher Agent]');
 
   const callModel = async (modelToUse: string) => {
     const result = await generateText({
@@ -128,7 +129,7 @@ export async function matchKeyPoints(
       }
     }
 
-    console.warn('No tool call returned; defaulting to no matches.');
+    logger.warn('No tool call returned; defaulting to no matches.');
     return { matchedIndexes: [] };
   };
 

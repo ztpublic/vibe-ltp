@@ -4,6 +4,7 @@
  */
 
 import { generateText } from 'ai';
+import { createLogger } from '@vibe-ltp/shared';
 import { callWithFallbackModel } from './fallback.js';
 import { openRouterLanguageModel } from './models.js';
 import {
@@ -12,6 +13,8 @@ import {
 } from './tools.js';
 import type { PuzzleContext } from './questionValidatorAgent.js';
 import type { ChatMessage } from './types.js';
+
+const logger = createLogger({ module: 'logicChainGenerator' });
 
 export interface LogicChainResult {
   chain: string[];
@@ -105,7 +108,7 @@ export async function distillPuzzleLogicChain(
     },
   };
 
-  console.log('\n[Logic Chain Generator]');
+  logger.info('[Logic Chain Generator]');
 
   const callModel = async (modelToUse: string) => {
     const result = await generateText({
@@ -123,7 +126,7 @@ export async function distillPuzzleLogicChain(
       }
     }
 
-    console.warn('No tool call returned; defaulting to empty logic chain.');
+    logger.warn('No tool call returned; defaulting to empty logic chain.');
     return { chain: [] };
   };
 

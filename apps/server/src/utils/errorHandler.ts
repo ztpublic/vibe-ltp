@@ -1,3 +1,7 @@
+import { createLogger } from '@vibe-ltp/shared';
+
+const logger = createLogger({ module: 'errorHandler' });
+
 /**
  * Socket Error Handler
  * Standardized error handling for Socket.IO event handlers
@@ -20,7 +24,7 @@ export function handleSocketError(
   callback?: SocketCallback
 ): void {
   const errorMessage = error instanceof Error ? error.message : String(error);
-  console.error(`[Socket] ${context}:`, errorMessage);
+  logger.error({ err: error, context }, '[Socket] Error occurred');
   
   if (callback) {
     callback({ success: false, error: errorMessage });

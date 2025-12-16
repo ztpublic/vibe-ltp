@@ -23,9 +23,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "pino": "^10.1.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/pino": "^7.0.5",
     "@vibe-ltp/config": "workspace:*",
     "typescript": "^5.6.3"
   }

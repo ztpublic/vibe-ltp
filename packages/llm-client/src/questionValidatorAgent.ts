@@ -5,10 +5,13 @@
  */
 
 import { generateText } from 'ai';
+import { createLogger } from '@vibe-ltp/shared';
 import { callWithFallbackModel } from './fallback.js';
 import { openRouterLanguageModel } from './models.js';
 import { createEvaluateQuestionTool, type EvaluateQuestionArgs, type AnswerType } from './tools.js';
 import type { ChatMessage } from './types.js';
+
+const logger = createLogger({ module: 'questionValidator' });
 
 /**
  * Question-answer pair in conversation history
@@ -159,8 +162,7 @@ export async function validatePuzzleQuestion(
     },
   };
 
-  console.log('\n[Question Validator Agent]');
-  console.log('Input:', question);
+  logger.info({ question }, '[Question Validator Agent]');
 
   // Helper function to call LLM with tool
   const callModel = async (modelToUse: string) => {
@@ -180,7 +182,7 @@ export async function validatePuzzleQuestion(
       if (toolCall) {
         const args = toolCall.args as EvaluateQuestionArgs;
         
-        console.log('Output:', args.answer.toUpperCase());
+        logger.info({ output: args.answer.toUpperCase() }, 'Output');
 
         return {
           answer: args.answer,
@@ -190,7 +192,7 @@ export async function validatePuzzleQuestion(
     }
 
     // Fallback if no tool call (shouldn't happen with proper prompt)
-    console.log('Output: UNKNOWN (no tool call)');
+    logger.info('Output: UNKNOWN (no tool call)');
     
     return {
       answer: 'unknown' as const,
