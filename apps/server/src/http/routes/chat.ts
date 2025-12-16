@@ -1,14 +1,16 @@
 import { Router, type Router as RouterType } from 'express';
 import {
   SOCKET_EVENTS,
-  type ChatRequest,
   type ChatResponse,
   type ChatReplyDecoration,
   type GameSessionId,
   type GameSessionSnapshot,
+  type SessionChatMessage,
 } from '@vibe-ltp/shared';
+import { ChatFeedbackRequestSchema, ChatRequestSchema } from '@vibe-ltp/shared/schemas';
 import {
   type PuzzleContext,
+  getModelSelection,
   validatePuzzleQuestion,
   validateTruthProposal,
   formatTruthValidationReply,
@@ -18,7 +20,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSocketServer } from '../../sockets/ioReference.js';
 
 const router = Router();
-const model = 'x-ai/grok-4-fast';
+const modelSelection = getModelSelection();
 
 const buildReplyPreview = (text: string, maxLength = 80) => {
   if (!text) return '';
@@ -35,7 +37,12 @@ function requireActiveSession(
 }
 
 router.post('/chat', async (req, res) => {
-  const body = req.body as ChatRequest & { sessionId?: GameSessionId };
+  const parsed = ChatRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid chat request', issues: parsed.error.issues });
+  }
+
+  const body = parsed.data;
 
   try {
     const userMessage = body.message;
@@ -69,9 +76,9 @@ router.post('/chat', async (req, res) => {
     const io = getSocketServer();
 
     // Persist the raw user message immediately so reconnecting clients can restore the question even if validation fails.
-    const persistedUserMessage = {
+    const persistedUserMessage: SessionChatMessage = {
       id: userMessage.id,
-      type: 'user' as const,
+      type: 'user',
       content: userText,
       nickname: userNickname,
       timestamp: userMessage.timestamp ?? new Date().toISOString(),
@@ -91,7 +98,7 @@ router.post('/chat', async (req, res) => {
     const evaluation = await validatePuzzleQuestion(
       userText,
       puzzleContext,
-      model
+      modelSelection
     );
 
     // Add to question history
@@ -105,9 +112,9 @@ router.post('/chat', async (req, res) => {
     };
 
     // Persist decorated user message in chat history
-    const decoratedUserMessage = {
+    const decoratedUserMessage: SessionChatMessage = {
       id: userMessage.id,
-      type: 'user' as const,
+      type: 'user',
       content: userText,
       nickname: userNickname,
       timestamp: userMessage.timestamp ?? new Date().toISOString(),
@@ -139,19 +146,14 @@ router.post('/chat', async (req, res) => {
 });
 
 router.post('/feedback', (req, res) => {
-  const body = req.body as {
-    sessionId?: GameSessionId;
-    messageId?: string;
-    direction?: 'up' | 'down' | null;
-    question?: string;
-  };
-  const sessionId = body.sessionId ?? gameState.getDefaultSessionId();
-  const { messageId, direction } = body;
-
-  if (!messageId) {
-    return res.status(400).json({ error: 'Missing messageId' });
+  const parsed = ChatFeedbackRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid feedback request', issues: parsed.error.issues });
   }
 
+  const body = parsed.data;
+  const sessionId = body.sessionId ?? gameState.getDefaultSessionId();
+  const { messageId, direction } = body;
   const thumbsDown = direction === 'down';
 
   try {
@@ -167,7 +169,12 @@ router.post('/feedback', (req, res) => {
 });
 
 router.post('/solution', async (req, res) => {
-  const body = req.body as ChatRequest & { sessionId?: GameSessionId };
+  const parsed = ChatRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid solution request', issues: parsed.error.issues });
+  }
+
+  const body = parsed.data;
 
   try {
     const userMessage = body.message;
@@ -198,9 +205,9 @@ router.post('/solution', async (req, res) => {
 
     const io = getSocketServer();
 
-    const persistedUserMessage = {
+    const persistedUserMessage: SessionChatMessage = {
       id: userMessage.id,
-      type: 'user' as const,
+      type: 'user',
       content: userText,
       nickname: userNickname,
       timestamp: userMessage.timestamp ?? new Date().toISOString(),
@@ -215,7 +222,7 @@ router.post('/solution', async (req, res) => {
         actualTruth: puzzleContent.soupTruth,
         surface: puzzleContent.soupSurface,
       },
-      model
+      modelSelection
     );
 
     const reply: ChatResponse['reply'] = {

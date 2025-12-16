@@ -1,20 +1,25 @@
-import { Router, type Router as RouterType } from 'express';
+import { Router, type Router as RouterType, type Response } from 'express';
 import {
   SESSION_SOCKET_EVENTS,
   SOCKET_EVENTS,
-  type CreateSessionRequest,
   type CreateSessionResponse,
   type GameSessionId,
   type GetSessionResponse,
   type ListSessionsResponse,
   type SessionStateUpdate,
 } from '@vibe-ltp/shared';
+import {
+  CreateSessionRequestSchema,
+  EndSessionRequestSchema,
+  JoinSessionRequestSchema,
+  StartSessionRequestSchema,
+} from '@vibe-ltp/shared/schemas';
 import * as gameState from '../../state/gameState.js';
 import { getSocketServer } from '../../sockets/ioReference.js';
 
 const router = Router();
 
-const notFound = (res: any, sessionId: GameSessionId) =>
+const notFound = (res: Response, sessionId: GameSessionId) =>
   res.status(404).json({ error: `Session not found: ${sessionId}` });
 
 router.get('/', (_req, res) => {
@@ -25,7 +30,12 @@ router.get('/', (_req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const body = req.body as CreateSessionRequest;
+  const parsed = CreateSessionRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid create session request', issues: parsed.error.issues });
+  }
+
+  const body = parsed.data;
   try {
     const snapshot = gameState.createSession({
       title: body.title,
@@ -44,12 +54,13 @@ router.post('/', (req, res) => {
     }
   } catch (error) {
     console.error('[Sessions] Create failed', error);
-    res.status(400).json({ error: (error as Error).message });
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(400).json({ error: message });
   }
 });
 
 router.get('/:sessionId', (req, res) => {
-  const { sessionId } = req.params as { sessionId: GameSessionId };
+  const sessionId: GameSessionId = req.params.sessionId;
   const session = gameState.getSession(sessionId);
   if (!session) return notFound(res, sessionId);
 
@@ -63,7 +74,11 @@ router.get('/:sessionId', (req, res) => {
 });
 
 router.post('/:sessionId/join', (req, res) => {
-  const { sessionId } = req.params as { sessionId: GameSessionId };
+  const sessionId: GameSessionId = req.params.sessionId;
+  const parsed = JoinSessionRequestSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid join session request', issues: parsed.error.issues });
+  }
   try {
     const session = gameState.joinSession(sessionId);
     const payload: GetSessionResponse = {
@@ -84,7 +99,7 @@ router.post('/:sessionId/join', (req, res) => {
 });
 
 router.post('/:sessionId/leave', (req, res) => {
-  const { sessionId } = req.params as { sessionId: GameSessionId };
+  const sessionId: GameSessionId = req.params.sessionId;
   try {
     const session = gameState.leaveSession(sessionId);
     if (!session) return notFound(res, sessionId);
@@ -102,12 +117,13 @@ router.post('/:sessionId/leave', (req, res) => {
 });
 
 router.post('/:sessionId/start', (req, res) => {
-  const { sessionId } = req.params as { sessionId: GameSessionId };
-  const { puzzleContent } = req.body as { puzzleContent?: any };
-
-  if (!puzzleContent) {
-    return res.status(400).json({ error: 'puzzleContent is required to start a session' });
+  const sessionId: GameSessionId = req.params.sessionId;
+  const parsed = StartSessionRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid start session request', issues: parsed.error.issues });
   }
+
+  const { puzzleContent } = parsed.data;
 
   try {
     const snapshot = gameState.startSession(sessionId, puzzleContent);
@@ -133,7 +149,7 @@ router.post('/:sessionId/start', (req, res) => {
 });
 
 router.post('/:sessionId/reset', (req, res) => {
-  const { sessionId } = req.params as { sessionId: GameSessionId };
+  const sessionId: GameSessionId = req.params.sessionId;
 
   try {
     gameState.resetGameState(sessionId);
@@ -160,8 +176,13 @@ router.post('/:sessionId/reset', (req, res) => {
 });
 
 router.post('/:sessionId/end', (req, res) => {
-  const { sessionId } = req.params as { sessionId: GameSessionId };
-  const { revealContent = true, preserveChat = true } = req.body ?? {};
+  const sessionId: GameSessionId = req.params.sessionId;
+  const parsed = EndSessionRequestSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid end session request', issues: parsed.error.issues });
+  }
+
+  const { revealContent = true, preserveChat = true } = parsed.data;
 
   try {
     const snapshot = gameState.endSession(sessionId, { revealContent, preserveChat });

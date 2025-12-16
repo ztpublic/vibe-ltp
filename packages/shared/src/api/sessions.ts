@@ -29,6 +29,15 @@ export interface ListSessionsResponse {
   sessions: GameSession[];
 }
 
+export interface StartSessionRequest {
+  puzzleContent: PuzzleContent;
+}
+
+export interface EndSessionRequest {
+  revealContent?: boolean;
+  preserveChat?: boolean;
+}
+
 export interface GetSessionResponse {
   session: GameSessionSnapshot;
   chatHistory?: SessionChatMessage[];

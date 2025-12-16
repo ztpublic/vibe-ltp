@@ -4,10 +4,10 @@
  */
 
 import { generateText } from 'ai';
-import { getOpenRouterClient } from './client.js';
+import { callWithFallbackModel } from './fallback.js';
+import { openRouterLanguageModel } from './models.js';
 import {
   createMatchKeyPointsTool,
-  MatchKeyPointsArgsSchema,
   type MatchKeyPointsArgs,
 } from './tools.js';
 import type { ChatMessage } from './types.js';
@@ -94,7 +94,6 @@ export async function matchKeyPoints(
     return { matchedIndexes: [] };
   }
 
-  const openRouter = getOpenRouterClient();
   const matchTool = createMatchKeyPointsTool();
 
   const messages = [
@@ -105,8 +104,7 @@ export async function matchKeyPoints(
   const aiTools = {
     [matchTool.name]: {
       description: matchTool.description,
-      parameters: MatchKeyPointsArgsSchema,
-      execute: async (args: any) => await matchTool.execute(args),
+      parameters: matchTool.parameters,
     },
   };
 
@@ -116,7 +114,7 @@ export async function matchKeyPoints(
 
   const callModel = async (modelToUse: string) => {
     const result = await generateText({
-      model: openRouter(modelToUse) as any,
+      model: openRouterLanguageModel(modelToUse),
       messages: messages.map(m => ({ role: m.role, content: m.content })),
       tools: aiTools,
       maxSteps: 1,
@@ -134,27 +132,10 @@ export async function matchKeyPoints(
     return { matchedIndexes: [] };
   };
 
-  try {
-    return await callModel(model);
-  } catch (primaryError) {
-    if (!fallbackModelToUse) {
-      console.error(`❌ Key points matcher primary model (${model}) failed and no fallbackModel was provided`);
-      throw primaryError;
-    }
-
-    console.warn(`⚠️ Key points matcher primary model (${model}) failed, trying fallback model (${fallbackModelToUse})...`, primaryError);
-
-    try {
-      return await callModel(fallbackModelToUse);
-    } catch (fallbackError) {
-      console.error('❌ Key points matcher: both primary and fallback models failed');
-      console.error('Primary error:', primaryError);
-      console.error('Fallback error:', fallbackError);
-
-      const primaryMsg = String(primaryError).slice(0, 50);
-      const fallbackMsg = String(fallbackError).slice(0, 50);
-
-      throw new Error(`Failed to match key points: Primary(${primaryMsg}), Fallback(${fallbackMsg})`);
-    }
-  }
+  return callWithFallbackModel({
+    operation: 'match key points',
+    model,
+    fallbackModel: fallbackModelToUse,
+    call: callModel,
+  });
 }

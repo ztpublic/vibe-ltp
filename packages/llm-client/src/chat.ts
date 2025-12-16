@@ -4,7 +4,7 @@
  */
 
 import { generateText } from 'ai';
-import { getOpenRouterClient } from './client.js';
+import { openRouterLanguageModel } from './models.js';
 import type { ChatMessage } from './types.js';
 
 export type ChatModelId = string; // e.g. 'openai/gpt-4o-mini', 'google/gemini-2.0-flash-001'
@@ -21,11 +21,10 @@ export interface ChatReplyOptions {
  */
 export async function chatReply(options: ChatReplyOptions): Promise<string> {
   const { model, systemPrompt, messages } = options;
-  const openRouter = getOpenRouterClient();
 
   try {
     const result = await generateText({
-      model: openRouter(model) as any,
+      model: openRouterLanguageModel(model),
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages.map(m => ({

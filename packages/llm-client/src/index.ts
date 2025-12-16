@@ -5,6 +5,8 @@
 
 export * from './types.js';
 export * from './client.js';
+export * from './models.js';
+export * from './fallback.js';
 export * from './chat.js';
 export * from './tools.js';
 export * from './agent.js';

@@ -4,7 +4,6 @@
  */
 
 import { z, type ZodTypeAny } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { AgentTool } from './types.js';
 import type { AnswerType as SharedAnswerType } from '@vibe-ltp/shared';
 
@@ -307,16 +306,10 @@ export function defineTool<ArgsSchema extends ZodTypeAny, Result>(
     execute: (args: z.infer<ArgsSchema>) => Promise<Result> | Result;
   }
 ): AgentTool<z.infer<ArgsSchema>, Result> {
-  // Reduce type-level work to avoid excessive instantiation from zod's complex generics
-  const jsonSchema: Record<string, unknown> = (zodToJsonSchema as unknown as (
-    schema: ZodTypeAny,
-    options: Record<string, unknown>
-  ) => unknown)(opts.argsSchema as ZodTypeAny, { target: 'openApi3' }) as Record<string, unknown>;
-
   return {
     name: opts.name,
     description: opts.description,
-    parameters: jsonSchema as Record<string, unknown>,
+    parameters: opts.argsSchema,
     execute: opts.execute,
   };
 }

@@ -1,4 +1,4 @@
-import type { ChatRequest, ChatResponse, UserMessage, ChatMessage } from '@vibe-ltp/shared';
+import type { ChatFeedbackRequest, ChatRequest, ChatResponse, UserMessage, ChatMessage } from '@vibe-ltp/shared';
 import type { ChatService } from './chatService';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${process.env.NEXT_PUBLIC_BACKEND_PORT || 4000}`;
@@ -60,20 +60,18 @@ export class ApiChatService implements ChatService {
     }
   }
 
-  async sendMessage(userMessage: UserMessage, history: ChatMessage[] = []): Promise<ChatResponse> {
+  async sendMessage(userMessage: UserMessage, _history: ChatMessage[] = []): Promise<ChatResponse> {
     const body: ChatRequest = {
       message: userMessage,
-      history,
       sessionId: this.sessionId,
     };
 
     return this.postChat('/api/chat', body);
   }
 
-  async requestSolution(userMessage: UserMessage, history: ChatMessage[] = []): Promise<ChatResponse> {
+  async requestSolution(userMessage: UserMessage, _history: ChatMessage[] = []): Promise<ChatResponse> {
     const body: ChatRequest = {
       message: userMessage,
-      history,
       sessionId: this.sessionId,
     };
 
@@ -81,15 +79,17 @@ export class ApiChatService implements ChatService {
   }
 
   async setQuestionFeedback(messageId: string, direction: 'up' | 'down' | null, question?: string): Promise<void> {
+    const payload: ChatFeedbackRequest = {
+      sessionId: this.sessionId,
+      messageId,
+      direction,
+      question,
+    };
+
     const res = await fetch(`${API_BASE}/api/feedback`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId: this.sessionId,
-        messageId,
-        direction,
-        question,
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {

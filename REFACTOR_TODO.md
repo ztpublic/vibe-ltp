@@ -29,18 +29,18 @@ This list is based on a quick repo audit plus running:
 
 ## P2 — Contracts + validation
 
-- [ ] Add Zod schemas for HTTP payloads in `packages/shared` (requests + responses) and use them in server routes.
+- [x] Add Zod schemas for HTTP payloads in `packages/shared` (requests + responses) and use them in server routes.
   - Targets: `ChatRequest`, `CreateSessionRequest`, `PuzzleContent`, feedback payloads.
-- [ ] Remove `as` casts/`any` in server routes and validate input at the boundary.
+- [x] Remove `as` casts/`any` in server routes and validate input at the boundary.
   - Example: `apps/server/src/http/routes/sessions.ts` (`res: any`, `puzzleContent?: any`).
-- [ ] Reconcile `ChatRequest.history`: the client sends it (`ApiChatService`), but the server ignores it (`apps/server/src/http/routes/chat.ts`).
+- [x] Reconcile `ChatRequest.history`: the client sends it (`ApiChatService`), but the server ignores it (`apps/server/src/http/routes/chat.ts`).
 
 ## P3 — LLM client refactors (reduce duplication + tighten types)
 
-- [ ] Centralize model selection (env var + default) and stop hardcoding `x-ai/grok-4-fast` in `apps/server/src/http/routes/chat.ts`.
-- [ ] Deduplicate “call primary model, fallback model” logic across agents (`questionValidatorAgent`, `truthValidatorAgent`, etc.) into a shared helper.
-- [ ] Normalize tool typing: `packages/llm-client/src/tools.ts` produces JSON Schema, but several agents pass Zod directly and cast `as any`; pick one approach and wrap it.
-- [ ] Reduce `as any` usage for `openRouter(model)` by introducing a typed wrapper that returns `LanguageModel`.
+- [x] Centralize model selection (env var + default) and stop hardcoding `x-ai/grok-4-fast` in `apps/server/src/http/routes/chat.ts`.
+- [x] Deduplicate “call primary model, fallback model” logic across agents (`questionValidatorAgent`, `truthValidatorAgent`, etc.) into a shared helper.
+- [x] Normalize tool typing: `packages/llm-client/src/tools.ts` produces JSON Schema, but several agents pass Zod directly and cast `as any`; pick one approach and wrap it.
+- [x] Reduce `as any` usage for `openRouter(model)` by introducing a typed wrapper that returns `LanguageModel`.
 
 ## P4 — Frontend cleanup + UX layering
 

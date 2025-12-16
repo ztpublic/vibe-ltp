@@ -4,10 +4,10 @@
  */
 
 import { generateText } from 'ai';
-import { getOpenRouterClient } from './client.js';
+import { callWithFallbackModel } from './fallback.js';
+import { openRouterLanguageModel } from './models.js';
 import {
   createExtractQuestionKeywordsTool,
-  ExtractQuestionKeywordsArgsSchema,
   type ExtractQuestionKeywordsArgs,
 } from './tools.js';
 
@@ -57,7 +57,6 @@ export async function extractQuestionKeywords(
   const fallbackModelToUse = options.fallbackModel;
   const systemPrompt = options.systemPrompt ?? buildQuestionKeywordsExtracterSystemPrompt();
 
-  const openRouter = getOpenRouterClient();
   const extractTool = createExtractQuestionKeywordsTool();
 
   const messages = [
@@ -71,8 +70,7 @@ export async function extractQuestionKeywords(
   const aiTools = {
     [extractTool.name]: {
       description: extractTool.description,
-      parameters: ExtractQuestionKeywordsArgsSchema,
-      execute: async (args: any) => await extractTool.execute(args),
+      parameters: extractTool.parameters,
     },
   };
 
@@ -80,7 +78,7 @@ export async function extractQuestionKeywords(
 
   const callModel = async (modelToUse: string) => {
     const result = await generateText({
-      model: openRouter(modelToUse) as any,
+      model: openRouterLanguageModel(modelToUse),
       messages,
       tools: aiTools,
       maxSteps: 1,
@@ -98,27 +96,10 @@ export async function extractQuestionKeywords(
     return { keywords: [] };
   };
 
-  try {
-    return await callModel(model);
-  } catch (primaryError) {
-    if (!fallbackModelToUse) {
-      console.error(`❌ Primary model (${model}) failed and no fallbackModel was provided`);
-      throw primaryError;
-    }
-
-    console.warn(`⚠️ Primary model (${model}) failed, trying fallback model (${fallbackModelToUse})...`, primaryError);
-
-    try {
-      return await callModel(fallbackModelToUse);
-    } catch (fallbackError) {
-      console.error('❌ Both primary and fallback models failed');
-      console.error('Primary error:', primaryError);
-      console.error('Fallback error:', fallbackError);
-
-      const primaryMsg = String(primaryError).slice(0, 50);
-      const fallbackMsg = String(fallbackError).slice(0, 50);
-
-      throw new Error(`Failed to extract question keywords: Primary(${primaryMsg}), Fallback(${fallbackMsg})`);
-    }
-  }
+  return callWithFallbackModel({
+    operation: 'extract question keywords',
+    model,
+    fallbackModel: fallbackModelToUse,
+    call: callModel,
+  });
 }

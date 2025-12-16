@@ -5,8 +5,9 @@
  */
 
 import { generateText } from 'ai';
-import { getOpenRouterClient } from './client.js';
-import { createEvaluateQuestionTool, EvaluateQuestionArgsSchema, type EvaluateQuestionArgs, type AnswerType } from './tools.js';
+import { callWithFallbackModel } from './fallback.js';
+import { openRouterLanguageModel } from './models.js';
+import { createEvaluateQuestionTool, type EvaluateQuestionArgs, type AnswerType } from './tools.js';
 import type { ChatMessage } from './types.js';
 
 /**
@@ -139,7 +140,6 @@ export async function validatePuzzleQuestion(
   const fallbackModelToUse = options.fallbackModel;
   const systemPrompt = options.systemPrompt ?? buildQuestionValidatorSystemPrompt();
 
-  const openRouter = getOpenRouterClient();
   const evaluateTool = createEvaluateQuestionTool();
 
   // Build messages following agent-flow.md structure
@@ -155,8 +155,7 @@ export async function validatePuzzleQuestion(
   const aiTools = {
     [evaluateTool.name]: {
       description: evaluateTool.description,
-      parameters: EvaluateQuestionArgsSchema, // Pass Zod schema directly
-      execute: async (args: any) => await evaluateTool.execute(args),
+      parameters: evaluateTool.parameters,
     },
   };
 
@@ -166,7 +165,7 @@ export async function validatePuzzleQuestion(
   // Helper function to call LLM with tool
   const callModel = async (modelToUse: string) => {
     const result = await generateText({
-      model: openRouter(modelToUse) as any,
+      model: openRouterLanguageModel(modelToUse),
       messages: messages.map(m => ({
         role: m.role,
         content: m.content,
@@ -198,32 +197,12 @@ export async function validatePuzzleQuestion(
     };
   };
 
-  try {
-    // Try with primary model
-    return await callModel(model);
-  } catch (primaryError) {
-    if (!fallbackModelToUse) {
-      console.error(`❌ Primary model (${model}) failed and no fallbackModel was provided`);
-      throw primaryError;
-    }
-
-    console.warn(`⚠️ Primary model (${model}) failed, trying fallback model (${fallbackModelToUse})...`, primaryError);
-    
-    try {
-      // Retry with fallback model
-      return await callModel(fallbackModelToUse);
-    } catch (fallbackError) {
-      console.error('❌ Both primary and fallback models failed');
-      console.error('Primary error:', primaryError);
-      console.error('Fallback error:', fallbackError);
-      
-      // Shorten error messages to 50 chars max
-      const primaryMsg = String(primaryError).slice(0, 50);
-      const fallbackMsg = String(fallbackError).slice(0, 50);
-      
-      throw new Error(`Failed to validate puzzle question: Primary(${primaryMsg}), Fallback(${fallbackMsg})`);
-    }
-  }
+  return callWithFallbackModel({
+    operation: 'validate puzzle question',
+    model,
+    fallbackModel: fallbackModelToUse,
+    call: callModel,
+  });
 }
 
 /**

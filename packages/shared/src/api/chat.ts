@@ -13,8 +13,11 @@ export interface ChatRequest {
   /** The user message being sent */
   message: UserMessage;
   
-  /** Conversation history for context */
-  history: ChatMessage[];
+  /**
+   * Optional conversation history for context.
+   * The server maintains canonical history per session; clients may omit this.
+   */
+  history?: ChatMessage[];
 
   /** Target session ID for multi-session gameplay */
   sessionId?: GameSessionId;
@@ -45,4 +48,19 @@ export interface ChatReplyDecoration {
   answer: AnswerType;
   /** Optional tip to show alongside the decoration */
   tip?: string;
+}
+
+export interface ChatFeedbackRequest {
+  /** Target session ID for multi-session gameplay */
+  sessionId?: GameSessionId;
+  /** Message ID for the question being rated */
+  messageId: MessageId;
+  /** Feedback direction (or null to clear) */
+  direction?: 'up' | 'down' | null;
+  /** Optional question text fallback (for older messages without IDs) */
+  question?: string;
+}
+
+export interface ChatFeedbackResponse {
+  success: boolean;
 }

@@ -4,7 +4,8 @@
  */
 
 import { generateText } from 'ai';
-import { getOpenRouterClient } from './client.js';
+import { callWithFallbackModel } from './fallback.js';
+import { openRouterLanguageModel } from './models.js';
 import type { ChatMessage } from './types.js';
 
 export interface TruthValidationInput {
@@ -88,8 +89,6 @@ export async function validateTruthProposal(
   const fallbackModelToUse = options.fallbackModel;
   const systemPrompt = options.systemPrompt ?? buildTruthValidatorSystemPrompt();
 
-  const openRouter = getOpenRouterClient();
-
   const messages = [
     { role: 'system' as const, content: systemPrompt },
     ...buildContextMessages(input),
@@ -100,7 +99,7 @@ export async function validateTruthProposal(
 
   const callModel = async (modelToUse: string) => {
     const result = await generateText({
-      model: openRouter(modelToUse) as any,
+      model: openRouterLanguageModel(modelToUse),
       messages: messages.map(m => ({ role: m.role, content: m.content })),
     });
 
@@ -111,32 +110,12 @@ export async function validateTruthProposal(
     };
   };
 
-  try {
-    return await callModel(model);
-  } catch (primaryError) {
-    if (!fallbackModelToUse) {
-      console.error(`❌ Truth validator primary model (${model}) failed and no fallbackModel was provided`);
-      throw primaryError;
-    }
-
-    console.warn(
-      `⚠️ Truth validator primary model (${model}) failed, trying fallback model (${fallbackModelToUse})...`,
-      primaryError
-    );
-
-    try {
-      return await callModel(fallbackModelToUse);
-    } catch (fallbackError) {
-      console.error('❌ Truth validator: both primary and fallback models failed');
-      console.error('Primary error:', primaryError);
-      console.error('Fallback error:', fallbackError);
-
-      const primaryMsg = String(primaryError).slice(0, 50);
-      const fallbackMsg = String(fallbackError).slice(0, 50);
-
-      throw new Error(`Failed to validate proposed truth: Primary(${primaryMsg}), Fallback(${fallbackMsg})`);
-    }
-  }
+  return callWithFallbackModel({
+    operation: 'validate proposed truth',
+    model,
+    fallbackModel: fallbackModelToUse,
+    call: callModel,
+  });
 }
 
 export function formatTruthValidationReply(result: TruthValidationResult): string {

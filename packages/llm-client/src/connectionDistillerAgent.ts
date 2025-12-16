@@ -4,10 +4,10 @@
  */
 
 import { generateText } from 'ai';
-import { getOpenRouterClient } from './client.js';
+import { callWithFallbackModel } from './fallback.js';
+import { openRouterLanguageModel } from './models.js';
 import {
   createDistillConnectionsTool,
-  DistillConnectionsArgsSchema,
   type DistillConnectionsArgs,
 } from './tools.js';
 import type { PuzzleContext } from './questionValidatorAgent.js';
@@ -90,7 +90,6 @@ export async function distillPuzzleConnections(
   const fallbackModelToUse = options.fallbackModel;
   const systemPrompt = options.systemPrompt ?? buildConnectionDistillerSystemPrompt();
 
-  const openRouter = getOpenRouterClient();
   const distillTool = createDistillConnectionsTool();
 
   const messages = [
@@ -101,8 +100,7 @@ export async function distillPuzzleConnections(
   const aiTools = {
     [distillTool.name]: {
       description: distillTool.description,
-      parameters: DistillConnectionsArgsSchema,
-      execute: async (args: any) => await distillTool.execute(args),
+      parameters: distillTool.parameters,
     },
   };
 
@@ -110,7 +108,7 @@ export async function distillPuzzleConnections(
 
   const callModel = async (modelToUse: string) => {
     const result = await generateText({
-      model: openRouter(modelToUse) as any,
+      model: openRouterLanguageModel(modelToUse),
       messages: messages.map(m => ({ role: m.role, content: m.content })),
       tools: aiTools,
       maxSteps: 1,
@@ -128,27 +126,10 @@ export async function distillPuzzleConnections(
     return { connections: [] };
   };
 
-  try {
-    return await callModel(model);
-  } catch (primaryError) {
-    if (!fallbackModelToUse) {
-      console.error(`❌ Primary model (${model}) failed and no fallbackModel was provided`);
-      throw primaryError;
-    }
-
-    console.warn(`⚠️ Primary model (${model}) failed, trying fallback model (${fallbackModelToUse})...`, primaryError);
-
-    try {
-      return await callModel(fallbackModelToUse);
-    } catch (fallbackError) {
-      console.error('❌ Both primary and fallback models failed');
-      console.error('Primary error:', primaryError);
-      console.error('Fallback error:', fallbackError);
-
-      const primaryMsg = String(primaryError).slice(0, 50);
-      const fallbackMsg = String(fallbackError).slice(0, 50);
-
-      throw new Error(`Failed to distill puzzle connections: Primary(${primaryMsg}), Fallback(${fallbackMsg})`);
-    }
-  }
+  return callWithFallbackModel({
+    operation: 'distill puzzle connections',
+    model,
+    fallbackModel: fallbackModelToUse,
+    call: callModel,
+  });
 }

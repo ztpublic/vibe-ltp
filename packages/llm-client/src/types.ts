@@ -3,6 +3,8 @@
  * Type definitions for chat messages, tool calls, and agent workflows
  */
 
+import type { ZodTypeAny } from 'zod';
+
 export type Role = 'system' | 'user' | 'assistant' | 'tool';
 
 export interface ChatMessage {
@@ -23,8 +25,8 @@ export interface ToolMessage {
 export interface AgentTool<Args = any, Result = any> {
   name: string;
   description: string;
-  // JSON schema for OpenRouter tooling
-  parameters: Record<string, unknown>;
+  // AI SDK tool parameters schema (Zod)
+  parameters: ZodTypeAny;
   // local executor
   execute: (args: Args) => Promise<Result> | Result;
 }

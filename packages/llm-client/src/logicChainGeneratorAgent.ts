@@ -4,10 +4,10 @@
  */
 
 import { generateText } from 'ai';
-import { getOpenRouterClient } from './client.js';
+import { callWithFallbackModel } from './fallback.js';
+import { openRouterLanguageModel } from './models.js';
 import {
   createDistillLogicChainTool,
-  DistillLogicChainArgsSchema,
   type DistillLogicChainArgs,
 } from './tools.js';
 import type { PuzzleContext } from './questionValidatorAgent.js';
@@ -91,7 +91,6 @@ export async function distillPuzzleLogicChain(
   const fallbackModelToUse = options.fallbackModel;
   const systemPrompt = options.systemPrompt ?? buildLogicChainSystemPrompt();
 
-  const openRouter = getOpenRouterClient();
   const logicChainTool = createDistillLogicChainTool();
 
   const messages = [
@@ -102,8 +101,7 @@ export async function distillPuzzleLogicChain(
   const aiTools = {
     [logicChainTool.name]: {
       description: logicChainTool.description,
-      parameters: DistillLogicChainArgsSchema,
-      execute: async (args: any) => await logicChainTool.execute(args),
+      parameters: logicChainTool.parameters,
     },
   };
 
@@ -111,7 +109,7 @@ export async function distillPuzzleLogicChain(
 
   const callModel = async (modelToUse: string) => {
     const result = await generateText({
-      model: openRouter(modelToUse) as any,
+      model: openRouterLanguageModel(modelToUse),
       messages: messages.map(m => ({ role: m.role, content: m.content })),
       tools: aiTools,
       maxSteps: 1,
@@ -129,27 +127,10 @@ export async function distillPuzzleLogicChain(
     return { chain: [] };
   };
 
-  try {
-    return await callModel(model);
-  } catch (primaryError) {
-    if (!fallbackModelToUse) {
-      console.error(`❌ Primary model (${model}) failed and no fallbackModel was provided`);
-      throw primaryError;
-    }
-
-    console.warn(`⚠️ Primary model (${model}) failed, trying fallback model (${fallbackModelToUse})...`, primaryError);
-
-    try {
-      return await callModel(fallbackModelToUse);
-    } catch (fallbackError) {
-      console.error('❌ Both primary and fallback models failed');
-      console.error('Primary error:', primaryError);
-      console.error('Fallback error:', fallbackError);
-
-      const primaryMsg = String(primaryError).slice(0, 50);
-      const fallbackMsg = String(fallbackError).slice(0, 50);
-
-      throw new Error(`Failed to generate logic chain: Primary(${primaryMsg}), Fallback(${fallbackMsg})`);
-    }
-  }
+  return callWithFallbackModel({
+    operation: 'generate logic chain',
+    model,
+    fallbackModel: fallbackModelToUse,
+    call: callModel,
+  });
 }

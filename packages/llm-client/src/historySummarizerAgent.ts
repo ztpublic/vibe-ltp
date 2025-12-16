@@ -4,7 +4,8 @@
  */
 
 import { generateText } from 'ai';
-import { getOpenRouterClient } from './client.js';
+import { callWithFallbackModel } from './fallback.js';
+import { openRouterLanguageModel } from './models.js';
 import type { ChatMessage } from './types.js';
 import type { QuestionAnswerPair } from './questionValidatorAgent.js';
 
@@ -88,7 +89,6 @@ export async function summarizePuzzleHistory(
   const fallbackModelToUse = options.fallbackModel;
   const systemPrompt = options.systemPrompt ?? buildHistorySummarizerSystemPrompt();
 
-  const openRouter = getOpenRouterClient();
   const messages = [
     { role: 'system' as const, content: systemPrompt },
     ...buildContextMessages(context),
@@ -98,7 +98,7 @@ export async function summarizePuzzleHistory(
 
   const callModel = async (modelToUse: string) => {
     const result = await generateText({
-      model: openRouter(modelToUse) as any,
+      model: openRouterLanguageModel(modelToUse),
       messages: messages.map(m => ({ role: m.role, content: m.content })),
       maxSteps: 1,
     });
@@ -111,27 +111,10 @@ export async function summarizePuzzleHistory(
     return { summary: '' };
   };
 
-  try {
-    return await callModel(model);
-  } catch (primaryError) {
-    if (!fallbackModelToUse) {
-      console.error(`❌ Primary model (${model}) failed and no fallbackModel was provided`);
-      throw primaryError;
-    }
-
-    console.warn(`⚠️ Primary model (${model}) failed, trying fallback model (${fallbackModelToUse})...`, primaryError);
-
-    try {
-      return await callModel(fallbackModelToUse);
-    } catch (fallbackError) {
-      console.error('❌ Both primary and fallback models failed');
-      console.error('Primary error:', primaryError);
-      console.error('Fallback error:', fallbackError);
-
-      const primaryMsg = String(primaryError).slice(0, 50);
-      const fallbackMsg = String(fallbackError).slice(0, 50);
-
-      throw new Error(`Failed to summarize puzzle history: Primary(${primaryMsg}), Fallback(${fallbackMsg})`);
-    }
-  }
+  return callWithFallbackModel({
+    operation: 'summarize puzzle history',
+    model,
+    fallbackModel: fallbackModelToUse,
+    call: callModel,
+  });
 }
