@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type {
   CreateSessionRequest,
@@ -24,41 +24,31 @@ export function SessionLobby({
   sessionCreator = createSession,
 }: SessionLobbyProps) {
   const router = useRouter();
-  const [sessions, setSessions] = useState<GameSession[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
 
-  const refresh = async () => {
-    try {
-      setLoading(true);
-      const res = await sessionLoader();
-      setSessions(res.sessions);
-      setError(null);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    refresh();
-  }, []);
+  const sessionsQuery = useQuery({
+    queryKey: ['sessions'],
+    queryFn: sessionLoader,
+  });
 
-  const handleCreate = async () => {
-    try {
-      setCreating(true);
-      const res = await sessionCreator({});
+  const createMutation = useMutation({
+    mutationFn: sessionCreator,
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] }).catch(() => {});
       const nextId = res.session.id;
       onCreate?.(nextId);
       router.push(`/rooms/${nextId}`);
+    },
+  });
+
+  const handleCreate = async () => {
+    try {
+      await createMutation.mutateAsync({});
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
+      console.warn('[SessionLobby] Failed to create session', err);
     } finally {
-      setCreating(false);
+      // noop - mutation state handled by TanStack Query
     }
   };
 
@@ -68,6 +58,14 @@ export function SessionLobby({
     onJoin?.(nextId);
     router.push(`/rooms/${nextId}`);
   };
+
+  const sessions: GameSession[] = sessionsQuery.data?.sessions ?? [];
+  const loading = sessionsQuery.isPending;
+  const creating = createMutation.isPending;
+
+  const error =
+    (sessionsQuery.error instanceof Error ? sessionsQuery.error.message : sessionsQuery.error ? String(sessionsQuery.error) : null) ??
+    (createMutation.error instanceof Error ? createMutation.error.message : createMutation.error ? String(createMutation.error) : null);
 
 
   return (

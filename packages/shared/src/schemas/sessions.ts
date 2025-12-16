@@ -4,11 +4,13 @@ import type {
   CreateSessionResponse,
   EndSessionRequest,
   GetSessionResponse,
+  GetSessionTruthResponse,
   JoinSessionRequest,
   ListSessionsResponse,
   StartSessionRequest,
 } from '../api/sessions.js';
 import {
+  GameSessionIdSchema,
   GameSessionSchema,
   GameSessionSnapshotSchema,
   PuzzleContentSchema,
@@ -52,6 +54,16 @@ export const GetSessionResponseSchema = z.object({
 });
 type _EnsureGetSessionResponseSync = z.infer<typeof GetSessionResponseSchema> extends GetSessionResponse
   ? GetSessionResponse extends z.infer<typeof GetSessionResponseSchema>
+    ? true
+    : never
+  : never;
+
+export const GetSessionTruthResponseSchema = z.object({
+  sessionId: GameSessionIdSchema,
+  soupTruth: z.string().min(1),
+});
+type _EnsureGetSessionTruthResponseSync = z.infer<typeof GetSessionTruthResponseSchema> extends GetSessionTruthResponse
+  ? GetSessionTruthResponse extends z.infer<typeof GetSessionTruthResponseSchema>
     ? true
     : never
   : never;

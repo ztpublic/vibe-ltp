@@ -3,13 +3,14 @@ import type {
   CreateSessionResponse,
   GameSessionId,
   GetSessionResponse,
+  GetSessionTruthResponse,
   ListSessionsResponse,
 } from '@vibe-ltp/shared';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${process.env.NEXT_PUBLIC_BACKEND_PORT || 4000}`;
+import { API_BASE_URL } from '@/src/lib/apiBaseUrl';
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -51,4 +52,9 @@ export function leaveSession(sessionId: GameSessionId): Promise<void> {
 
 export function getSession(sessionId: GameSessionId): Promise<GetSessionResponse> {
   return fetchJson(`/api/sessions/${sessionId}`);
+}
+
+export async function getSessionTruth(sessionId: GameSessionId): Promise<string> {
+  const payload = await fetchJson<GetSessionTruthResponse>(`/api/sessions/${sessionId}/truth`);
+  return payload.soupTruth;
 }

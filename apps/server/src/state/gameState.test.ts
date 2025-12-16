@@ -65,7 +65,9 @@ describe('Session Store', () => {
 
     const snapshot = startSession(sessionId, puzzle);
     expect(snapshot.state).toBe('Started');
-    expect(snapshot.puzzleContent).toEqual(puzzle);
+    expect(snapshot.puzzleContent).toEqual({ soupSurface: puzzle.soupSurface });
+    expect((snapshot.puzzleContent as any)?.soupTruth).toBeUndefined();
+    expect(getPuzzleContent(sessionId)).toEqual(puzzle);
   });
 
   it('resets a session while preserving chat and keeping questions for export', () => {

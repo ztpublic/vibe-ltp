@@ -8,12 +8,11 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Socket } from 'socket.io-client';
-import { SOCKET_EVENTS, type GameState, type GameStateData, type PuzzleContent } from '@vibe-ltp/shared';
+import { SOCKET_EVENTS, type GameStartRequest, type GameState, type GameStateData, type PuzzleContentPublic } from '@vibe-ltp/shared';
 import { acquireSocket, releaseSocket, attachSocketLifecycle, isSocketConnected } from '../../../lib/socketManager';
+import { SOCKET_BASE_URL } from '@/src/lib/apiBaseUrl';
 import type { ToastInput } from '../utils/notifications';
 import type { GameStateController } from './GameStateController';
-
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
 /**
  * Hook that provides a socket-based game state controller for production
@@ -22,10 +21,10 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:400
 export function useSocketGameStateController(
   sessionId: string,
   onNotify?: (toast: ToastInput) => void,
-  initial?: { state?: GameState; puzzleContent?: PuzzleContent | null },
+  initial?: { state?: GameState; puzzleContent?: PuzzleContentPublic | null },
 ): GameStateController {
   const [gameState, setGameState] = useState<GameState>(initial?.state ?? 'NotStarted');
-  const [puzzleContent, setPuzzleContent] = useState<PuzzleContent | null>(initial?.puzzleContent ?? null);
+  const [puzzleContent, setPuzzleContent] = useState<PuzzleContentPublic | null>(initial?.puzzleContent ?? null);
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
@@ -40,7 +39,7 @@ export function useSocketGameStateController(
 
   useEffect(() => {
     // Acquire socket from singleton manager
-    const socket = acquireSocket(SOCKET_URL, sessionId);
+    const socket = acquireSocket(SOCKET_BASE_URL, sessionId);
     socketRef.current = socket;
 
     // Attach lifecycle handlers
@@ -89,7 +88,7 @@ export function useSocketGameStateController(
   }, [onNotify, sessionId]);
 
   const startGame = useCallback(
-    (content: PuzzleContent) => {
+    (request: GameStartRequest) => {
       const socket = socketRef.current;
       if (!socket || !isSocketConnected(socket)) {
         onNotify?.({ type: 'warning', message: '无法开始：未连接服务器' });
@@ -98,12 +97,20 @@ export function useSocketGameStateController(
       
       // Optimistically update local state for responsive UI
       setGameState('Started');
-      setPuzzleContent(content);
+      setPuzzleContent(
+        request.mode === 'custom'
+          ? {
+              soupSurface: request.puzzleContent.soupSurface,
+              facts: request.puzzleContent.facts,
+              keywords: request.puzzleContent.keywords,
+            }
+          : null,
+      );
       
       // Emit with acknowledgment callback
       socket.emit(
         SOCKET_EVENTS.GAME_STARTED, 
-        { puzzleContent: content },
+        request,
         (response: { success: boolean; error?: string }) => {
           if (!response.success) {
             onNotify?.({ type: 'error', message: `开始失败：${response.error || '未知错误'}` });

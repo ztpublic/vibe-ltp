@@ -5,6 +5,7 @@ import type {
   GameSession,
   GameSessionSnapshot,
   PuzzleContent,
+  PuzzleContentPublic,
   PuzzleFact,
   PuzzleKeyword,
   PuzzleSummary,
@@ -59,6 +60,17 @@ type _EnsurePuzzleContentSync = z.infer<typeof PuzzleContentSchema> extends Puzz
     : never
   : never;
 
+export const PuzzleContentPublicSchema = z.object({
+  soupSurface: z.string().min(1),
+  facts: z.array(PuzzleFactSchema).optional(),
+  keywords: z.array(PuzzleKeywordSchema).optional(),
+});
+type _EnsurePuzzleContentPublicSync = z.infer<typeof PuzzleContentPublicSchema> extends PuzzleContentPublic
+  ? PuzzleContentPublic extends z.infer<typeof PuzzleContentPublicSchema>
+    ? true
+    : never
+  : never;
+
 export const PuzzleSummarySchema = z.object({
   soupSurface: z.string().min(1).optional(),
   facts: z.array(PuzzleFactSchema).optional(),
@@ -88,7 +100,7 @@ type _EnsureGameSessionSync = z.infer<typeof GameSessionSchema> extends GameSess
   : never;
 
 export const GameSessionSnapshotSchema = GameSessionSchema.extend({
-  puzzleContent: PuzzleContentSchema.optional(),
+  puzzleContent: PuzzleContentPublicSchema.optional(),
 });
 type _EnsureGameSessionSnapshotSync = z.infer<typeof GameSessionSnapshotSchema> extends GameSessionSnapshot
   ? GameSessionSnapshot extends z.infer<typeof GameSessionSnapshotSchema>

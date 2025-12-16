@@ -4,6 +4,7 @@ import type {
   GameSessionSnapshot,
   GameState,
   PuzzleContent,
+  PuzzleContentPublic,
   SessionChatMessage,
   SessionQuestionHistoryEntry,
 } from '../types/game.js';
@@ -44,6 +45,11 @@ export interface GetSessionResponse {
   questionHistory?: SessionQuestionHistoryEntry[];
 }
 
+export interface GetSessionTruthResponse {
+  sessionId: GameSessionId;
+  soupTruth: string;
+}
+
 export interface JoinSessionRequest {
   nickname?: string;
 }
@@ -51,7 +57,7 @@ export interface JoinSessionRequest {
 export interface SessionStateUpdate {
   sessionId: GameSessionId;
   state: GameState;
-  puzzleContent?: PuzzleContent;
+  puzzleContent?: PuzzleContentPublic;
   updatedAt?: string;
 }
 

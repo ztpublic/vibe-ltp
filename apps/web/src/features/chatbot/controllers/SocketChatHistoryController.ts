@@ -10,10 +10,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Socket } from 'socket.io-client';
 import { SOCKET_EVENTS } from '@vibe-ltp/shared';
 import { acquireSocket, releaseSocket } from '../../../lib/socketManager';
+import { SOCKET_BASE_URL } from '@/src/lib/apiBaseUrl';
 import type { ToastInput } from '../utils/notifications';
 import type { ChatHistoryController, ChatHistoryMessage } from './ChatHistoryController';
-
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${process.env.NEXT_PUBLIC_BACKEND_PORT || 4000}`;
 
 /**
  * Hook that provides a socket-based chat history controller for production
@@ -83,7 +82,7 @@ export function useSocketChatHistoryController(
   }, [applyIncomingMessages, initialMessages]);
 
   useEffect(() => {
-    const socket = acquireSocket(SOCKET_URL, sessionId);
+    const socket = acquireSocket(SOCKET_BASE_URL, sessionId);
     socketRef.current = socket;
 
     const handleConnect = () => {

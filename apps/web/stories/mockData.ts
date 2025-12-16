@@ -2,11 +2,13 @@
  * Mock data generators for Storybook stories
  */
 
-import type { ChatMessage, UserMessage, BotMessage, PuzzleContent } from '@vibe-ltp/shared';
+import type { ChatMessage, UserMessage, BotMessage, PuzzleContentPublic } from '@vibe-ltp/shared';
 
-export const samplePuzzle: PuzzleContent = {
+export const samplePuzzleTruth =
+  '这个男人患有打嗝症。他走进酒吧是想喝水来止住打嗝。酒保意识到了这一点，用枪吓唬他，让他受到惊吓后打嗝停止了。男人感谢酒保后离开。';
+
+export const samplePuzzle: PuzzleContentPublic = {
   soupSurface: '一个男人走进酒吧，点了一杯水。酒保突然拔出枪指着他。男人说了声"谢谢"就离开了。',
-  soupTruth: '这个男人患有打嗝症。他走进酒吧是想喝水来止住打嗝。酒保意识到了这一点，用枪吓唬他，让他受到惊吓后打嗝停止了。男人感谢酒保后离开。',
   facts: [
     { id: 'fact_1', text: '这个男人来酒吧的主要目的是止住打嗝。', revealed: true },
     { id: 'fact_2', text: '酒保并没有打算射击，他只是想吓唬男人。', revealed: true },
@@ -21,7 +23,15 @@ export const samplePuzzle: PuzzleContent = {
   ],
 };
 
-export const longPuzzle: PuzzleContent = {
+export const longPuzzleTruth = `真相是：图书馆附近有一个海洋研究所，他们养了一只高智商的章鱼。
+  
+这只章鱼逃出了水族箱，通过下水道系统进入了图书馆的地下室，然后爬到阅览室。它对人类的知识非常好奇，特别是关于自己物种的信息。
+  
+章鱼利用它的触手翻阅书籍，并且能够识别图片。它专门寻找带有章鱼插图的书籍，然后停留在那些页面上。
+  
+摄像头拍到了这只章鱼的夜间"阅读"行为。研究所的科学家们后来证实，这只章鱼确实具有非凡的学习能力和好奇心。`;
+
+export const longPuzzle: PuzzleContentPublic = {
   soupSurface: `在一个偏远的小镇上，有一座古老的图书馆。每到深夜，总能听到图书馆里传来翻书的声音。
   
 镇上的人们都说图书馆闹鬼，因为图书管理员每天晚上锁门后，第二天早上总会发现有些书被移动过位置。有些书甚至被打开，停留在某一页上。
@@ -29,13 +39,6 @@ export const longPuzzle: PuzzleContent = {
 最奇怪的是，这些书都是关于同一个主题的——海洋生物学。而且被翻开的页面总是关于章鱼的内容。
 
 图书管理员决定在图书馆安装摄像头。第二天查看录像时，他惊讶地发现了真相。`,
-  soupTruth: `真相是：图书馆附近有一个海洋研究所，他们养了一只高智商的章鱼。
-  
-这只章鱼逃出了水族箱，通过下水道系统进入了图书馆的地下室，然后爬到阅览室。它对人类的知识非常好奇，特别是关于自己物种的信息。
-  
-章鱼利用它的触手翻阅书籍，并且能够识别图片。它专门寻找带有章鱼插图的书籍，然后停留在那些页面上。
-  
-摄像头拍到了这只章鱼的夜间"阅读"行为。研究所的科学家们后来证实，这只章鱼确实具有非凡的学习能力和好奇心。`,
   facts: [
     { id: 'fact_long_1', text: '摄像头记录到了夜间活动的身影。', revealed: true },
     { id: 'fact_long_2', text: '被翻开的书都围绕同一主题：海洋生物学。', revealed: true },

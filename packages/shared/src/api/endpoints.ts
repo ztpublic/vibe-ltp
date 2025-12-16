@@ -9,6 +9,7 @@ export const API_ROUTES = {
   SESSION_START: (sessionId: string) => `/api/sessions/${sessionId}/start`,
   SESSION_RESET: (sessionId: string) => `/api/sessions/${sessionId}/reset`,
   SESSION_END: (sessionId: string) => `/api/sessions/${sessionId}/end`,
+  SESSION_TRUTH: (sessionId: string) => `/api/sessions/${sessionId}/truth`,
 } as const;
 
 export const SOCKET_EVENTS = {

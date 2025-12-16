@@ -3,14 +3,14 @@
  * Abstract interface for game state management that can be implemented with real or mock behavior
  */
 
-import type { GameState, PuzzleContent } from '@vibe-ltp/shared';
+import type { GameState, GameStartRequest, PuzzleContentPublic } from '@vibe-ltp/shared';
 
 export interface GameStateController {
   /** Current game state (NotStarted, Started) */
   gameState: GameState;
   
   /** Current puzzle data */
-  puzzleContent: PuzzleContent | null;
+  puzzleContent: PuzzleContentPublic | null;
   
   /** Connection status indicator */
   isConnected: boolean;
@@ -19,7 +19,7 @@ export interface GameStateController {
   sessionId: string;
   
   /** Initiate a new game session */
-  startGame: (content: PuzzleContent) => void;
+  startGame: (request: GameStartRequest) => void;
   
   /** Reset game to initial state */
   resetGame: () => void;

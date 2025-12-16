@@ -12,6 +12,7 @@ import type {
   GameSessionSnapshot,
   GameState,
   PuzzleContent,
+  PuzzleContentPublic,
   PuzzleSummary,
   SessionChatMessage,
   SessionQuestionHistoryEntry,
@@ -39,6 +40,16 @@ const emptyRoomTimers = new Map<GameSessionId, NodeJS.Timeout>();
 const nowIso = (value = Date.now()): string => new Date(value).toISOString();
 
 function buildPuzzleSummary(puzzle?: PuzzleContent): PuzzleSummary | undefined {
+  if (!puzzle) return undefined;
+  const { soupSurface, facts, keywords } = puzzle;
+  return {
+    soupSurface,
+    facts,
+    keywords,
+  };
+}
+
+function buildPublicPuzzleContent(puzzle?: PuzzleContent): PuzzleContentPublic | undefined {
   if (!puzzle) return undefined;
   const { soupSurface, facts, keywords } = puzzle;
   return {
@@ -120,7 +131,7 @@ function setSessionPuzzleContent(sessionId: GameSessionId, content: PuzzleConten
 function buildSnapshot(session: SessionRecord): GameSessionSnapshot {
   return {
     ...session.meta,
-    puzzleContent: session.stateContainer.puzzleContent,
+    puzzleContent: buildPublicPuzzleContent(session.stateContainer.puzzleContent),
   };
 }
 

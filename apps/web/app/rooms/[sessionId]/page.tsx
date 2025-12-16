@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { ChatHome } from '@/src/features/chatbot/ChatHome';
 import { ApiChatService } from '@/src/features/chatbot/services';
@@ -19,10 +20,6 @@ export default function RoomPage() {
   const sessionId = Array.isArray(params.sessionId) ? params.sessionId[0] : params.sessionId;
   const safeSessionId = sessionId || 'default';
   const { toasts, push } = useToastQueue();
-  const [snapshot, setSnapshot] = useState<GameSessionSnapshot | null>(null);
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const normalizeHistory = (entries: SessionChatMessage[]): ChatMessage[] =>
     entries.map((entry) => {
@@ -53,35 +50,24 @@ export default function RoomPage() {
       };
     });
 
-  useEffect(() => {
-    if (!sessionId) {
-      setError('缺少房间 ID');
-      setLoading(false);
-      return;
-    }
-    let active = true;
-    const load = async () => {
-      try {
-        setLoading(true);
-        const res = await getSession(safeSessionId);
-        if (!active) return;
-        setSnapshot(res.session);
-        setChatHistory(res.chatHistory ? normalizeHistory(res.chatHistory) : []);
-        setError(null);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setError(msg);
-        push({ type: 'error', message: msg });
-      } finally {
-        setLoading(false);
-      }
-    };
+  const sessionQuery = useQuery({
+    queryKey: ['session', safeSessionId],
+    queryFn: () => getSession(safeSessionId),
+    enabled: Boolean(sessionId),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
 
-    load();
-    return () => {
-      active = false;
-    };
-  }, [safeSessionId, sessionId, push]);
+  useEffect(() => {
+    if (!sessionQuery.error) return;
+    const msg = sessionQuery.error instanceof Error ? sessionQuery.error.message : String(sessionQuery.error);
+    push({ type: 'error', message: msg });
+  }, [push, sessionQuery.error]);
+
+  const snapshot: GameSessionSnapshot | null = sessionQuery.data?.session ?? null;
+  const chatHistory = useMemo(() => {
+    return sessionQuery.data?.chatHistory ? normalizeHistory(sessionQuery.data.chatHistory) : [];
+  }, [sessionQuery.data?.chatHistory]);
 
   const gameStateController = useGameStateController(
     safeSessionId,
@@ -93,7 +79,7 @@ export default function RoomPage() {
   const chatHistoryController = useChatHistoryController(safeSessionId, push, chatHistory);
   const chatService = useMemo(() => new ApiChatService(safeSessionId), [safeSessionId]);
 
-  if (loading) {
+  if (sessionQuery.isPending) {
     return (
       <div className="min-h-screen bg-[#1e1e1e] text-white flex items-center justify-center">
         <p className="text-sm text-[#9cdcfe]">加载房间中...</p>
@@ -101,10 +87,18 @@ export default function RoomPage() {
     );
   }
 
-  if (error || !snapshot) {
+  if (!sessionId || sessionQuery.error || !snapshot) {
+    const errorMessage = !sessionId
+      ? '缺少房间 ID'
+      : sessionQuery.error instanceof Error
+        ? sessionQuery.error.message
+        : sessionQuery.error
+          ? String(sessionQuery.error)
+          : '未知错误';
+
     return (
       <div className="min-h-screen bg-[#1e1e1e] text-white flex flex-col items-center justify-center gap-4">
-        <p className="text-sm text-red-300">房间加载失败：{error || '未知错误'}</p>
+        <p className="text-sm text-red-300">房间加载失败：{errorMessage}</p>
         <button
           className="px-4 py-2 rounded bg-[#0e639c] hover:bg-[#1177bb]"
           onClick={() => router.push('/')}

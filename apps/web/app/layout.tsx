@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import '../src/ui/chatbot/main.css';
 import './globals.css';
+import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: 'Vibe LTP - Lateral Thinking Puzzles',
@@ -15,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

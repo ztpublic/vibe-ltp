@@ -6,6 +6,12 @@ import type { AnswerType, MessageId } from './messages.js';
 
 export type GameState = 'NotStarted' | 'Started' | 'Ended';
 
+export type GameStartMode = 'random' | 'custom';
+
+export type GameStartRequest =
+  | { mode: 'random' }
+  | { mode: 'custom'; puzzleContent: PuzzleContent };
+
 export interface PuzzleFact {
   id: string;
   text: string;
@@ -25,6 +31,15 @@ export interface PuzzleContent {
   keywords?: PuzzleKeyword[];
 }
 
+/**
+ * Public-facing puzzle content safe to send to clients (no truth leakage).
+ */
+export interface PuzzleContentPublic {
+  soupSurface: string;
+  facts?: PuzzleFact[];
+  keywords?: PuzzleKeyword[];
+}
+
 export interface GameStateData {
   /**
    * Optional session identifier; multi-session servers should set this
@@ -32,7 +47,7 @@ export interface GameStateData {
    */
   sessionId?: string;
   state: GameState;
-  puzzleContent?: PuzzleContent;
+  puzzleContent?: PuzzleContentPublic;
 }
 
 export type GameSessionId = string;
@@ -63,7 +78,7 @@ export interface GameSession {
 }
 
 export interface GameSessionSnapshot extends GameSession {
-  puzzleContent?: PuzzleContent;
+  puzzleContent?: PuzzleContentPublic;
 }
 
 export interface SessionQuestionHistoryEntry {

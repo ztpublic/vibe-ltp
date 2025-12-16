@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { ChatHome } from '../src/features/chatbot/ChatHome';
 import { MockChatService } from '../src/features/chatbot/services';
 import { useMockGameStateController, useMockChatHistoryController } from '../src/features/chatbot/controllers';
-import { samplePuzzle, generateMockConversation } from './mockData';
+import { samplePuzzle, samplePuzzleTruth, generateMockConversation } from './mockData';
 import React from 'react';
 
 const meta: Meta<typeof ChatHome> = {
@@ -63,6 +63,7 @@ export const Started_WithConversation: Story = {
         gameStateController={gameStateController}
         chatService={chatService}
         chatHistoryController={chatHistoryController}
+        truthLoader={async () => samplePuzzleTruth}
       />
     );
   },
@@ -85,6 +86,7 @@ export const End_WithConversation: Story = {
         gameStateController={gameStateController}
         chatService={chatService}
         chatHistoryController={chatHistoryController}
+        truthLoader={async () => samplePuzzleTruth}
       />
     );
   },

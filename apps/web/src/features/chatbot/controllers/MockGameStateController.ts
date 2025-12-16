@@ -6,12 +6,12 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import type { GameState, PuzzleContent } from '@vibe-ltp/shared';
+import type { GameState, GameStartRequest, PuzzleContentPublic } from '@vibe-ltp/shared';
 import type { GameStateController } from './GameStateController';
 
 export interface MockGameStateControllerOptions {
   gameState?: GameState;
-  puzzleContent?: PuzzleContent | null;
+  puzzleContent?: PuzzleContentPublic | null;
   isConnected?: boolean;
   sessionId?: string;
 }
@@ -24,15 +24,23 @@ export function useMockGameStateController(
   options?: MockGameStateControllerOptions
 ): GameStateController {
   const [gameState, setGameState] = useState<GameState>(options?.gameState || 'NotStarted');
-  const [puzzleContent, setPuzzleContent] = useState<PuzzleContent | null>(
+  const [puzzleContent, setPuzzleContent] = useState<PuzzleContentPublic | null>(
     options?.puzzleContent || null
   );
   const [isConnected] = useState<boolean>(options?.isConnected ?? true);
   const sessionId = options?.sessionId ?? 'mock-session';
 
-  const startGame = useCallback((content: PuzzleContent) => {
+  const startGame = useCallback((request: GameStartRequest) => {
     setGameState('Started');
-    setPuzzleContent(content);
+    setPuzzleContent(
+      request.mode === 'custom'
+        ? {
+            soupSurface: request.puzzleContent.soupSurface,
+            facts: request.puzzleContent.facts,
+            keywords: request.puzzleContent.keywords,
+          }
+        : null,
+    );
   }, []);
 
   const resetGame = useCallback(() => {

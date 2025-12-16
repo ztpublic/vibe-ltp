@@ -57,7 +57,11 @@ describe('Session HTTP routes', () => {
       .expect(200);
 
     expect(startRes.body.session.state).toBe('Started');
-    expect(startRes.body.session.puzzleContent?.soupTruth).toBe('Truth');
+    expect(startRes.body.session.puzzleContent?.soupSurface).toBe('Surface');
+    expect(startRes.body.session.puzzleContent?.soupTruth).toBeUndefined();
+
+    const truthRes = await request(app).get(`/api/sessions/${sessionId}/truth`).expect(200);
+    expect(truthRes.body.soupTruth).toBe('Truth');
   });
 
   it('resets a started session back to NotStarted', async () => {

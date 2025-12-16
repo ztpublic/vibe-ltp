@@ -2,13 +2,15 @@ import type { Server } from 'socket.io';
 import {
   SESSION_SOCKET_EVENTS,
   SOCKET_EVENTS,
-  type PuzzleContent,
   type GameSessionId,
+  type GameStartRequest,
+  type PuzzleContent,
   type SessionChatMessage,
 } from '@vibe-ltp/shared';
 import * as gameState from '../state/gameState.js';
 import { handleSocketError, sendSocketSuccess } from '../utils/errorHandler.js';
 import { setSocketServer } from './ioReference.js';
+import { pickRandomPuzzle } from '../puzzles/randomPuzzle.js';
 
 export function setupSocketIO(io: Server): void {
   setSocketServer(io);
@@ -23,14 +25,14 @@ export function setupSocketIO(io: Server): void {
     console.log(`[Socket] Client connected: ${socket.id} (session=${sessionId})`);
 
     // Join the session (increment player count)
-    gameState.joinSession(sessionId);
+    const joinedSnapshot = gameState.joinSession(sessionId);
     socket.join(sessionId);
 
     // Send current game state to the connecting client
     socket.emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
       sessionId,
-      state: gameState.getGameState(sessionId),
-      puzzleContent: gameState.getPuzzleContent(sessionId),
+      state: joinedSnapshot.state,
+      puzzleContent: joinedSnapshot.puzzleContent,
     });
     
     // Send chat history to the connecting client
@@ -41,10 +43,13 @@ export function setupSocketIO(io: Server): void {
     });
 
     const emitSessionSnapshot = () => {
+      const snapshot = gameState.getSession(sessionId);
+      if (!snapshot) return;
+
       socket.emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
         sessionId,
-        state: gameState.getGameState(sessionId),
-        puzzleContent: gameState.getPuzzleContent(sessionId),
+        state: snapshot.state,
+        puzzleContent: snapshot.puzzleContent,
       });
 
       socket.emit(SOCKET_EVENTS.CHAT_HISTORY_SYNC, {
@@ -78,11 +83,17 @@ export function setupSocketIO(io: Server): void {
     );
 
     // Handle game start
-    socket.on(SOCKET_EVENTS.GAME_STARTED, async (data: { puzzleContent: PuzzleContent }, callback?: (response: { success: boolean; error?: string }) => void) => {
-      const { puzzleContent } = data;
-
+    socket.on(SOCKET_EVENTS.GAME_STARTED, async (data: GameStartRequest | { puzzleContent: PuzzleContent } | undefined, callback?: (response: { success: boolean; error?: string }) => void) => {
       try {
-        gameState.startSession(sessionId, puzzleContent);
+        const mode = (data as Partial<GameStartRequest> | undefined)?.mode;
+        const providedPuzzle = (data as { puzzleContent?: PuzzleContent } | undefined)?.puzzleContent;
+        const puzzleContent = mode === 'random' ? await pickRandomPuzzle() : providedPuzzle;
+
+        if (!puzzleContent) {
+          throw new Error('Cannot start game without puzzle content.');
+        }
+
+        const snapshot = gameState.startSession(sessionId, puzzleContent);
         // After starting a new game, clear any previous chat history for all clients
         const clearedChatHistory = gameState.getChatMessages(sessionId);
         
@@ -90,13 +101,13 @@ export function setupSocketIO(io: Server): void {
         io.to(sessionId).emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
           sessionId,
           state: 'Started',
-          puzzleContent,
+          puzzleContent: snapshot.puzzleContent,
         });
         io.to(sessionId).emit(SOCKET_EVENTS.CHAT_HISTORY_SYNC, {
           sessionId,
           messages: clearedChatHistory,
         });
-        io.to(sessionId).emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session: gameState.getSession(sessionId) });
+        io.to(sessionId).emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session: snapshot });
         
         sendSocketSuccess(callback);
       } catch (error) {
@@ -120,14 +131,18 @@ export function setupSocketIO(io: Server): void {
             keywords: revealedKeywords,
           }, sessionId);
         }
+
+        const snapshot = gameState.getSession(sessionId);
         
         // Notify all connected clients (leave revealed content until next game starts)
         io.to(sessionId).emit(SOCKET_EVENTS.GAME_STATE_UPDATED, {
           sessionId,
           state: 'NotStarted',
-          puzzleContent: gameState.getPuzzleContent(sessionId),
+          puzzleContent: snapshot?.puzzleContent,
         });
-        io.to(sessionId).emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session: gameState.getSession(sessionId) });
+        if (snapshot) {
+          io.to(sessionId).emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session: snapshot });
+        }
         
         sendSocketSuccess(callback);
       } catch (error) {

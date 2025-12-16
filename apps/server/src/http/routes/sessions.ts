@@ -5,6 +5,7 @@ import {
   type CreateSessionResponse,
   type GameSessionId,
   type GetSessionResponse,
+  type GetSessionTruthResponse,
   type ListSessionsResponse,
   type SessionStateUpdate,
 } from '@vibe-ltp/shared';
@@ -71,6 +72,24 @@ router.get('/:sessionId', (req, res) => {
   };
 
   res.json(payload);
+});
+
+router.get('/:sessionId/truth', (req, res) => {
+  const sessionId: GameSessionId = req.params.sessionId;
+  const session = gameState.getSession(sessionId);
+  if (!session) return notFound(res, sessionId);
+
+  const puzzle = gameState.getPuzzleContent(sessionId);
+  if (!puzzle) {
+    return res.status(409).json({ error: 'Game not started' });
+  }
+
+  const payload: GetSessionTruthResponse = {
+    sessionId,
+    soupTruth: puzzle.soupTruth,
+  };
+
+  return res.json(payload);
 });
 
 router.post('/:sessionId/join', (req, res) => {

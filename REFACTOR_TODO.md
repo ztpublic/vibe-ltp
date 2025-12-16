@@ -44,11 +44,11 @@ This list is based on a quick repo audit plus running:
 
 ## P4 — Frontend cleanup + UX layering
 
-- [ ] Consolidate API base URL resolution into one place and remove the unused `NEXT_PUBLIC_BACKEND_PORT` fallback (not in `.env.example`).
+- [x] Consolidate API base URL resolution into one place and remove the unused `NEXT_PUBLIC_BACKEND_PORT` fallback (not in `.env.example`).
   - Files: `apps/web/src/features/sessions/api.ts`, `apps/web/src/features/chatbot/services/apiChatService.ts`, socket controllers.
-- [ ] Use TanStack Query (already installed) for session list + room snapshot fetching instead of bespoke `useState/useEffect`.
-- [ ] Avoid shipping puzzle truth to every client: `apps/web/src/features/puzzles/randomPuzzle.ts` imports JSON containing `soupTruth`; consider moving random selection to the server and sending only `soupSurface` to non-host clients.
-- [ ] Revisit `apps/web/next.config.ts` `transpilePackages`: `@vibe-ltp/llm-client` looks server-only; ensure it’s not needed in the web bundle.
+- [x] Use TanStack Query (already installed) for session list + room snapshot fetching instead of bespoke `useState/useEffect`.
+- [x] Avoid shipping puzzle truth to every client: `apps/web/src/features/puzzles/randomPuzzle.ts` imports JSON containing `soupTruth`; consider moving random selection to the server and sending only `soupSurface` to non-host clients.
+- [x] Revisit `apps/web/next.config.ts` `transpilePackages`: `@vibe-ltp/llm-client` looks server-only; ensure it’s not needed in the web bundle.
 
 ## P5 — Docs + repo hygiene
 

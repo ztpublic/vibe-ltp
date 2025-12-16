@@ -1,14 +1,14 @@
 import type { ChatFeedbackRequest, ChatRequest, ChatResponse, UserMessage, ChatMessage } from '@vibe-ltp/shared';
 import type { ChatService } from './chatService';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || `http://localhost:${process.env.NEXT_PUBLIC_BACKEND_PORT || 4000}`;
+import { API_BASE_URL } from '@/src/lib/apiBaseUrl';
 
 export class ApiChatService implements ChatService {
   constructor(public sessionId?: string) {}
 
   private async postChat(path: string, body: ChatRequest): Promise<ChatResponse> {
     try {
-      const res = await fetch(`${API_BASE}${path}`, {
+      const res = await fetch(`${API_BASE_URL}${path}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -86,7 +86,7 @@ export class ApiChatService implements ChatService {
       question,
     };
 
-    const res = await fetch(`${API_BASE}/api/feedback`, {
+    const res = await fetch(`${API_BASE_URL}/api/feedback`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

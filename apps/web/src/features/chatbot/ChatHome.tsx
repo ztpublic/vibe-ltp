@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { SoupBotChat, type SoupBotChatRef } from './index';
 import type { ChatService } from './services';
 import type { GameStateController, ChatHistoryController } from './controllers';
 import { IdentityProvider } from './identity/useChatIdentity';
 import { PuzzleInputDialog } from './components';
-import { pickRandomPuzzle } from '@/src/features/puzzles/randomPuzzle';
+import { getSessionTruth } from '@/src/features/sessions/api';
 import type { BotMessage } from '@vibe-ltp/shared';
 import type { Toast } from './utils/notifications';
 
@@ -15,20 +15,22 @@ export interface ChatHomeProps {
   gameStateController: GameStateController;
   chatService: ChatService;
   chatHistoryController?: ChatHistoryController;
-  onStartGame?: (content: { soupSurface: string; soupTruth: string }) => void;
+  onStartGame?: () => void;
   onResetGame?: () => void;
   onLeaveGame?: () => void;
+  truthLoader?: (sessionId: string) => Promise<string>;
   toasts?: Toast[];
 }
 
 export const ChatHome = ({ 
-  sessionId: _sessionId,
+  sessionId,
   gameStateController,
   chatService, 
   chatHistoryController,
   onStartGame,
   onResetGame,
   onLeaveGame,
+  truthLoader = getSessionTruth,
   toasts = [],
 }: ChatHomeProps) => {
   const { gameState, puzzleContent, startGame, resetGame } = gameStateController;
@@ -40,6 +42,15 @@ export const ChatHome = ({
   const isGameNotStarted = gameState === 'NotStarted';
   const isGameStarted = gameState === 'Started';
   const isGameEnded = gameState === 'Ended';
+  const hasPuzzleSurface = Boolean(puzzleContent?.soupSurface);
+  const isChatDisabled = gameState !== 'Started' || !hasPuzzleSurface;
+
+  useEffect(() => {
+    if (!isRandomLoading) return;
+    if (hasPuzzleSurface || gameState !== 'Started') {
+      setIsRandomLoading(false);
+    }
+  }, [gameState, hasPuzzleSurface, isRandomLoading]);
 
   const handleStartGameClick = () => {
     setRandomError(null);
@@ -52,22 +63,21 @@ export const ChatHome = ({
     try {
       setRandomError(null);
       setIsRandomLoading(true);
-      const puzzle = await pickRandomPuzzle();
-      startGame(puzzle);
-      onStartGame?.({ soupSurface: puzzle.soupSurface, soupTruth: puzzle.soupTruth });
+      startGame({ mode: 'random' });
+      onStartGame?.();
     } catch (error) {
       const message = error instanceof Error ? error.message : '无法加载随机谜题';
       setRandomError(`随机开局失败：${message}`);
       console.error('[ChatHome] Failed to start random puzzle', error);
     } finally {
-      setIsRandomLoading(false);
+      // Loading state is cleared once puzzle content arrives via socket update.
     }
   };
 
   const handleDialogConfirm = (soupSurface: string, soupTruth: string) => {
-    startGame({ soupSurface, soupTruth });
+    startGame({ mode: 'custom', puzzleContent: { soupSurface, soupTruth } });
     setIsDialogOpen(false);
-    onStartGame?.({ soupSurface, soupTruth });
+    onStartGame?.();
   };
 
   const handleDialogClose = () => {
@@ -75,12 +85,14 @@ export const ChatHome = ({
   };
 
   const handleRevealTruth = async () => {
-    // Send truth to chatbot
-    if (puzzleContent?.soupTruth && chatbotRef.current) {
+    try {
+      const soupTruth = await truthLoader(sessionId);
+      if (!chatbotRef.current) return;
+
       const truthMessage: BotMessage = {
         id: `bot-truth-${Date.now()}`,
         type: 'bot',
-        content: `💡 谜题真相：\n\n${puzzleContent.soupTruth}`,
+        content: `💡 谜题真相：\n\n${soupTruth}`,
         timestamp: new Date().toISOString(),
       };
       chatbotRef.current.addBotMessage(truthMessage, {
@@ -91,11 +103,15 @@ export const ChatHome = ({
       
       // Wait a bit to ensure message is sent to server before resetting
       await new Promise(resolve => setTimeout(resolve, 150));
+      
+      // Reset game state (chat history is preserved on server)
+      resetGame();
+      onResetGame?.();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '无法获取谜题真相';
+      setRandomError(`公布答案失败：${message}`);
+      console.error('[ChatHome] Failed to reveal truth', error);
     }
-    
-    // Reset game state (chat history is preserved on server)
-    resetGame();
-    onResetGame?.();
   };
 
   return (
@@ -147,14 +163,16 @@ export const ChatHome = ({
                 ref={chatbotRef}
                 chatService={chatService}
                 chatHistoryController={chatHistoryController}
-                disabled={isGameNotStarted || isGameEnded}
+                disabled={isChatDisabled}
                 gameState={gameState}
               />
-              {(isGameNotStarted || isGameEnded) && (
+              {isChatDisabled && (
                 <div className="mt-2 text-xs text-[#aaaaaa]">
                   {isGameNotStarted
                     ? '游戏未开始，先点击“开始新汤”开启本局。'
-                    : '本局已结束，重新开始后再继续聊天。'}
+                    : isGameEnded
+                      ? '本局已结束，重新开始后再继续聊天。'
+                      : '谜题载入中，请稍候...'}
                 </div>
               )}
             </div>
@@ -196,12 +214,12 @@ export const ChatHome = ({
               </div>
               <button
                 className={`px-6 py-3 rounded-lg transition-colors border border-[#3e3e42] whitespace-nowrap ${
-                  isGameStarted
+                  isGameStarted && hasPuzzleSurface
                     ? 'bg-[#2d2d30] hover:bg-[#3e3e42] text-white cursor-pointer'
                     : 'bg-[#2d2d30] text-[#858585] cursor-not-allowed'
                 }`}
                 onClick={handleRevealTruth}
-                disabled={isGameNotStarted || isGameEnded}
+                disabled={!isGameStarted || !hasPuzzleSurface}
               >
                 公布答案
               </button>
