@@ -59,6 +59,12 @@ Key values from `.env.example`:
 - `CORS_ORIGIN` – comma-separated allowed origins (defaults to frontend origin)
 - `NEXT_PUBLIC_API_BASE_URL` – browser-facing API URL
 - `OPENROUTER_REFERRER`, `OPENROUTER_APP_TITLE` – optional OpenRouter metadata
+- `GAME_EXPORT_DIR`, `GAME_EXPORT_ENABLED` – optional JSON transcript export controls
+
+## Persistence (current)
+
+- **Puzzles**: file-backed JSON fixtures in `packages/data/puzzles` (loaded by `apps/server/src/puzzles`).
+- **Sessions**: in-memory server state; transcripts are optionally exported as JSON to `game-exports` (see `apps/server/src/utils/gameExport.ts`).
 
 ## Monorepo Layout
 

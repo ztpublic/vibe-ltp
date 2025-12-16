@@ -1,12 +1,13 @@
 import { Router, type Router as RouterType } from 'express';
+import { getPuzzleById, listPuzzles } from '../../puzzles/puzzleCatalog.js';
 
 export const puzzleRoutes: RouterType = Router();
 
 // GET /api/puzzles - List all puzzles
 puzzleRoutes.get('/', async (_req, res) => {
   try {
-    // TODO: Implement with Prisma
-    res.json({ puzzles: [] });
+    const puzzles = await listPuzzles();
+    res.json({ puzzles });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch puzzles' });
   }
@@ -16,20 +17,22 @@ puzzleRoutes.get('/', async (_req, res) => {
 puzzleRoutes.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    // TODO: Implement with Prisma
-    res.json({ puzzle: null, id });
+    const puzzle = await getPuzzleById(id);
+    if (!puzzle) {
+      return res.status(404).json({ error: `Puzzle not found: ${id}` });
+    }
+
+    // Never expose truth via public REST endpoint.
+    return res.json({ puzzle: { id, soupSurface: puzzle.soupSurface } });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch puzzle' });
   }
 });
 
-// POST /api/puzzles - Create puzzle
-puzzleRoutes.post('/', async (req, res) => {
-  try {
-    const data = req.body;
-    // TODO: Validate with Zod and save with Prisma
-    res.status(201).json({ puzzle: data });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create puzzle' });
-  }
+// Puzzles are currently file-backed under packages/data/puzzles (no Prisma/DB yet).
+puzzleRoutes.post('/', (_req, res) => {
+  res.status(405).json({
+    error:
+      'Creating puzzles via REST is not supported (file-backed dataset). Add puzzles in packages/data/puzzles instead.',
+  });
 });
