@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.server
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
     image: vibe-ltp-server:local
     restart: "no"
     env_file:
@@ -19,6 +21,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.web
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
     image: vibe-ltp-web:local
     restart: "no"
     env_file:

@@ -20,6 +20,9 @@ RUN pnpm install --frozen-lockfile
 # Copy full source
 COPY . .
 
+# Re-link after full workspace is present (avoids broken pnpm symlinks during build)
+RUN pnpm install --frozen-lockfile
+
 # Build workspace deps needed by the server (force rebuild to ensure dist exists)
 RUN rm -f packages/shared/tsconfig.tsbuildinfo && pnpm --filter @vibe-ltp/shared exec tsc --build --force
 RUN rm -f packages/puzzle-core/tsconfig.tsbuildinfo && pnpm --filter @vibe-ltp/puzzle-core exec tsc --build --force

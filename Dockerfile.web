@@ -23,6 +23,9 @@ RUN pnpm install --frozen-lockfile
 # Copy full source for the build
 COPY . .
 
+# Re-link after full workspace is present (avoids broken pnpm symlinks during build)
+RUN pnpm install --frozen-lockfile
+
 # Build shared workspace needed by the web app (force rebuild to refresh dist)
 RUN rm -f packages/shared/tsconfig.tsbuildinfo && pnpm --filter @vibe-ltp/shared exec tsc --build --force
 
