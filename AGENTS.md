@@ -7,6 +7,7 @@ This document provides context and guidance for AI agents working on the vibe-lt
 **vibe-ltp** is a lateral thinking puzzle game built as a pnpm monorepo. Players solve mystery puzzles by asking yes/no questions to uncover hidden solutions, with an LLM acting as the host/judge for player questions.
 
 ### Tech Stack
+
 - **Frontend**: Next.js 16 (App Router), React 18, Tailwind CSS v4, TanStack Query
 - **Backend**: Node.js, Express, Socket.IO (websocket transport)
 - **Real-time**: Socket.IO for live rooms and Q&A
@@ -26,7 +27,6 @@ vibe-ltp/
 │   ├── puzzle-core/      # Domain logic (framework-free)
 │   ├── shared/           # Shared types, DTOs, Zod schemas
 │   ├── llm-client/       # OpenRouter client + puzzle agents
-│   ├── react-chatbot-kit/ # Vendored chatbot kit used by the web UI
 │   └── config/           # Shared configs (ESLint, TS, Tailwind)
 ├── tools/
 │   └── agent-lab/        # CLI harness + fixtures for LLM experiments (excluded from workspace)
@@ -35,14 +35,13 @@ vibe-ltp/
 
 ### Key Packages
 
-| Package | Purpose | Dependencies |
-|---------|---------|--------------|
-| `puzzle-core` | Pure domain logic (Puzzle, Session models) | `@vibe-ltp/shared` |
-| `shared` | Types, API constants, Zod schemas | `zod` |
-| `llm-client` | OpenRouter client + question validator agent helpers | `ai`, `@openrouter/ai-sdk-provider`, `zod` |
-| `react-chatbot-kit` | Vendored chatbot kit | `react-conditionally-render` |
-| `server` | REST API + Socket.IO + LLM question validator | `express`, `socket.io`, `@vibe-ltp/llm-client` |
-| `web` | Next.js UI (includes local UI kit in `src/ui`) | `next`, `@vibe-ltp/shared` |
+| Package       | Purpose                                                    | Dependencies                                   |
+| ------------- | ---------------------------------------------------------- | ---------------------------------------------- |
+| `puzzle-core` | Pure domain logic (Puzzle, Session models)                 | `@vibe-ltp/shared`                             |
+| `shared`      | Types, API constants, Zod schemas                          | `zod`                                          |
+| `llm-client`  | OpenRouter client + question validator agent helpers       | `ai`, `@openrouter/ai-sdk-provider`, `zod`     |
+| `server`      | REST API + Socket.IO + LLM question validator              | `express`, `socket.io`, `@vibe-ltp/llm-client` |
+| `web`         | Next.js UI (chatbot UI lives in `apps/web/src/ui/chatbot`) | `next`, `@vibe-ltp/shared`                     |
 
 **Tools (excluded from workspace)**: `tools/agent-lab` – CLI experiments for LLM agents (`@vibe-ltp/llm-client`, `dotenv`)
 
@@ -51,17 +50,20 @@ vibe-ltp/
 ## How to Run
 
 ### Prerequisites
+
 - Node.js 20+
 - pnpm 9+
 
 ### Setup Steps
 
 1. **Install dependencies**
+
    ```bash
    pnpm install
    ```
 
 2. **Configure environment variables** (root `.env`, copied from `.env.example`)
+
    ```bash
    cp .env.example .env
    # Required: OPENROUTER_API_KEY (needed for chat replies)
@@ -69,6 +71,7 @@ vibe-ltp/
    ```
 
 3. **Start dev servers**
+
    ```bash
    # Start both frontend and backend
    pnpm dev
@@ -76,7 +79,7 @@ vibe-ltp/
    # Or run individually
    pnpm dev:web      # Frontend only (defaults to localhost:3000)
    pnpm dev:server   # Backend only (defaults to localhost:4000)
-   
+
    # With custom ports
    FRONTEND_PORT=8080 BACKEND_PORT=8081 pnpm dev
    ```
@@ -104,11 +107,13 @@ pnpm agent-lab:demo:connections # Connection-puzzle agent demo
 ### 1. Domain Logic in `puzzle-core`
 
 **ALL business logic** must go in `packages/puzzle-core`. This package is:
+
 - ✅ Pure TypeScript (no React, Express)
 - ✅ Framework-agnostic
 - ✅ Easy to test
 
 **Examples:**
+
 - Puzzle model with tag filtering and sanitization
 - Question/answer validation rules (pure functions)
 
@@ -157,6 +162,7 @@ pnpm agent-lab:demo:connections # Connection-puzzle agent demo
 ### Add a Socket.IO Event
 
 1. **Define event constant** in `packages/shared/src/api/endpoints.ts`
+
    ```ts
    export const SOCKET_EVENTS = {
      // ... existing events
@@ -185,6 +191,7 @@ pnpm agent-lab:demo:connections # Connection-puzzle agent demo
 - Run: `pnpm test`
 
 **Key Test Suites:**
+
 - `packages/puzzle-core/src/models/Puzzle.test.ts` - Puzzle domain model
 - `apps/server/src/state/gameState.test.ts` - Game state management with validation
 - `apps/server/src/utils/errorHandler.test.ts` - Socket error handling utilities
@@ -217,7 +224,7 @@ Storybook is integrated into `apps/web` for visual component development and tes
   - `preview.ts` - Global decorators and parameters (includes Tailwind CSS v4)
   - `vitest.setup.ts` - Vitest integration for component testing
 
-- **Stories location**: 
+- **Stories location**:
   - `apps/web/stories/` - Page-level stories (e.g., ChatHome)
   - `apps/web/src/**/*.stories.tsx` - Component-level stories
 
@@ -298,6 +305,7 @@ export const Mocked: Story = {
 #### How to Use Mocks
 
 1. Make components accept optional provider overrides:
+
    ```tsx
    export interface MyComponentProps {
      dataProvider?: typeof RealProvider;
@@ -355,6 +363,7 @@ pnpm install
 ### Port Already in Use
 
 Change ports using environment variables:
+
 ```bash
 # Use custom ports
 FRONTEND_PORT=8080 BACKEND_PORT=8081 pnpm dev
@@ -368,9 +377,11 @@ lsof -ti:4000 | xargs kill
 All environment variables are documented in `.env.example`:
 
 **Required:**
+
 - `OPENROUTER_API_KEY` - OpenRouter API key for LLM features
 
 **Optional:**
+
 - `BACKEND_PORT` - Backend server port (default: 4000)
 - `FRONTEND_PORT` - Frontend dev server port (default: 3000)
 - `CORS_ORIGIN` - Allowed CORS origins (default: http://localhost:3000)
@@ -404,6 +415,7 @@ All environment variables are documented in `.env.example`:
 ## Next Steps for Development
 
 See the initialization plan for roadmap phases:
+
 1. ✅ Scaffold monorepo
 2. ✅ Add puzzle-core/shared models
 3. 🚧 Wire up backend + LLM question validation (Express routes, sockets)

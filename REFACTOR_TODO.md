@@ -1,6 +1,7 @@
 # Refactor TODOs (vibe-ltp)
 
 This list is based on a quick repo audit plus running:
+
 - `pnpm lint` → **passes** (warnings remain)
 - `pnpm typecheck` → **passes**
 - `pnpm test` → **passes**
@@ -52,9 +53,9 @@ This list is based on a quick repo audit plus running:
 
 ## P5 — Docs + repo hygiene
 
-- [ ] Update stale docs referencing `packages/react-chatbot-kit` (folder does not exist; UI lives under `apps/web/src/ui/chatbot`).
+- [x] Update stale docs referencing `packages/react-chatbot-kit` (folder does not exist; UI lives under `apps/web/src/ui/chatbot`).
   - Files: `AGENTS.md`, `README.md`
-- [ ] Replace the default Next.js template doc in `apps/web/README.md` with project-specific instructions (root `README.md` is already the canonical guide).
+- [x] Replace the default Next.js template doc in `apps/web/README.md` with project-specific instructions (root `README.md` is already the canonical guide).
 
 ## P6 — Persistence roadmap (optional / future)
 

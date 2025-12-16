@@ -14,7 +14,7 @@ Multiplayer lateral thinking puzzles with an LLM host, real-time rooms, and a Ne
 
 - **Frontend**: Next.js 16 (App Router), React 18, Tailwind CSS v4, TanStack Query
 - **Backend**: Node.js, Express, Socket.IO (websocket transport)
-- **Shared packages**: `puzzle-core`, `shared`, `llm-client`, vendored `react-chatbot-kit` (UI kit now lives in `apps/web/src/ui`; experimental `agent-lab` lives under `tools/`)
+- **Shared packages**: `puzzle-core`, `shared`, `llm-client` (chatbot UI lives in `apps/web/src/ui/chatbot`; experimental `agent-lab` lives under `tools/`)
 - **Testing**: Vitest (unit), Playwright (e2e)
 
 ## Getting Started
@@ -40,10 +40,12 @@ pnpm dev
 ```
 
 Defaults:
+
 - Frontend: http://localhost:3000
 - Backend: http://localhost:4000
 
 To use custom ports:
+
 ```bash
 FRONTEND_PORT=8080 BACKEND_PORT=8081 pnpm dev
 ```
@@ -51,6 +53,7 @@ FRONTEND_PORT=8080 BACKEND_PORT=8081 pnpm dev
 ### Environment Variables
 
 Key values from `.env.example`:
+
 - `OPENROUTER_API_KEY` (required) – OpenRouter key for LLM calls
 - `BACKEND_PORT`, `FRONTEND_PORT` – ports for server and web
 - `CORS_ORIGIN` – comma-separated allowed origins (defaults to frontend origin)
@@ -68,7 +71,6 @@ vibe-ltp/
 │   ├── puzzle-core/      # Domain logic (pure TS)
 │   ├── shared/           # Shared types, DTOs, Zod schemas
 │   ├── llm-client/       # OpenRouter client + question validator agents
-│   ├── react-chatbot-kit/ # Vendored chatbot kit used by web UI
 │   └── config/           # Shared config (ESLint, TS, Tailwind)
 ├── tools/
 │   └── agent-lab/        # CLI harness for LLM experiments (excluded from workspace)
