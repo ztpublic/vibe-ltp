@@ -30,11 +30,18 @@ export default [
     },
   },
   {
+    files: ['**/*.ts', '**/*.tsx'],
+    rules: {
+      'no-undef': 'off',
+    },
+  },
+  {
     ignores: [
       'node_modules/**',
       '**/dist/**',
       '**/build/**',
       '**/.next/**',
+      'tools/agent-lab/**',
       '*.config.js',
       '*.config.mjs',
     ],

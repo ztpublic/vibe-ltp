@@ -27,12 +27,13 @@ router.get('/', (_req, res) => {
 router.post('/', (req, res) => {
   const body = req.body as CreateSessionRequest;
   try {
-    const session = gameState.createSession({
+    const snapshot = gameState.createSession({
       title: body.title,
       hostNickname: body.hostNickname,
       puzzleContent: body.puzzleContent,
     });
 
+    const { puzzleContent: _puzzleContent, ...session } = snapshot;
     const payload: CreateSessionResponse = { session };
     res.status(201).json(payload);
 
@@ -74,7 +75,7 @@ router.post('/:sessionId/join', (req, res) => {
 
     const io = getSocketServer();
     if (io) {
-      io.emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session });
+      io.to(sessionId).emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session });
       io.emit(SESSION_SOCKET_EVENTS.SESSION_LIST_UPDATED, { sessions: gameState.listSessions() });
     }
   } catch (error) {
@@ -92,7 +93,7 @@ router.post('/:sessionId/leave', (req, res) => {
 
     const io = getSocketServer();
     if (io) {
-      io.emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session });
+      io.to(sessionId).emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session });
       io.emit(SESSION_SOCKET_EVENTS.SESSION_LIST_UPDATED, { sessions: gameState.listSessions() });
     }
   } catch (error) {
@@ -122,7 +123,7 @@ router.post('/:sessionId/start', (req, res) => {
     const io = getSocketServer();
     if (io) {
       io.to(sessionId).emit(SOCKET_EVENTS.GAME_STATE_UPDATED, update);
-      io.emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session: snapshot });
+      io.to(sessionId).emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session: snapshot });
       io.emit(SESSION_SOCKET_EVENTS.SESSION_LIST_UPDATED, { sessions: gameState.listSessions() });
     }
   } catch (error) {
@@ -149,7 +150,7 @@ router.post('/:sessionId/reset', (req, res) => {
     const io = getSocketServer();
     if (io) {
       io.to(sessionId).emit(SOCKET_EVENTS.GAME_STATE_UPDATED, update);
-      io.emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session: snapshot });
+      io.to(sessionId).emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session: snapshot });
       io.emit(SESSION_SOCKET_EVENTS.SESSION_LIST_UPDATED, { sessions: gameState.listSessions() });
     }
   } catch (error) {
@@ -176,7 +177,7 @@ router.post('/:sessionId/end', (req, res) => {
     const io = getSocketServer();
     if (io) {
       io.to(sessionId).emit(SOCKET_EVENTS.GAME_STATE_UPDATED, update);
-      io.emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session: snapshot });
+      io.to(sessionId).emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session: snapshot });
       io.emit(SESSION_SOCKET_EVENTS.SESSION_LIST_UPDATED, { sessions: gameState.listSessions() });
     }
   } catch (error) {

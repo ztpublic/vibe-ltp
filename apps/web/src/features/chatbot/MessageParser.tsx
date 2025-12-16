@@ -32,14 +32,17 @@ const MessageParser: React.FC<MessageParserProps> = ({ children, actions }) => {
     actions.handleSolutionRequest(trimmed, nickname);
   };
 
+  type MessageParserChildProps = {
+    parse: (message: string) => void;
+    answerParse: (message: string) => void;
+  };
+
   return (
     <>
-      {React.Children.map(children, (child) =>
-        React.cloneElement(child as React.ReactElement, {
-          parse,
-          answerParse: parseForSolution,
-        })
-      )}
+      {React.Children.map(children, (child) => {
+        if (!React.isValidElement<MessageParserChildProps>(child)) return child;
+        return React.cloneElement(child, { parse, answerParse: parseForSolution });
+      })}
     </>
   );
 };

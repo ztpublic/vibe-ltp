@@ -66,6 +66,20 @@ router.post('/chat', async (req, res) => {
       return res.status(409).json({ error: 'Game not started', reply, sessionId });
     }
 
+    const io = getSocketServer();
+
+    // Persist the raw user message immediately so reconnecting clients can restore the question even if validation fails.
+    const persistedUserMessage = {
+      id: userMessage.id,
+      type: 'user' as const,
+      content: userText,
+      nickname: userNickname,
+      timestamp: userMessage.timestamp ?? new Date().toISOString(),
+    };
+
+    gameState.addChatMessage(persistedUserMessage, sessionId);
+    io?.to(sessionId).emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { sessionId, message: persistedUserMessage });
+
     // Build puzzle context for agent
     const puzzleContext: PuzzleContext = {
       surface: puzzleContent.soupSurface,
@@ -103,9 +117,8 @@ router.post('/chat', async (req, res) => {
 
     gameState.addChatMessage(decoratedUserMessage, sessionId);
 
-    const io = getSocketServer();
     if (io) {
-      io.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { sessionId, message: decoratedUserMessage });
+      io.to(sessionId).emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { sessionId, message: decoratedUserMessage });
     }
 
     const response: ChatResponse = { decoration };
@@ -183,6 +196,19 @@ router.post('/solution', async (req, res) => {
       return res.status(409).json({ error: 'Game not started', reply, sessionId });
     }
 
+    const io = getSocketServer();
+
+    const persistedUserMessage = {
+      id: userMessage.id,
+      type: 'user' as const,
+      content: userText,
+      nickname: userNickname,
+      timestamp: userMessage.timestamp ?? new Date().toISOString(),
+    };
+
+    gameState.addChatMessage(persistedUserMessage, sessionId);
+    io?.to(sessionId).emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { sessionId, message: persistedUserMessage });
+
     const evaluation = await validateTruthProposal(
       {
         proposedTruth: userText,
@@ -204,33 +230,8 @@ router.post('/solution', async (req, res) => {
       },
     };
 
-    // Persist messages for history sync
-    const persistedUserMessage = {
-      id: userMessage.id,
-      type: 'user' as const,
-      content: userText,
-      nickname: userNickname,
-      timestamp: userMessage.timestamp ?? new Date().toISOString(),
-    };
-
-    const botMessage = {
-      id: reply.id!,
-      type: 'bot' as const,
-      content: reply.content,
-      replyToId: reply.replyMetadata?.replyToId,
-      replyToPreview: reply.replyMetadata?.replyToPreview,
-      replyToNickname: reply.replyMetadata?.replyToNickname,
-      timestamp: reply.timestamp ?? new Date().toISOString(),
-    };
-
-    gameState.addChatMessage(persistedUserMessage, sessionId);
-    gameState.addChatMessage(botMessage, sessionId);
-
-    const io = getSocketServer();
-    if (io) {
-      io.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { sessionId, message: persistedUserMessage });
-      io.emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { sessionId, message: botMessage });
-    }
+    gameState.addChatMessage(reply, sessionId);
+    io?.to(sessionId).emit(SOCKET_EVENTS.CHAT_MESSAGE_ADDED, { sessionId, message: reply });
 
     const response: ChatResponse = { reply };
     res.json(response);

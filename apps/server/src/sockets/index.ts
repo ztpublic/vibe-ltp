@@ -96,7 +96,7 @@ export function setupSocketIO(io: Server): void {
           sessionId,
           messages: clearedChatHistory,
         });
-        io.emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session: gameState.getSession(sessionId) });
+        io.to(sessionId).emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session: gameState.getSession(sessionId) });
         
         sendSocketSuccess(callback);
       } catch (error) {
@@ -127,7 +127,7 @@ export function setupSocketIO(io: Server): void {
           state: 'NotStarted',
           puzzleContent: gameState.getPuzzleContent(sessionId),
         });
-        io.emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session: gameState.getSession(sessionId) });
+        io.to(sessionId).emit(SESSION_SOCKET_EVENTS.SESSION_UPDATED, { session: gameState.getSession(sessionId) });
         
         sendSocketSuccess(callback);
       } catch (error) {
@@ -135,7 +135,7 @@ export function setupSocketIO(io: Server): void {
       }
     });
 
-    socket.on('session:join', (data: { sessionId: GameSessionId }, callback?: (response: { success: boolean; error?: string }) => void) => {
+    socket.on(SESSION_SOCKET_EVENTS.SESSION_JOIN, (data: { sessionId: GameSessionId }, callback?: (response: { success: boolean; error?: string }) => void) => {
       try {
         const nextSessionId = data.sessionId;
         const session = gameState.getSession(nextSessionId);

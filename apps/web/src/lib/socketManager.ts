@@ -87,10 +87,15 @@ export function releaseSocket(socket: Socket): void {
  * Get the current shared socket instance (if any)
  */
 export function getSharedSocket(sessionId?: string): Socket | null {
-  const key = sessionId ? buildKey('', sessionId) : null;
-  if (key && socketInstances.has(key)) {
-    return socketInstances.get(key)?.socket ?? null;
+  if (sessionId) {
+    for (const instance of socketInstances.values()) {
+      const [, keySessionId] = instance.key.split('::', 2);
+      if (keySessionId === sessionId) {
+        return instance.socket;
+      }
+    }
   }
+
   // Fallback: return first socket if any
   const first = socketInstances.values().next();
   return first.done ? null : first.value.socket;

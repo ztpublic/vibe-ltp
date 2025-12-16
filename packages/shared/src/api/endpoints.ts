@@ -41,6 +41,7 @@ export const SOCKET_EVENTS = {
 export const SESSION_SOCKET_EVENTS = {
   // Lobby events
   SESSION_CREATED: 'session:created',
+  SESSION_JOIN: 'session:join',
   SESSION_UPDATED: 'session:updated',
   SESSION_REMOVED: 'session:removed',
   SESSION_LIST_UPDATED: 'session:listUpdated',

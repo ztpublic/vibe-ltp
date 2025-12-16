@@ -30,43 +30,9 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
   messageStore,
   gameState,
 }) => {
-  const emitMessageToServer = (message: ChatMessage) => {
-    if (chatHistoryController) {
-      chatHistoryController.onMessageAdded(message);
-    }
-  };
-
   const appendBotMessage = (message: BotMessage) => {
     const replyMetadata =
       message.replyMetadata ?? buildReplyMetadata(null);
-
-    // Prevent duplicate bot messages with same id (can happen when server broadcast races with local append)
-    const existingId = message.id;
-    if (existingId) {
-      messageStore.mutateMessages((messages) => {
-        const idx = messages.findIndex((msg) => String(msg.id) === String(existingId));
-        if (idx === -1) return messages;
-
-        const next = [...messages];
-        const existing = next[idx];
-        if (!existing) return messages;
-
-        next[idx] = {
-          ...existing,
-          ...(message.content ? { message: message.content } : {}),
-          loading: false,
-          withAvatar: true,
-        };
-        return next;
-      });
-
-      emitMessageToServer({
-        ...message,
-        replyMetadata,
-        timestamp: message.timestamp ?? new Date().toISOString(),
-      });
-      return;
-    }
 
     const baseBotMessage = createChatBotMessage(message.content, {
       replyToId: replyMetadata?.replyToId,
@@ -83,19 +49,10 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     };
 
     messageStore.appendMessage(botMessageNode);
-
-    const messageWithTimestamp: BotMessage = {
-      ...message,
-      replyMetadata,
-      timestamp: message.timestamp ?? new Date().toISOString(),
-    };
-
-    emitMessageToServer(messageWithTimestamp);
   };
 
   const decorateUserMessage = (
-    decoration: ChatReplyDecoration,
-    userChatMessage: UserMessage
+    decoration: ChatReplyDecoration
   ) => {
     const decorator = buildAnswerDecorator(decoration.answer, decoration.tip);
     let found = false;
@@ -128,14 +85,6 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
       return next;
     });
 
-    const decoratedUserMessage: UserMessage = {
-      ...userChatMessage,
-      answer: decoration.answer,
-      answerTip: decoration.tip,
-      timestamp: userChatMessage.timestamp ?? new Date().toISOString(),
-    };
-
-    emitMessageToServer(decoratedUserMessage);
   };
 
   const sendUserMessage = async (
@@ -177,7 +126,6 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
       return next;
     });
 
-    // Emit user message to server for persistence
     const userChatMessage: UserMessage = {
       id: userMessageId,
       type: 'user' as const,
@@ -185,7 +133,6 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
       nickname: msgNickname,
       timestamp: new Date().toISOString(),
     };
-    emitMessageToServer(userChatMessage);
 
     const TIMEOUT_MS = 30000; // 30 seconds
     const { promise: timeoutPromise, cancel: cancelTimeout } = createTimeoutController<never>(
@@ -203,7 +150,7 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
       ]);
 
       if (chatResponse.decoration) {
-        decorateUserMessage(chatResponse.decoration, userChatMessage);
+        decorateUserMessage(chatResponse.decoration);
       }
 
       if (chatResponse.reply) {
@@ -263,13 +210,16 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
     handleSolutionRequest,
   };
 
+  type ActionProviderChildProps = {
+    actions: typeof actions;
+  };
+
   return (
     <>
-      {React.Children.map(children, (child) =>
-        React.cloneElement(child as React.ReactElement, {
-          actions,
-        })
-      )}
+      {React.Children.map(children, (child) => {
+        if (!React.isValidElement<ActionProviderChildProps>(child)) return child;
+        return React.cloneElement(child, { actions });
+      })}
     </>
   );
 };
