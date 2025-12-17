@@ -1,6 +1,7 @@
 'use client';
 
 import { NicknameBadge } from './components/NicknameBadge';
+import { DEFAULT_BOT_NAME } from './botIdentity';
 
 type ChatbotMessageConfig = {
   message: string;
@@ -13,10 +14,8 @@ type ChatbotConfig = {
   customComponents?: Record<string, unknown>;
 };
 
-export const BOT_NAME = '主持人';
-
 const config: ChatbotConfig = {
-  botName: BOT_NAME,
+  botName: DEFAULT_BOT_NAME,
   initialMessages: [],
   customComponents: {
     header: () => (

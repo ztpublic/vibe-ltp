@@ -33,6 +33,9 @@ interface IChatbotMessageProps {
   message: string;
   /** Message type (bot/custom) */
   type?: string;
+
+  /** Default bot name (used when message.botName is unset) */
+  defaultBotName?: string;
   
   /** Bot reply metadata */
   replyToId?: string;
@@ -60,6 +63,7 @@ interface IChatbotMessageProps {
 const ChatbotMessage = ({
   message,
   type = 'bot',
+  defaultBotName,
   replyToId,
   replyToPreview,
   replyToNickname,
@@ -80,13 +84,19 @@ const ChatbotMessage = ({
   const [show, toggleShow] = useState(false);
   const ref = React.useRef<HTMLDivElement | null>(null);
 
+  const effectiveReplyToId = replyToId ?? messageObject?.replyToId;
+  const effectiveReplyToPreview =
+    replyToPreview ?? messageObject?.replyToPreview;
+  const effectiveReplyToNickname =
+    replyToNickname ?? messageObject?.replyToNickname;
+
   const handleReplyClick = () => {
-    if (!replyToId) return;
-    console.log('Clicking reply label, scrolling to:', replyToId);
+    if (!effectiveReplyToId) return;
+    console.log('Clicking reply label, scrolling to:', effectiveReplyToId);
     if (onReplyScroll) {
-      onReplyScroll(replyToId);
+      onReplyScroll(effectiveReplyToId);
     }
-    scrollToMessage(replyToId);
+    scrollToMessage(effectiveReplyToId);
   };
 
   useEffect(() => {
@@ -137,7 +147,7 @@ const ChatbotMessage = ({
   }, [delay]);
 
   const effectiveDisableAutoLoading =
-    disableAutoLoadingDismiss || messageObject?.disableAutoLoadingDismiss;
+    disableAutoLoadingDismiss ?? messageObject?.disableAutoLoadingDismiss;
 
   const fullMessage: IMessage = {
     // Start with any existing message metadata so it's preserved
@@ -146,24 +156,39 @@ const ChatbotMessage = ({
     id,
     type,
     message,
-    loading,
-    disableAutoLoadingDismiss: effectiveDisableAutoLoading,
-    replyToId,
-    replyToPreview,
-    replyToNickname,
-    payload,
-    delay,
+    ...(loading !== undefined ? { loading } : {}),
+    ...(effectiveDisableAutoLoading !== undefined
+      ? { disableAutoLoadingDismiss: effectiveDisableAutoLoading }
+      : {}),
+    ...(replyToId !== undefined ? { replyToId } : {}),
+    ...(replyToPreview !== undefined ? { replyToPreview } : {}),
+    ...(replyToNickname !== undefined ? { replyToNickname } : {}),
+    ...(payload !== undefined ? { payload } : {}),
+    ...(delay !== undefined ? { delay } : {}),
   };
 
+  const resolvedMessage: IMessage = {
+    ...fullMessage,
+    botName: fullMessage.botName ?? defaultBotName,
+  };
+
+  const botDisplayName = resolvedMessage.botName;
+  const botAvatar = resolvedMessage.botAvatar;
+  const derivedAvatarLabel =
+    botDisplayName && botDisplayName.trim().length > 0
+      ? Array.from(botDisplayName.trim())[0]
+      : 'B';
+  const avatarLabel = botAvatar?.label ?? derivedAvatarLabel;
+
   const bubbleStyle = buildStyle(customStyles?.botMessageBox);
-  const decorator = fullMessage.decorators?.[0];
+  const decorator = resolvedMessage.decorators?.[0];
   const decoratorColor = decorator?.color;
   const decoratedBubbleStyle = {
     ...bubbleStyle,
     ...(decoratorColor ? { border: `1px solid ${decoratorColor}` } : {}),
   };
-  const showThumbsUp = fullMessage.showThumbsUp ?? true;
-  const showThumbsDown = fullMessage.showThumbsDown ?? true;
+  const showThumbsUp = resolvedMessage.showThumbsUp ?? true;
+  const showThumbsDown = resolvedMessage.showThumbsDown ?? true;
   const feedbackShellClass = mergeClassNames(
     'message-bubble-shell',
     showThumbsUp || showThumbsDown
@@ -188,12 +213,12 @@ const ChatbotMessage = ({
   );
 
   const decorationProps = {
-    message: fullMessage,
-    decorators: fullMessage.decorators,
-    actions: fullMessage.actions,
-    feedbackOptions: fullMessage.feedbackOptions,
-    status: fullMessage.status,
-    timestamp: fullMessage.timestamp,
+    message: resolvedMessage,
+    decorators: resolvedMessage.decorators,
+    actions: resolvedMessage.actions,
+    feedbackOptions: resolvedMessage.feedbackOptions,
+    status: resolvedMessage.status,
+    timestamp: resolvedMessage.timestamp,
     onFeedback,
   };
 
@@ -207,7 +232,7 @@ const ChatbotMessage = ({
           data-message-id={`bot_msg_${id}`}
         >
           {/* Reply label if metadata exists */}
-          {replyToId && replyToPreview && (
+          {effectiveReplyToId && effectiveReplyToPreview && (
             <button
               type="button"
               className={replyLabelClassName}
@@ -215,7 +240,8 @@ const ChatbotMessage = ({
               onClick={handleReplyClick}
               title="点击跳转到问题"
             >
-              ↩ 回复 {replyToNickname || 'visitor'}: &quot;{replyToPreview}&quot;
+              ↩ 回复 {effectiveReplyToNickname || 'visitor'}: &quot;
+              {effectiveReplyToPreview}&quot;
             </button>
           )}
           
@@ -226,79 +252,96 @@ const ChatbotMessage = ({
                 <ConditionallyRender
                   condition={!!customComponents?.botAvatar}
                   show={callIfExists(customComponents?.botAvatar, {
-                    message: fullMessage,
+                    message: resolvedMessage,
                   })}
                   elseShow={
                     <ChatbotMessageAvatar
                       className={customStyles?.botAvatar?.className}
                       style={buildStyle(customStyles?.botAvatar)}
-                      label="B"
+                      label={avatarLabel}
+                      imageSrc={botAvatar?.imageSrc}
+                      imageAlt={botAvatar?.imageAlt}
+                      size={botAvatar?.size}
+                      backgroundColor={botAvatar?.backgroundColor}
                     />
                   }
                 />
               }
             />
 
-            <div className={feedbackShellClass}>
-              <ConditionallyRender
-                condition={!!customComponents?.botChatMessage}
-                show={callIfExists(customComponents?.botChatMessage, {
-                  message: fullMessage,
-                  defaultLoader: (
-                    <div className={loaderClassName} style={loaderStyle}>
-                      <Loader />
-                    </div>
-                  ),
-                  onReplyScroll: handleReplyClick,
-                  onFeedback,
-                })}
-                elseShow={
-                  <div className={bubbleClassName} style={decoratedBubbleStyle}>
-                    <ConditionallyRender
-                      condition={!!loading}
-                      show={
+            <div className="chatbot-message-content">
+              {botDisplayName && withAvatar && (
+                <div className="bot-name-label">{botDisplayName}</div>
+              )}
+              <div className="chatbot-message-row">
+                <div className={feedbackShellClass}>
+                  <ConditionallyRender
+                    condition={!!customComponents?.botChatMessage}
+                    show={callIfExists(customComponents?.botChatMessage, {
+                      message: resolvedMessage,
+                      defaultLoader: (
                         <div className={loaderClassName} style={loaderStyle}>
                           <Loader />
                         </div>
-                      }
-                      elseShow={<span>{message}</span>}
-                    />
-                    <ConditionallyRender
-                      condition={!!decorator?.icon}
-                      show={
-                        <div
-                          className="message-decorator-icon"
-                          style={{ color: decoratorColor }}
-                          aria-label="message decorator"
-                        >
-                          {decorator?.icon?.startsWith('http') ? (
-                            <img
-                              src={decorator.icon}
-                              alt={decorator.label || 'Decorator icon'}
-                              className="message-decorator-icon-image"
-                            />
-                          ) : (
-                            decorator?.icon
-                          )}
-                        </div>
-                      }
-                    />
-                  </div>
-                }
-              />
-              <ThumbControls
-                message={fullMessage}
-                align="right"
-                showThumbsUp={showThumbsUp}
-                showThumbsDown={showThumbsDown}
-                setState={setState}
-                onFeedback={onFeedback}
-              />
+                      ),
+                      onReplyScroll: handleReplyClick,
+                      onFeedback,
+                    })}
+                    elseShow={
+                      <div
+                        className={bubbleClassName}
+                        style={decoratedBubbleStyle}
+                      >
+                        <ConditionallyRender
+                          condition={!!loading}
+                          show={
+                            <div className={loaderClassName} style={loaderStyle}>
+                              <Loader />
+                            </div>
+                          }
+                          elseShow={<span>{message}</span>}
+                        />
+                        <ConditionallyRender
+                          condition={!!decorator?.icon}
+                          show={
+                            <div
+                              className="message-decorator-icon"
+                              style={{ color: decoratorColor }}
+                              aria-label="message decorator"
+                            >
+                              {decorator?.icon?.startsWith('http') ? (
+                                <img
+                                  src={decorator.icon}
+                                  alt={decorator.label || 'Decorator icon'}
+                                  className="message-decorator-icon-image"
+                                />
+                              ) : (
+                                decorator?.icon
+                              )}
+                            </div>
+                          }
+                        />
+                      </div>
+                    }
+                  />
+                  <ThumbControls
+                    message={resolvedMessage}
+                    align="right"
+                    showThumbsUp={showThumbsUp}
+                    showThumbsDown={showThumbsDown}
+                    setState={setState}
+                    onFeedback={onFeedback}
+                  />
+                </div>
+                <ConditionallyRender
+                  condition={!!customComponents?.botMessageAside}
+                  show={callIfExists(
+                    customComponents?.botMessageAside,
+                    decorationProps
+                  )}
+                />
+              </div>
             </div>
-            <ConditionallyRender
-              condition={!!customComponents?.botMessageAside}
-              show={callIfExists(customComponents?.botMessageAside, decorationProps)}
-            />
           </div>
           <ConditionallyRender
             condition={!!decorator?.text || !!decorator?.label}

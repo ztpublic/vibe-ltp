@@ -94,13 +94,30 @@ const Chat = ({
     scrollIntoView();
   });
 
+  const botIdentityKey = (msg: IMessage) => {
+    const botId = msg.botId ?? '';
+    const botName = msg.botName ?? '';
+    const avatarSrc = msg.botAvatar?.imageSrc ?? '';
+    const avatarLabel = msg.botAvatar?.label ?? '';
+    return `${botId}|${botName}|${avatarSrc}|${avatarLabel}`;
+  };
+
   const showAvatar = (messages: IMessage[], index: number) => {
     if (index === 0) return true;
 
     const lastMessage = messages[index - 1];
     if (!lastMessage) return true;
 
-    if (lastMessage.type === 'bot' && !lastMessage.widget) {
+    const currentMessage = messages[index];
+    if (!currentMessage) return true;
+
+    if (
+      lastMessage.type === 'bot' &&
+      currentMessage.type === 'bot' &&
+      !lastMessage.widget &&
+      !currentMessage.widget &&
+      botIdentityKey(lastMessage) === botIdentityKey(currentMessage)
+    ) {
       return false;
     }
     return true;
@@ -232,6 +249,7 @@ const Chat = ({
           <ChatbotMessage
             customStyles={customStyles}
             withAvatar={withAvatar}
+            defaultBotName={botName}
             {...chatbotMessageProps}
             key={messageObject.id}
           />
@@ -247,6 +265,7 @@ const Chat = ({
       <ChatbotMessage
         customStyles={customStyles}
         key={messageObject.id}
+        defaultBotName={botName}
         withAvatar={withAvatar}
         {...chatbotMessageProps}
       />

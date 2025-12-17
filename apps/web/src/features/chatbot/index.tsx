@@ -12,6 +12,7 @@ import type { ChatHistoryController } from './controllers';
 import { useChatIdentity } from './identity/useChatIdentity';
 import { isUserMessage, isBotMessage, type BotMessage, type ChatMessage, type GameState } from '@vibe-ltp/shared';
 import { buildAnswerDecorator } from './utils/answerDecorators';
+import { DEFAULT_BOT_ID, DEFAULT_BOT_NAME } from './botIdentity';
 import {
   createChatbotMessageStore,
   type ChatbotMessageStore,
@@ -61,6 +62,8 @@ const convertHistoryMessages = (
             replyToId: botMsg.replyMetadata?.replyToId,
             replyToPreview: botMsg.replyMetadata?.replyToPreview,
             replyToNickname: botMsg.replyMetadata?.replyToNickname,
+            botId: DEFAULT_BOT_ID,
+            botName: DEFAULT_BOT_NAME,
           }) as unknown as ChatbotUiMessage),
           type: 'bot' as const,
           withAvatar: true,
@@ -211,6 +214,8 @@ export const SoupBotChat = React.forwardRef<SoupBotChatRef, SoupBotChatProps>((
             replyToId: message.replyMetadata?.replyToId,
             replyToPreview: message.replyMetadata?.replyToPreview,
             replyToNickname: message.replyMetadata?.replyToNickname,
+            botId: DEFAULT_BOT_ID,
+            botName: DEFAULT_BOT_NAME,
           }) as unknown as ChatbotUiMessage),
           type: 'bot',
           ...visibility,

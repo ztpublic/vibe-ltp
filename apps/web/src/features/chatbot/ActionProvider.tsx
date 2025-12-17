@@ -10,6 +10,7 @@ import type { ChatbotMessageStore, ChatbotUiMessage } from './messageStore';
 import { createTimeoutController } from './utils/timeoutController';
 import { buildReplyMetadata, type PendingUserContext } from './replyMetadata';
 import { buildAnswerDecorator } from './utils/answerDecorators';
+import { DEFAULT_BOT_ID, DEFAULT_BOT_NAME } from './botIdentity';
 
 type CreateChatBotMessage = typeof createChatBotMessage;
 
@@ -38,6 +39,8 @@ const ActionProvider: React.FC<ActionProviderProps> = ({
       replyToId: replyMetadata?.replyToId,
       replyToPreview: replyMetadata?.replyToPreview,
       replyToNickname: replyMetadata?.replyToNickname,
+      botId: DEFAULT_BOT_ID,
+      botName: DEFAULT_BOT_NAME,
     }) as unknown as ChatbotUiMessage;
 
     const botMessageNode: ChatbotUiMessage = {

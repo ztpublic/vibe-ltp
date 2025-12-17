@@ -8,6 +8,15 @@ export type ChatbotUiMessage = {
   type: 'user' | 'bot';
   message?: string;
   nickname?: string;
+  botId?: string;
+  botName?: string;
+  botAvatar?: {
+    label?: string;
+    imageSrc?: string;
+    imageAlt?: string;
+    size?: number;
+    backgroundColor?: string;
+  };
   loading?: boolean;
   widget?: string;
   delay?: number;

@@ -47,6 +47,10 @@ export const createChatBotMessage = (
     ...createChatMessage(message, 'bot'),
     loading: true,
     disableAutoLoadingDismiss: options.disableAutoLoadingDismiss,
+    // Bot identity metadata (optional)
+    botId: options.botId,
+    botName: options.botName,
+    botAvatar: options.botAvatar,
     // Extract reply metadata from options if provided
     replyToId: options.replyToId,
     replyToPreview: options.replyToPreview,

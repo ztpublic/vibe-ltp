@@ -62,6 +62,11 @@ export interface IMessageOptions {
   
   /** User message metadata */
   nickname?: string;
+
+  /** Bot identity metadata (for multi-bot chats) */
+  botId?: string;
+  botName?: string;
+  botAvatar?: IMessageAvatar;
   
   /** Bot message reply metadata */
   replyToId?: string;
@@ -74,6 +79,15 @@ export interface IMessageOptions {
   feedbackOptions?: IMessageFeedbackOption[];
   status?: IMessageStatus;
   timestamp?: number | string;
+}
+
+export interface IMessageAvatar {
+  /** Letter/short label rendered when no image is provided */
+  label?: string;
+  imageSrc?: string;
+  imageAlt?: string;
+  size?: number;
+  backgroundColor?: string;
 }
 
 export interface IMessage extends IBaseMessage {
@@ -92,6 +106,11 @@ export interface IMessage extends IBaseMessage {
   
   /** User message: display nickname */
   nickname?: string;
+
+  /** Bot identity (for multi-bot chats) */
+  botId?: string;
+  botName?: string;
+  botAvatar?: IMessageAvatar;
   
   /** Bot message: reply metadata fields */
   replyToId?: string;

@@ -35,6 +35,25 @@
   align-items: flex-start;
 }
 
+.chatbot-message-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.chatbot-message-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.bot-name-label {
+  font-size: 10px;
+  color: #cbd5e1;
+  margin-bottom: 2px;
+  text-align: left;
+}
+
 .react-chatbot-kit-chat-bot-avatar-container {
   width: 40px;
   height: 40px;
