@@ -20,6 +20,7 @@
     "agent-lab:setup": "pnpm -C tools/agent-lab install --ignore-workspace --prefer-offline",
     "agent-lab:demo": "pnpm run agent-lab:setup && pnpm -C tools/agent-lab demo",
     "agent-lab:demo:connections": "pnpm run agent-lab:setup && pnpm -C tools/agent-lab demo:connections",
+    "agent-lab:demo:puzzle-generator": "pnpm run agent-lab:setup && pnpm -C tools/agent-lab demo:puzzle-generator",
     "agent-lab:demo:history": "pnpm run agent-lab:setup && pnpm -C tools/agent-lab demo:history",
     "agent-lab:demo:keypoints": "pnpm run agent-lab:setup && pnpm -C tools/agent-lab demo:keypoints",
     "agent-lab:demo:truth-keywords": "pnpm run agent-lab:setup && pnpm -C tools/agent-lab demo:truth-keywords",

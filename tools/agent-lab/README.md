@@ -18,6 +18,16 @@ pnpm agent-lab:demo:connections
 
 This runs `tools/agent-lab/src/connectionDemo.ts`, exercising the connection distiller agent against sample puzzles pulled from the sea turtle soups dataset.
 
+```bash
+# From repo root (requires OPENROUTER_API_KEY)
+pnpm agent-lab:demo:puzzle-generator
+
+# Optional controls
+PUZZLE_PROMPT="现代都市悬疑，避免暴力，结局反转" PUZZLE_COUNT=3 pnpm agent-lab:demo:puzzle-generator
+```
+
+This runs `tools/agent-lab/src/puzzleGeneratorDemo.ts`, generating 1+ puzzles and printing each as JSON `{ puzzleSurface, puzzleTruth }`.
+
 ## Key files
 
 - `src/types.ts` — shared types for agent variants, experiment cases, and results
